@@ -1,0 +1,36 @@
+{
+    "abberior": 0,
+    "size_slm_mm": [
+        7.5,
+        10
+    ],
+    "slm_px": 0.0125,
+    "slm_range": 255,
+    "size_full": [
+        600,
+        792
+    ],
+    "phasewrap": 1,
+    "size_slm": [
+        600,
+        396
+    ],
+    "displaywidth": 300,
+    "laser_radius": 1.2,
+    "objective": "100xOil NA 1.40",
+    "path": "patterns/",
+    "cal1": "patterns/CorrPatterns/CAL_LSH0801768_780nm.bmp",
+    "cal0": "patterns/CorrPatterns/Black_Full.bmp",
+    "last_img_nm": "latest.bmp",
+    "modes": [
+        "Gauss",
+        "2D STED",
+        "3D STED",
+        "Segments",
+        "Bivortex",
+        "From File"
+    ],
+    "split_image": 1,
+    "flat_field": 0,
+    "single_aberr": 0
+}
