@@ -5,16 +5,10 @@ Created on Fri Oct 21 10:22:25 2016
 @author: wjahr
 
 TODO:
-+ set checkboxes according to params files upon startup
-+ Load flat field correction according to checkbox
-+ make sure that not only 1st aberration is loaded correctly from params
-+ code sngl aberration case
++ add to git
 - code split image
-+ checkbox format when exporting to JSON
-+ load image from file for vortex
+- load image from file for vortex (crashes when cancelled)
 + scale according to wavelength
-+ code bivortex
-+ code segmented phase plate out of half moon
 - save paths for corrections etc correctly when saving params (hardcoded atm)
 """
 
