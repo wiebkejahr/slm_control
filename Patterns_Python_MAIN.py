@@ -140,12 +140,20 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_r.update_guivalues(self.p, self.p.right)
         
         self.objective_changed()
+        #TODO: These check/uncheck when being called?!
         #self.split_image(self.splt_img_state.checkState())
         #self.single_correction(self.sngl_corr_state.checkState())
         #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
         
         self.recalc_images()
-        #self.init_images()    
+        #self.init_images()
+        
+    def auto_align(self):
+        #zernicke_coeffs = Function_inHopesCode
+        #add zernicke coeffs to guivalues
+        #update guivalues
+        #update slm display
+        print("autoalign")
         
     def save_params(self, fname):
         """" Calls write_file implemented in parameters class to save the 
