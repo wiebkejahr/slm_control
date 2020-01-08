@@ -34,7 +34,7 @@ import SLM
 from Parameters import param
 
 # NOTE: HASN'T BEEN PUT HERE YET
-from AutoAlign.abberior import autoalign
+from AutoAlign import abberior as abberior
 
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
@@ -161,7 +161,7 @@ class Main_Window(QtWidgets.QMainWindow):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
 
-        self.zernike = autoalign(self) # returns a dictionary
+        self.zernike = abberior(self) # returns a dictionary
         # self.p exists bc load_params() is called during creation of mainframe
         # this is setting each value to its current value plus the correction
         self.p.set_(self.p.left["astig"], self.p.get(self.p.left["astig"]) + self.zernike["astig"])
