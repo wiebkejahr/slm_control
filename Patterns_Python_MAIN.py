@@ -33,8 +33,7 @@ import SLM
 
 from Parameters import param
 
-# NOTE: HASN'T BEEN PUT HERE YET
-from AutoAlign import abberior as abberior
+from AutoAlign.abberior import *
 
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
@@ -161,7 +160,7 @@ class Main_Window(QtWidgets.QMainWindow):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
 
-        self.zernike = abberior(self) # returns a dictionary
+        self.zernike = abberior() # returns a dictionary
         # self.p exists bc load_params() is called during creation of mainframe
         # this is setting each value to its current value plus the correction
         self.p.set_(self.p.left["astig"], self.p.get(self.p.left["astig"]) + self.zernike["astig"])
@@ -180,6 +179,9 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_r.update_guivalues(self.p, self.p.right)
 
         self.objective_changed()
+        #self.split_image(self.splt_img_state.checkState())
+        #self.single_correction(self.sngl_corr_state.checkState())
+        #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
 
         self.recalc_images()
 
@@ -218,7 +220,7 @@ class Main_Window(QtWidgets.QMainWindow):
         vbox = QtWidgets.QVBoxLayout()     
         self.crea_but(vbox, self._quit, "Quit")
         # NOTE: I WROTE THIS
-        self.crea_but(vbox, self.Hello, "Auto Align")
+        self.crea_but(vbox, self.auto_align, "Auto Align")
                     
         # doesn't do anything at the moment, could be used to set another path
         # to load the images from
