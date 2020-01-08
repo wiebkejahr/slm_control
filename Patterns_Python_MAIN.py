@@ -33,6 +33,9 @@ import SLM
 
 from Parameters import param
 
+# NOTE: HASN'T BEEN PUT HERE YET
+from AutoAlign.abberior import autoalign
+
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
@@ -122,6 +125,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.show()
         self.raise_()
 
+
         
     def load_params(self, fname):
         """ Calls the load_file function implemented in the parameters class, 
@@ -129,7 +133,7 @@ class Main_Window(QtWidgets.QMainWindow):
             startup of the program. """
         self.p = param()
         self.p.load_file(fname)
-        
+
 
     def reload_params(self, fname):
         """ Calls the load_file function implemented in the parameters class, 
@@ -145,7 +149,40 @@ class Main_Window(QtWidgets.QMainWindow):
         #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
         
         self.recalc_images()
-        #self.init_images()    
+        #self.init_images() 
+    
+    # # NOTE: I WROTE THIS
+    # def load_dict_params(self):
+    #     self.p = param()
+    #     self.p.load_dict(self.zernike) # NOTE: THIS HAS NOT BEEN WRITTEN YET
+    
+    # NOTE: I WROTE THIS
+    def auto_align(self):
+        """This function calls abberior from AutoAlign module, passes the resulting dictionary
+        through a constructor for a param object"""
+
+        self.zernike = autoalign(self) # returns a dictionary
+        # self.p exists bc load_params() is called during creation of mainframe
+        # this is setting each value to its current value plus the correction
+        self.p.set_(self.p.left["astig"], self.p.get(self.p.left["astig"]) + self.zernike["astig"])
+        self.p.set_(self.p.left["coma"], self.p.get(self.p.left["coma"]) + self.zernike["coma"])
+        self.p.set_(self.p.left["sphere"], self.p.get(self.p.left["sphere"]) + self.zernike["sphere"])
+        self.p.set_(self.p.left["trefoil"], self.p.get(self.p.left["trefoil"]) + self.zernike["trefoil"])
+
+        self.p.set_(self.p.right["astig"], self.p.get(self.p.right["astig"]) + self.zernike["astig"])
+        self.p.set_(self.p.right["coma"], self.p.get(self.p.right["coma"]) + self.zernike["coma"])
+        self.p.set_(self.p.right["sphere"], self.p.get(self.p.right["sphere"]) + self.zernike["sphere"])
+        self.p.set_(self.p.right["trefoil"], self.p.get(self.p.right["trefoil"]) + self.zernike["trefoil"])
+        
+        # self.load_dict_params(self.zernike)
+        # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
+        self.img_l.update_guivalues(self.p, self.p.left)
+        self.img_r.update_guivalues(self.p, self.p.right)
+
+        self.objective_changed()
+
+        self.recalc_images()
+
         
     def save_params(self, fname):
         """" Calls write_file implemented in parameters class to save the 
@@ -180,6 +217,8 @@ class Main_Window(QtWidgets.QMainWindow):
         # vertical box to place the controls above the image in
         vbox = QtWidgets.QVBoxLayout()     
         self.crea_but(vbox, self._quit, "Quit")
+        # NOTE: I WROTE THIS
+        self.crea_but(vbox, self.Hello, "Auto Align")
                     
         # doesn't do anything at the moment, could be used to set another path
         # to load the images from
@@ -466,6 +505,8 @@ class Main_Window(QtWidgets.QMainWindow):
         #self.save_params("parameters/params")
         self.close_SLMDisplay()           
         self.close()
+    def Hello(self):
+        print("Hello, World!")
 
 
 class App(QtWidgets.QApplication):
