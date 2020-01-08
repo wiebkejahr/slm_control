@@ -117,7 +117,7 @@ class param():
             parameters provided via the GUI. Updates the values in the 
             dictionary with the values from the GUI. """
         daddy = p
-        print(daddy.splt_img_state.checkState())
+        print("splt img check state ", daddy.splt_img_state.checkState())
         splt_img = 0
         if daddy.splt_img_state.checkState():
             splt_img = 1
