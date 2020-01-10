@@ -33,7 +33,7 @@ import SLM
 
 from Parameters import param
 
-from AutoAlign.abberior import *
+from abberior import *
 
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
@@ -161,18 +161,34 @@ class Main_Window(QtWidgets.QMainWindow):
         through a constructor for a param object"""
 
         self.zernike = abberior() # returns a dictionary
+        print(self.zernike)
         # self.p exists bc load_params() is called during creation of mainframe
         # this is setting each value to its current value plus the correction
-        self.p.set_(self.p.left["astig"], self.p.get(self.p.left["astig"]) + self.zernike["astig"])
-        self.p.set_(self.p.left["coma"], self.p.get(self.p.left["coma"]) + self.zernike["coma"])
-        self.p.set_(self.p.left["sphere"], self.p.get(self.p.left["sphere"]) + self.zernike["sphere"])
-        self.p.set_(self.p.left["trefoil"], self.p.get(self.p.left["trefoil"]) + self.zernike["trefoil"])
 
-        self.p.set_(self.p.right["astig"], self.p.get(self.p.right["astig"]) + self.zernike["astig"])
-        self.p.set_(self.p.right["coma"], self.p.get(self.p.right["coma"]) + self.zernike["coma"])
-        self.p.set_(self.p.right["sphere"], self.p.get(self.p.right["sphere"]) + self.zernike["sphere"])
-        self.p.set_(self.p.right["trefoil"], self.p.get(self.p.right["trefoil"]) + self.zernike["trefoil"])
+        self.p.left["astig"] = [x+y for x,y in zip(self.p.left["astig"], self.zernike["astig"])]
         
+        
+        
+        self.p.left["coma"] = [x+y for x,y in zip(self.p.left["coma"], self.zernike["coma"])]
+        self.p.left["sphere"] = [x+y for x,y in zip(self.p.left["sphere"], self.zernike["sphere"])]
+        self.p.left["trefoil"] = [x+y for x,y in zip(self.p.left["trefoil"], self.zernike["trefoil"])]
+
+        # self.p.right["astig"] = np.sum(self.p.get(self.p.right["astig"]), self.zernike["astig"])
+        # self.p.right["coma"] = np.sum(self.p.get(self.p.right["coma"]), self.zernike["coma"])
+        # self.p.right["sphere"] = np.sum(self.p.get(self.p.right["sphere"]), self.zernike["sphere"])
+        # self.p.right["trefoil"] = np.sum(self.p.get(self.p.right["trefoil"]), self.zernike["trefoil"])
+
+        # self.p.set_(self.p.left["astig"], self.p.get(self.p.left["astig"]) + self.zernike["astig"])
+        # self.p.set_(self.p.left["coma"], self.p.get(self.p.left["coma"]) + self.zernike["coma"])
+        # self.p.set_(self.p.left["sphere"], self.p.get(self.p.left["sphere"]) + self.zernike["sphere"])
+        # self.p.set_(self.p.left["trefoil"], self.p.get(self.p.left["trefoil"]) + self.zernike["trefoil"])
+
+        # self.p.set_(self.p.right["astig"], self.p.get(self.p.right["astig"]) + self.zernike["astig"])
+        # self.p.set_(self.p.right["coma"], self.p.get(self.p.right["coma"]) + self.zernike["coma"])
+        # self.p.set_(self.p.right["sphere"], self.p.get(self.p.right["sphere"]) + self.zernike["sphere"])
+        # self.p.set_(self.p.right["trefoil"], self.p.get(self.p.right["trefoil"]) + self.zernike["trefoil"])
+
+        print(self.p.left)
         # self.load_dict_params(self.zernike)
         # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
         self.img_l.update_guivalues(self.p, self.p.left)

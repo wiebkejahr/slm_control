@@ -23,9 +23,9 @@ import copy
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
-import utils.my_classes as my_classes
-import utils.helpers as helpers
-from utils.integration import integrate
+from my_classes import *
+from helpers import * 
+from integration import integrate
 
 
 class Net(nn.Module):
@@ -192,7 +192,7 @@ def train(model, data_loaders, optimizer, scheduler, num_epochs, logdir, device,
 
 def get_stats(data_path, batch_size, mode='train'):
     """ Finding Dataset Stats for Normalization """
-    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, transform=my_classes.ToTensor())
+    dataset = PSFDataset(hdf5_path=data_path, mode=mode, transform=my_classes.ToTensor())
     loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     mean = 0.
     std = 0.
@@ -219,11 +219,11 @@ def main(args):
     model_store_path = args.model_store_path
 
     mean, std = get_stats(data_path, batch_size)
-    Norm = my_classes.MyNormalize(mean=mean, std=std)
+    Norm = MyNormalize(mean=mean, std=std)
     # TODO: write this to a text file along with the hparams to be loaded during eval
 
-    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=transforms.Compose([my_classes.ToTensor(), Norm]))
-    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([my_classes.ToTensor(), Norm]))
+    train_dataset = PSFDataset(hdf5_path=data_path, mode='train', transform=transforms.Compose([ToTensor(), Norm]))
+    val_dataset = PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([ToTensor(), Norm]))
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
