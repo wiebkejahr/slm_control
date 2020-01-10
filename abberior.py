@@ -65,7 +65,7 @@ def test(model, input_image, model_store_path):
 
 def abberior():
 
-    model_store_path="fixed_zern_old_10_epochs_SGD_lr_0.1_w_val.pth"
+    model_store_path="08.01.20_corrected_pattern_calc_w_val_20_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
     
     # creates an instance of CNN
     model = Net()
