@@ -5,10 +5,16 @@ Created on Fri Oct 21 10:22:25 2016
 @author: wjahr
 
 TODO:
-+ add to git
++ set checkboxes according to params files upon startup
++ Load flat field correction according to checkbox
++ make sure that not only 1st aberration is loaded correctly from params
++ code sngl aberration case
 - code split image
-- load image from file for vortex (crashes when cancelled)
++ checkbox format when exporting to JSON
++ load image from file for vortex
 + scale according to wavelength
++ code bivortex
++ code segmented phase plate out of half moon
 - save paths for corrections etc correctly when saving params (hardcoded atm)
 """
 
@@ -143,6 +149,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_r.update_guivalues(self.p, self.p.right)
         
         self.objective_changed()
+        #TODO: These check/uncheck when being called?!
         #self.split_image(self.splt_img_state.checkState())
         #self.single_correction(self.sngl_corr_state.checkState())
         #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
