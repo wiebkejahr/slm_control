@@ -71,7 +71,7 @@ def normalize_radius(laser_radius, slm_px, slm_size):
         the laser beam. """
     #radnorm = laser_radius / slm_px #/ slm_size[0]
     radnorm = laser_radius / slm_px / slm_size[1]
-    print(radnorm)
+    # print(radnorm)
     return radnorm
 
 def bfp_radius(M, NA, f_TL):
@@ -157,7 +157,7 @@ def create_bottleneck(size, radius, amp):
         radius and amplitude. """
     xcoord, ycoord = create_coords(size)
     bn = (cart2polar(xcoord, ycoord)[0] <= radius) * amp
-    print(radius)
+    # print(radius)
     return bn
 
 
@@ -210,7 +210,7 @@ def compute_vortex(mode, size, rot, rad, amp, steps):
         img = create_bivortex(size, rad, rot, amp)
     elif mode == "From File":
         img = np.zeros(size)
-        print(img.size())
+        # print(img.size())
         print("TODO From File")
     return img
 

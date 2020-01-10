@@ -446,7 +446,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.current_objective = self.p.objectives[self.obj_sel.currentText()]
         co = self.current_objective
         self.current_objective_bfp = pcalc.bfp_radius(co["mag"], co["NA"], co["f_tl"])
-        print(self.current_objective["name"], " bfp ", self.current_objective_bfp)
+        # print(self.current_objective["name"], " bfp ", self.current_objective_bfp)
         
         
     def apply_correction(self):

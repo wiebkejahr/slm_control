@@ -29,7 +29,7 @@ def test(model, input_image, model_store_path):
 
     ideal_coeffs = np.asarray([0.0]*12)
 
-    donut = get_psf(ideal_coeffs)
+    donut = normalize_img(get_psf(ideal_coeffs))
     
     # Test the model
     model.eval()
@@ -43,20 +43,41 @@ def test(model, input_image, model_store_path):
         image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
        
         avg = []
-        i = 0
-        while i < 20:
+        # i = 0
+        # while i < 20:
             # pass it through the trained model to get the predicted coeffs
-            outputs = model(image)
-            coeffs = outputs.numpy().squeeze()
-            avg.append(coeffs)
-            i += 1
-    avg = np.stack(avg)
-    avg = np.average(avg, axis=0)
-    coeffs = avg
-    corrected = normalize_img(input_image) + normalize_img(get_psf(-coeffs))
-    plt.figure()
-    plt.imshow(corrected)
+        outputs = model(image)
+        coeffs = outputs.numpy().squeeze()
+        avg.append(coeffs)
+            # i += 1
+    # avg = np.stack(avg)
+    # avg = np.average(avg, axis=0)
+    # coeffs = avg
+    input_image = normalize_img(input_image)
+    print(np.max(input_image), np.min(input_image))
+    print(np.max(get_psf(coeffs)), np.min(get_psf(coeffs)))
+    print(np.max(donut), np.min(donut))
+    corrected = normalize_img(input_image + get_psf(coeffs))
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1,3,1)
+    ax1.imshow(donut)
+    ax1.title.set_text('donut')
+    ax2 = fig.add_subplot(1,3,2)
+    ax2.imshow(input_image)
+    ax2.title.set_text('input image')
+    ax4 = fig.add_subplot(1,3,3)
+    ax4.imshow(input_image+donut+normalize_img(get_psf(-coeffs)))
+    ax4.title.set_text('corrected')
     plt.show()
+    
+    
+    # plt.figure()
+    # plt.imshow(input_image)
+    # plt.show()
+    # plt.imshow(get_psf(coeffs))
+    # plt.show()
+    # plt.imshow(get_psf(-coeffs))
+    # plt.show()
 
    
     print("\n\n correlation coeff is: {} \n\n".format(np.corrcoef(donut.flat, corrected.flat)[0][1]))
