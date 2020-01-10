@@ -173,27 +173,15 @@ class Main_Window(QtWidgets.QMainWindow):
         # this is setting each value to its current value plus the correction
 
         self.p.left["astig"] = [x+y for x,y in zip(self.p.left["astig"], self.zernike["astig"])]
-        
-        
-        
         self.p.left["coma"] = [x+y for x,y in zip(self.p.left["coma"], self.zernike["coma"])]
         self.p.left["sphere"] = [x+y for x,y in zip(self.p.left["sphere"], self.zernike["sphere"])]
         self.p.left["trefoil"] = [x+y for x,y in zip(self.p.left["trefoil"], self.zernike["trefoil"])]
 
-        # self.p.right["astig"] = np.sum(self.p.get(self.p.right["astig"]), self.zernike["astig"])
-        # self.p.right["coma"] = np.sum(self.p.get(self.p.right["coma"]), self.zernike["coma"])
-        # self.p.right["sphere"] = np.sum(self.p.get(self.p.right["sphere"]), self.zernike["sphere"])
-        # self.p.right["trefoil"] = np.sum(self.p.get(self.p.right["trefoil"]), self.zernike["trefoil"])
+        self.p.right["astig"] = [x+y for x,y in zip(self.p.right["astig"], self.zernike["astig"])]
+        self.p.right["coma"] = [x+y for x,y in zip(self.p.right["coma"], self.zernike["coma"])]
+        self.p.right["sphere"] = [x+y for x,y in zip(self.p.right["sphere"], self.zernike["sphere"])]
+        self.p.right["trefoil"] = [x+y for x,y in zip(self.p.right["trefoil"], self.zernike["trefoil"])]
 
-        # self.p.set_(self.p.left["astig"], self.p.get(self.p.left["astig"]) + self.zernike["astig"])
-        # self.p.set_(self.p.left["coma"], self.p.get(self.p.left["coma"]) + self.zernike["coma"])
-        # self.p.set_(self.p.left["sphere"], self.p.get(self.p.left["sphere"]) + self.zernike["sphere"])
-        # self.p.set_(self.p.left["trefoil"], self.p.get(self.p.left["trefoil"]) + self.zernike["trefoil"])
-
-        # self.p.set_(self.p.right["astig"], self.p.get(self.p.right["astig"]) + self.zernike["astig"])
-        # self.p.set_(self.p.right["coma"], self.p.get(self.p.right["coma"]) + self.zernike["coma"])
-        # self.p.set_(self.p.right["sphere"], self.p.get(self.p.right["sphere"]) + self.zernike["sphere"])
-        # self.p.set_(self.p.right["trefoil"], self.p.get(self.p.right["trefoil"]) + self.zernike["trefoil"])
 
         print(self.p.left)
         # self.load_dict_params(self.zernike)
