@@ -121,9 +121,7 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         super(Sub_Pattern, self).__init__(parent) 
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.size = np.asarray(params.general["size_slm"]) * 2
-        self.radnorm = pcalc.normalize_radius(params.general["laser_radius"], 
-                                              params.general["slm_px"],
-                                              params.general["size_slm"])
+        
         self.data = np.zeros(self.size)
         self.path = params.general["path"]
         
@@ -149,28 +147,11 @@ class Sub_Pattern_Vortex(Sub_Pattern):
     def compute_pattern(self, update = True):        
         if self.daddy.blockupdating == False:
             mode = self.modegui.currentText()
-            rad = self.radgui.value()*self.radnorm
+            rad = self.radgui.value()*self.daddy.daddy.slm_radius
             phase = self.phasegui.value()
             rot = self.rotgui.value()
             steps = self.stepgui.value()
-        
-            if mode == "2D STED":
-                self.data = pcalc.create_donut(self.size, rot, phase)
-            elif mode == "3D STED":
-                self.data = pcalc.create_bottleneck(self.size, rad, phase)
-            elif mode == "Gauss":
-                self.data = pcalc.create_gauss(self.size)
-            elif mode == "Segments":
-                self.data = pcalc.create_segments(self.size, rot, phase, steps)
-            elif mode == "Bivortex":
-                self.data = pcalc.create_bivortex(self.size, rad, rot, phase)
-            elif mode == "From File":
-                imgfile = self.daddy.daddy.openFileDialog(self.path)
-                if imgfile != None:
-                    self.data = np.asarray(pcalc.load_image(imgfile))/255
-                else:
-                    print("Cancelled by user; not loading file.")
-        
+            
             self.data = pcalc.compute_vortex(mode, self.size, rot, rad, phase, steps)
             
             if update:
@@ -185,7 +166,7 @@ class Sub_Pattern_Defoc(Sub_Pattern):
     def __init__(self, params, parent = None):
         super(Sub_Pattern, self).__init__(parent)
         self.size = np.asarray(params.general["size_slm"]) * 2
-        self.radnorm = params.general["laser_radius"] / params.general["slm_px"] / self.size[0] / 2
+        #self.radnorm = params.general["laser_radius"] / params.general["slm_px"] / self.size[0] / 2
         self.data = np.zeros(self.size)
         
     def create_gui(self, defval, setup):
@@ -198,7 +179,7 @@ class Sub_Pattern_Defoc(Sub_Pattern):
     def compute_pattern(self, update = True):
         """ Zernike mode (2,0) """
         if self.daddy.blockupdating == False:
-            self.data = self.defocgui.value() * pcalc.create_zernike(self.size, [2,0], self.radnorm)       
+            self.data = self.defocgui.value() * pcalc.create_zernike(self.size, [2,0], self.daddy.daddy.slm_radius)       
             if update:
                 self.daddy.update()
         return self.data
