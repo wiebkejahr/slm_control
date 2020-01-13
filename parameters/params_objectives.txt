@@ -5,7 +5,7 @@
         "NA": 1.4,
         "f_tl": 200,
         "immersion": "Oil",
-        "backaperture": 5.6
+        "backaperture": 5.04
     },
     "100xSil NA 1.35": {
         "name": "100xSil NA 1.35",
@@ -13,7 +13,7 @@
         "NA": 1.35,
         "f_tl": 200,
         "immersion": "Sil",
-        "backaperture": 5.0
+        "backaperture": 4.86
     },
     "60xWat NA 1.20": {
         "name": "60xWat NA 1.20",
@@ -21,7 +21,7 @@
         "NA": 1.2,
         "f_tl": 200,
         "immersion": "Wat",
-        "backaperture": 5.0
+        "backaperture": 7.2
     },
     "20xAir NA 0.70": {
         "name": "20xAir NA 0.70",
@@ -29,6 +29,6 @@
         "NA": 0.7,
         "f_tl": 200,
         "immersion": "Air",
-        "backaperture": 5.0
+        "backaperture": 12.6
     }
 }

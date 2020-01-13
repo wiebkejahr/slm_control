@@ -16,11 +16,12 @@
         396
     ],
     "displaywidth": 300,
+    "slm_mag": 7.059,
     "laser_radius": 1.2,
     "objective": "100xOil NA 1.40",
     "path": "patterns/",
-    "cal1": "patterns/CorrPatterns/CAL_LSH0801768_780nm.bmp",
-    "cal0": "patterns/CorrPatterns/Black_Full.bmp",
+    "cal1": "patterns/CAL_LSH0801768_780nm.bmp",
+    "cal0": "patterns/Black_Full.bmp",
     "last_img_nm": "latest.bmp",
     "modes": [
         "Gauss",

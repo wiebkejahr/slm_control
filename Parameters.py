@@ -28,11 +28,12 @@ class param():
                     "phasewrap" : 1,
                     "size_slm" : [600, 396],
                     "displaywidth" : 300,
+                    "slm_mag" :  7.059,
                     "laser_radius" : 1.2,
                     "objective": "100xOil NA 1.40",
                     "path" : 'patterns/',                    
-                    "cal1": "patterns/CorrPatterns/CAL_LSH0801768_780nm.bmp",
-                    "cal0": "patterns/CorrPatterns/Black_Full.bmp",
+                    "cal1": "patterns/CAL_LSH0801768_780nm.bmp",
+                    "cal0": "patterns/Black_Full.bmp",
                     "last_img_nm" : 'latest.bmp',
                     "modes" : ["Gauss", "2D STED", "3D STED", "Segments", "Bivortex", "From File"],
                     "split_image": 1,
@@ -77,7 +78,7 @@ class param():
                                             "NA": 1.4,
                                             "f_tl": 200,
                                             "immersion": "Oil",
-                                            "backaperture": 5.6
+                                            "backaperture": 5.04
                                             },
                         "100xSil NA 1.35": {
                                             "name": "100xSil NA 1.35",
@@ -85,7 +86,7 @@ class param():
                                             "NA": 1.35,
                                             "f_tl": 200,
                                             "immersion": "Sil",
-                                            "backaperture": 5.0
+                                            "backaperture": 4.86
                                             },
                         "60xWat NA 1.20": {
                                             "name": "60xWat NA 1.20",
@@ -93,7 +94,7 @@ class param():
                                             "NA": 1.2,
                                             "f_tl": 200,
                                             "immersion": "Wat",
-                                            "backaperture": 5.0
+                                            "backaperture": 7.2
                                             },
                         "20xAir NA 0.70": {
                                             "name": "20xAir NA 0.70",
@@ -101,7 +102,7 @@ class param():
                                             "NA": 0.7,
                                             "f_tl": 200,
                                             "immersion": "Air",
-                                            "backaperture": 5.0
+                                            "backaperture": 12.6
                                             },
                         }
         
@@ -140,6 +141,7 @@ class param():
                     "phasewrap" : daddy.p.general["phasewrap"],
                     "size_slm" : daddy.p.general["size_slm"],
                     "displaywidth" : daddy.p.general["displaywidth"],
+                    "slm_mag" : daddy.p.general["slm_mag"], 
                     "laser_radius" : daddy.p.general["laser_radius"],
                     "objective": daddy.current_objective["name"],
                     "path": daddy.p.general["path"],

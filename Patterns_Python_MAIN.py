@@ -391,16 +391,18 @@ class Main_Window(QtWidgets.QMainWindow):
             self.img_r.aberr.sphere.xgui.setValue(self.img_l.aberr.sphere.xgui.value())
             self.img_r.aberr.sphere.ygui.setValue(self.img_l.aberr.sphere.ygui.value())
             self.img_r.aberr.trefoil.xgui.setValue(self.img_l.aberr.trefoil.xgui.value())
-            self.img_r.aberr.trefoil.ygui.setValue(self.img_l.aberr.trefoil.ygui.value())      
+            self.img_r.aberr.trefoil.ygui.setValue(self.img_l.aberr.trefoil.ygui.value())
+            
             
     def objective_changed(self):
         """ Action called when the users selects a different objective. 
             Calculates the diameter of the BFP; then recalculates the the
             patterns based on the selected objective. """
         self.current_objective = self.p.objectives[self.obj_sel.currentText()]
-        co = self.current_objective
-        self.current_objective_bfp = pcalc.bfp_radius(co["mag"], co["NA"], co["f_tl"])
-        print(self.current_objective["name"], " bfp ", self.current_objective_bfp)
+        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.current_objective["name"]]["backaperture"], 
+                                                 self.p.general["slm_mag"], 
+                                                 self.p.general["slm_px"], 
+                                                 self.p.general["size_slm"][1])
         
         
     def apply_correction(self):

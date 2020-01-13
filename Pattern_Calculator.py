@@ -66,13 +66,15 @@ def normalize_img(img):
 
     return img_norm
 
-def normalize_radius(laser_radius, slm_px, slm_size):
+def normalize_radius(obj_ba, mag, slm_px, displaywidth):
     """ Normalizes the radius to the size of the SLM pixels and the radius of
         the laser beam. """
     #radnorm = laser_radius / slm_px #/ slm_size[0]
-    radnorm = laser_radius / slm_px / slm_size[1]
-    print(radnorm)
-    return radnorm
+    #radnorm = laser_radius / slm_px / slm_size[1]
+    radius_slm = obj_ba / 2 * mag / slm_px * displaywidth
+    
+    print("normr", radius_slm)
+    return radius_slm
 
 def bfp_radius(M, NA, f_TL):
     """ Takes magnification M and NA of the objective, as well as focal length
@@ -157,7 +159,7 @@ def create_bottleneck(size, radius, amp):
         radius and amplitude. """
     xcoord, ycoord = create_coords(size)
     bn = (cart2polar(xcoord, ycoord)[0] <= radius) * amp
-    print(radius)
+    print("bn",radius)
     return bn
 
 

@@ -21,9 +21,9 @@ class Sub_Pattern_Zernike(Sub_Pattern):
         super(Sub_Pattern, self).__init__(parent)
         self.size = np.asarray(params.general["size_slm"]) * 2
         self.order = order
-        self.radnorm = pcalc.normalize_radius(params.general["laser_radius"], 
-                                      params.general["slm_px"],
-                                      params.general["size_slm"])
+#        self.radnorm = pcalc.normalize_radius(params.general["laser_radius"], 
+#                                      params.general["slm_px"],
+#                                      params.general["size_slm"])
         self.data = np.zeros(self.size)
         
     def set_name(self, name):
@@ -72,8 +72,8 @@ class Sub_Pattern_Zernike(Sub_Pattern):
                         otherside.trefoil.xgui.setValue(thisside.trefoil.xgui.value())
                         otherside.trefoil.ygui.setValue(thisside.trefoil.ygui.value())
     
-            data_a = pcalc.create_zernike(self.size, self.order[0], self.radnorm)
-            data_b = pcalc.create_zernike(self.size, self.order[1], self.radnorm)
+            data_a = pcalc.create_zernike(self.size, self.order[0], self.daddy.daddy.daddy.slm_radius)
+            data_b = pcalc.create_zernike(self.size, self.order[1], self.daddy.daddy.daddy.slm_radius)
             self.data = self.xgui.value() * data_a + self.ygui.value() * data_b
             
             if update:
