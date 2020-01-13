@@ -71,7 +71,7 @@ def normalize_radius(obj_ba, mag, slm_px, displaywidth):
         the laser beam. """
     #radnorm = laser_radius / slm_px #/ slm_size[0]
     #radnorm = laser_radius / slm_px / slm_size[1]
-    radius_slm = obj_ba / 2 * mag / slm_px * displaywidth
+    radius_slm = obj_ba / 2 / mag / slm_px / displaywidth
     
     print("normr", radius_slm)
     return radius_slm
@@ -122,6 +122,7 @@ def create_zernike(size, order, rad=1):
     """ Calculates the Zernike polynomial of a given order, for the given 
         image size. Normalizes the polynomials in the center quadrant of the 
         image to [0,1]. """
+    #rad = 2
     xcoord, ycoord = create_coords(size)
     rho, phi = cart2polar(xcoord, ycoord)
     
@@ -199,6 +200,7 @@ def compute_vortex(mode, size, rot, rad, amp, steps):
         - "Segments"
         - "Bivortex"
         Input parameters are size of the image, rotation, radius and amplitude. """
+    print("compute_vortex")
     img = np.zeros(size)
     if mode == "2D STED":
         img = create_donut(size, rot, amp)
@@ -340,7 +342,8 @@ if __name__ == "__main__":
 #        plt.imshow(crop(zernike, size, [0,0]))
 #        plt.show()
         
-        zernike = create_zernike(size*2, oo, .5)
+        zernike = create_zernike(size*2, oo, 1)
+        
         #ax = plt.subplot(gs[oo[0], oo[1] + 6])
         print(ii, oo)
 #        if oo == [1, -1]:

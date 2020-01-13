@@ -64,7 +64,7 @@ class PlotCanvas(FigureCanvas):
         self.setParent(parent)
  
     def plot(self, data):
-        self.img_ax.imshow(data, interpolation = 'nearest', cmap = 'PRGn')
+        self.img_ax.imshow(data, interpolation = 'nearest', clim = [0,1], cmap = 'PRGn')
         self.draw()
 
 
@@ -201,7 +201,11 @@ class Main_Window(QtWidgets.QMainWindow):
         self.current_objective = self.p.general["objective"]
         self.obj_sel.setCurrentText(self.current_objective)
         self.obj_sel.activated.connect(lambda: self.objective_changed())
-        self.objective_changed()
+        
+        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.p.general["objective"]]["backaperture"], 
+                                                 self.p.general["slm_mag"], 
+                                                 self.p.general["slm_px"], 
+                                                 self.p.general["size_slm"][1])
             
         self.crea_but(hbox, self.reload_params, "Load Config", "parameters/params")
         self.crea_but(hbox, self.save_params, "Save Config", "parameters/params")
@@ -403,6 +407,7 @@ class Main_Window(QtWidgets.QMainWindow):
                                                  self.p.general["slm_mag"], 
                                                  self.p.general["slm_px"], 
                                                  self.p.general["size_slm"][1])
+        self.recalc_images()
         
         
     def apply_correction(self):
@@ -434,17 +439,17 @@ class Main_Window(QtWidgets.QMainWindow):
             pitch (depends on the wavelength, and is set in the general 
             parameters). Saves the image patterns/latest.bmp and then reloads
             into the Pixmap for display. """
-        self.img_data = self.img_data * self.p.general["slm_range"] / 255
-        pcalc.save_image(self.img_data, self.p.general["path"], self.p.general["last_img_nm"])
+        img_data_scaled = self.img_data * self.p.general["slm_range"] / 255
+        pcalc.save_image(img_data_scaled, self.p.general["path"], self.p.general["last_img_nm"])
         self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
         #self.img_frame.setPixmap(self.image.scaledToWidth(self.p.general["displaywidth"]))
         
         if self.p.general["abberior"] == 1:
             try:
-                self.stk.data()[:]=self.img_data
+                self.stk.data()[:]=img_data_scaled
                 self.meas.update()
             except:
-                print("""Still cannot communicate with the Abberior. """)
+                print("Still cannot communicate with the Abberior.")
             
         elif self.slm != None:
             self.slm.update_image(self.p.general["path"]+self.p.general["last_img_nm"])

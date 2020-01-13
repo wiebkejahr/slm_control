@@ -5,7 +5,7 @@
         10
     ],
     "slm_px": 0.0125,
-    "slm_range": 255,
+    "slm_range": 205,
     "size_full": [
         600,
         792

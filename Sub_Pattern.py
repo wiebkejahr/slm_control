@@ -144,7 +144,8 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         return gui
         
         
-    def compute_pattern(self, update = True):        
+    def compute_pattern(self, update = True):
+        print("compute pattern vortex ", self.modegui.currentText())
         if self.daddy.blockupdating == False:
             mode = self.modegui.currentText()
             rad = self.radgui.value()*self.daddy.daddy.slm_radius
