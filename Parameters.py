@@ -113,12 +113,10 @@ class param():
 #                            "trefoil" : [0,0],
 #                            }
     
-    def update(self, p):
+    def update(self, daddy):
         """ Parameter p: self of the calling function. Needed to have access to
             parameters provided via the GUI. Updates the values in the 
             dictionary with the values from the GUI. """
-        daddy = p
-        print(daddy.splt_img_state.checkState())
         splt_img = 0
         if daddy.splt_img_state.checkState():
             splt_img = 1
@@ -143,7 +141,7 @@ class param():
                     "displaywidth" : daddy.p.general["displaywidth"],
                     "slm_mag" : daddy.p.general["slm_mag"], 
                     "laser_radius" : daddy.p.general["laser_radius"],
-                    "objective": daddy.current_objective["name"],
+                    "objective": daddy.current_objective,
                     "path": daddy.p.general["path"],
                     "cal1": daddy.p.general["cal1"],
                     "cal0": daddy.p.general["cal0"],
@@ -153,7 +151,10 @@ class param():
                     "flat_field": flt_fld,
                     "single_aberr": sngl_corr,
                     }
-       
+#        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.current_objective["name"]]["backaperture"], 
+
+        
+        
         d = daddy.img_l
         self.left = {
                     "sl"      : [d.gr.xgui.value(), d.gr.ygui.value()],
