@@ -64,23 +64,22 @@ class PlotCanvas(FigureCanvas):
         self.setParent(parent)
  
     def plot(self, data):
-        #self.img_ax.imshow(data, interpolation = 'nearest', clim = [0,1], cmap = 'PRGn')
-        self.img_ax.imshow(data, interpolation = 'nearest', clim = [-1,1], cmap = 'RdYlBu')#'PRGn')
+        self.img_ax.imshow(data, interpolation = 'nearest', clim = [0,1], cmap = 'RdYlBu')#'PRGn')
         
         #TODO wj: remove circles
-        circle = plt.Circle((396/2, 600/2), 396/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        self.img_ax.add_artist(circle)
-        circle = plt.Circle((396/2, 600/2), 600/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        self.img_ax.add_artist(circle)
-        circle = plt.Circle((396/2, 600/2), np.mean([600,396])/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        self.img_ax.add_artist(circle)
+        # circle = plt.Circle((396/2, 600/2), 396/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        # self.img_ax.add_artist(circle)
+        # circle = plt.Circle((396/2, 600/2), 600/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        # self.img_ax.add_artist(circle)
+        # circle = plt.Circle((396/2, 600/2), np.mean([600,396])/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        # self.img_ax.add_artist(circle)
         
-        circle = plt.Circle((3*396/2, 600/2), 396/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        self.img_ax.add_artist(circle)
-        circle = plt.Circle((3*396/2, 600/2), 600/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        self.img_ax.add_artist(circle)
-        circle = plt.Circle((3*396/2, 600/2), np.mean([600,396])/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        self.img_ax.add_artist(circle)
+        # circle = plt.Circle((3*396/2, 600/2), 396/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        # self.img_ax.add_artist(circle)
+        # circle = plt.Circle((3*396/2, 600/2), 600/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        # self.img_ax.add_artist(circle)
+        # circle = plt.Circle((3*396/2, 600/2), np.mean([600,396])/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        # self.img_ax.add_artist(circle)
         
         self.draw()
 
@@ -448,7 +447,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_data = pcalc.stitch_images(self.img_l.data, self.img_r.data)
         self.img_data = pcalc.add_images([self.flatfield, self.img_data])
         #TODO put back in
-        #self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
+        self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
 
 
     def update_display(self):

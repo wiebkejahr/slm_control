@@ -71,13 +71,10 @@ def normalize_img(img):
 def normalize_radius(obj_ba, mag, slm_px, size_slm):
     """ Normalizes the radius to the size of the SLM pixels and the radius of
         the laser beam. """
-    #radnorm = laser_radius / slm_px #/ slm_size[0]
-    #radnorm = laser_radius / slm_px / slm_size[1]
     
     #radius_slm = obj_ba / 2 / mag / slm_px / np.mean(size_slm * 2)
     radius_slm = 1
     
-    print("normr", radius_slm)
     return radius_slm
 
 def bfp_radius(M, NA, f_TL):
@@ -129,14 +126,10 @@ def create_zernike(size, order, radscale=1):
     #rad = 2
     xcoord, ycoord = create_coords(size)
     rho, phi = cart2polar(xcoord, ycoord)
-    print("rho zernike 1 ", size, np.min(rho), np.max(rho))
     # when normalizing rho: factor of two is needed because I'm creating images
     # double the size for subsequent cropping. Factor of 2 / sqrt(2) is needed 
     # because I'm working on a square whereas the polynomials are defined on a 
     # circle
-    #rho = rho * 2 * 2 / np.sqrt(2) / radscale
-    #rho = rho * 2 * 2 / radscale
-    #rho = rho * 2 * 2 / np.sqrt(np.sum(np.square(size/np.mean(size)))) / radscale
     rho = rho * 4 / radscale
     #rho = rho * 2 * 2 / (np.sqrt(np.sum(np.square(size))) / np.sqrt(np.prod(size)))
     if order[1] < 0:
@@ -144,12 +137,9 @@ def create_zernike(size, order, radscale=1):
     elif order[1] >= 0:
         zernike = zernike_coeff(rho, order) * np.cos(order[1] * phi)
  
-    #print(np.min(xcoord), np.max(xcoord), np.min(ycoord), np.max(ycoord))
-
-    mask = (rho <= 1)
-    zernike = zernike * mask
-    print("rho zernike ", size, np.min(rho), np.max(rho))
-    print("minmax zernike ", order, np.min(zernike), np.max(zernike))
+    
+    #mask = (rho <= 1)
+    #zernike = zernike * mask
     return zernike
 
 
@@ -174,8 +164,6 @@ def create_bottleneck(size, radius, amp, radscale = 1):
     rho = rho * 4 / radscale
     
     bn = (rho <= radius) * amp
-    print("bn", size, radscale, radius)
-    print("rho bn ", np.min(rho), np.max(rho))
     return bn
 
 
@@ -215,7 +203,6 @@ def compute_vortex(mode, size, rot, rad, amp, steps, radscale):
         - "Segments"
         - "Bivortex"
         Input parameters are size of the image, rotation, radius and amplitude. """
-    print("compute_vortex")
     img = np.zeros(size)
     if mode == "2D STED":
         img = create_donut(size, rot, amp)
@@ -312,7 +299,6 @@ if __name__ == "__main__":
               [6,-6], [6,-4], [6,-2], [6,0], [6,2], [6,4], [6,6]]
        
     f1 = plt.figure(num = 3, figsize = (10,10), dpi = 100)
-    #print(np.max(orders), np.max(np.max(orders)))
     f1.canvas.manager.window.move(0,0)
     
     for ii, oo in enumerate(orders):
