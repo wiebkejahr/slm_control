@@ -64,7 +64,24 @@ class PlotCanvas(FigureCanvas):
         self.setParent(parent)
  
     def plot(self, data):
-        self.img_ax.imshow(data, interpolation = 'nearest', clim = [0,1], cmap = 'PRGn')
+        #self.img_ax.imshow(data, interpolation = 'nearest', clim = [0,1], cmap = 'PRGn')
+        self.img_ax.imshow(data, interpolation = 'nearest', clim = [-1,1], cmap = 'RdYlBu')#'PRGn')
+        
+        #TODO wj: remove circles
+        circle = plt.Circle((396/2, 600/2), 396/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        self.img_ax.add_artist(circle)
+        circle = plt.Circle((396/2, 600/2), 600/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        self.img_ax.add_artist(circle)
+        circle = plt.Circle((396/2, 600/2), np.mean([600,396])/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        self.img_ax.add_artist(circle)
+        
+        circle = plt.Circle((3*396/2, 600/2), 396/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        self.img_ax.add_artist(circle)
+        circle = plt.Circle((3*396/2, 600/2), 600/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        self.img_ax.add_artist(circle)
+        circle = plt.Circle((3*396/2, 600/2), np.mean([600,396])/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        self.img_ax.add_artist(circle)
+        
         self.draw()
 
 
@@ -205,7 +222,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.p.general["objective"]]["backaperture"], 
                                                  self.p.general["slm_mag"], 
                                                  self.p.general["slm_px"], 
-                                                 self.p.general["size_slm"][1])
+                                                 self.p.general["size_slm"])
             
         self.crea_but(hbox, self.reload_params, "Load Config", "parameters/params")
         self.crea_but(hbox, self.save_params, "Save Config", "parameters/params")
@@ -406,7 +423,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.current_objective["name"]]["backaperture"], 
                                                  self.p.general["slm_mag"], 
                                                  self.p.general["slm_px"], 
-                                                 self.p.general["size_slm"][1])
+                                                 self.p.general["size_slm"])
         self.recalc_images()
         
         
@@ -430,7 +447,8 @@ class Main_Window(QtWidgets.QMainWindow):
             self.img_data with the new image data. """
         self.img_data = pcalc.stitch_images(self.img_l.data, self.img_r.data)
         self.img_data = pcalc.add_images([self.flatfield, self.img_data])
-        self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
+        #TODO put back in
+        #self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
 
 
     def update_display(self):

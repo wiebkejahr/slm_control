@@ -50,7 +50,9 @@ def phase_wrap(image, phase):
 def cart2polar(x, y):
     """ Returns normalized polar coordinates for cartesian inputs x and y. """
     z = x + 1j * y
-    return (np.abs(z)/np.max(np.abs(z)), np.angle(z))
+    z_norm = np.mean([(np.max(x) - np.min(x)), (np.max(y) - np.min(y))])
+    return(np.abs(z) / z_norm, np.angle(z))
+    #return (np.abs(z)/np.max(np.abs(z)), np.angle(z))
 
 def polar2cart(r, theta):
     """ Returns cartesian coordinates for r and theta polar coordinates. """
@@ -66,12 +68,14 @@ def normalize_img(img):
 
     return img_norm
 
-def normalize_radius(obj_ba, mag, slm_px, displaywidth):
+def normalize_radius(obj_ba, mag, slm_px, size_slm):
     """ Normalizes the radius to the size of the SLM pixels and the radius of
         the laser beam. """
     #radnorm = laser_radius / slm_px #/ slm_size[0]
     #radnorm = laser_radius / slm_px / slm_size[1]
-    radius_slm = obj_ba / 2 / mag / slm_px / displaywidth
+    
+    #radius_slm = obj_ba / 2 / mag / slm_px / np.mean(size_slm * 2)
+    radius_slm = 1
     
     print("normr", radius_slm)
     return radius_slm
@@ -118,27 +122,34 @@ def zernike_coeff(rho, order):
         coeff = coeff + c * r
     return coeff
 
-def create_zernike(size, order, rad=1):
+def create_zernike(size, order, radscale=1):
     """ Calculates the Zernike polynomial of a given order, for the given 
         image size. Normalizes the polynomials in the center quadrant of the 
         image to [0,1]. """
     #rad = 2
     xcoord, ycoord = create_coords(size)
     rho, phi = cart2polar(xcoord, ycoord)
-    
+    print("rho zernike 1 ", size, np.min(rho), np.max(rho))
     # when normalizing rho: factor of two is needed because I'm creating images
     # double the size for subsequent cropping. Factor of 2 / sqrt(2) is needed 
     # because I'm working on a square whereas the polynomials are defined on a 
     # circle
-    rho = rho * 2 * 2 / np.sqrt(2) / rad
-    
+    #rho = rho * 2 * 2 / np.sqrt(2) / radscale
+    #rho = rho * 2 * 2 / radscale
+    #rho = rho * 2 * 2 / np.sqrt(np.sum(np.square(size/np.mean(size)))) / radscale
+    rho = rho * 4 / radscale
+    #rho = rho * 2 * 2 / (np.sqrt(np.sum(np.square(size))) / np.sqrt(np.prod(size)))
     if order[1] < 0:
         zernike = zernike_coeff(rho, np.abs(order)) * np.sin(np.abs(order[1]) * phi)
     elif order[1] >= 0:
         zernike = zernike_coeff(rho, order) * np.cos(order[1] * phi)
-    
-    #mask = (rho <= 1)
-    #zernike = zernike * mask
+ 
+    #print(np.min(xcoord), np.max(xcoord), np.min(ycoord), np.max(ycoord))
+
+    mask = (rho <= 1)
+    zernike = zernike * mask
+    print("rho zernike ", size, np.min(rho), np.max(rho))
+    print("minmax zernike ", order, np.min(zernike), np.max(zernike))
     return zernike
 
 
@@ -155,12 +166,16 @@ def create_donut(size, rot, amp):
     return dn
 
 
-def create_bottleneck(size, radius, amp):
+def create_bottleneck(size, radius, amp, radscale = 1):
     """ Creates the phasemask for shaping the 3D donut with the given size,
         radius and amplitude. """
     xcoord, ycoord = create_coords(size)
-    bn = (cart2polar(xcoord, ycoord)[0] <= radius) * amp
-    print("bn",radius)
+    rho = cart2polar(xcoord, ycoord)[0]
+    rho = rho * 4 / radscale
+    
+    bn = (rho <= radius) * amp
+    print("bn", size, radscale, radius)
+    print("rho bn ", np.min(rho), np.max(rho))
     return bn
 
 
@@ -170,7 +185,7 @@ def create_segments(size, rot, amp, steps):
         2 steps: 
         3 steps: Easy STED phase mask
         ..."""
-    xcoord, ycoord = create_coords(size)    
+    xcoord, ycoord = create_coords(size)
     rad_cont = np.mod(cart2polar(xcoord, ycoord)[1] + (rot + 180) / 180 * np.pi,
                       2*np.pi)
     segments = amp / (steps + 1) * np.floor_divide(rad_cont, 
@@ -178,7 +193,7 @@ def create_segments(size, rot, amp, steps):
     return segments
 
 
-def create_bivortex(size, radius, rot, amp):
+def create_bivortex(size, radius, rot, amp, radscale = 1):
     """ Creates a Bivortex: for radii smaller than the parameter radius, a 
         normal vortex with rotation rot and amplitude amp. For radii larger 
         than radius, a vortex that is rotated by 180 degrees. Will create a 
@@ -186,13 +201,13 @@ def create_bivortex(size, radius, rot, amp):
         more robust to spherical aberrations as in Pereira ... Maiato et al.,
         Optics Express, 2019. """
     xcoord, ycoord = create_coords(size)
-    mask = (cart2polar(xcoord, ycoord)[0] <= radius)
+    mask = (cart2polar(xcoord, ycoord)[0] <= radius * 4 * radscale)
     bivortex = (mask * create_donut(size, rot, amp) + 
                 (mask * (-1) + 1) * create_donut(size, rot + 180, amp))
     return bivortex
 
         
-def compute_vortex(mode, size, rot, rad, amp, steps):
+def compute_vortex(mode, size, rot, rad, amp, steps, radscale):
     """ Depending on the mode selected for the vortex, creates the phasemasks for
         - the donut ("2D STED")
         - the bottleneck beam ("3D STED")
@@ -205,13 +220,13 @@ def compute_vortex(mode, size, rot, rad, amp, steps):
     if mode == "2D STED":
         img = create_donut(size, rot, amp)
     elif mode == "3D STED":
-        img = create_bottleneck(size, rad, amp)
+        img = create_bottleneck(size, rad, amp, radscale)
     elif mode == "Gauss":
         img = np.zeros(size)
     elif mode == "Segments":
         img = create_segments(size, rot, amp, steps)
     elif mode == "Bivortex":
-        img = create_bivortex(size, rad, rot, amp)
+        img = create_bivortex(size, rad, rot, amp, radscale)
     elif mode == "From File":
         img = np.zeros(size)
         print(img.size())
@@ -272,60 +287,22 @@ def blazed_grating(size, slope, slm_px):
 if __name__ == "__main__":
     
     #size = np.asarray([600, 792])
-    size = np.asarray([100,100])
+    size = np.asarray([100,250])
     path = 'patterns/'
     imgname = 'test.bmp'
     rot = 0
+    radius = 1
     amp = 1
     offset = [0,0]
+    phase = 10
     
-#    rot = 0
-#    amp = 1
-#    offset = [0,0]
-#    size = np.asarray([500,500])
-#    
-#    zern = create_zernike(size, [2,0])
-#    plt.figure()
-#    plt.imshow(zern)
-#    plt.show()
+
+    # plt.figure()
+    # plt.subplot(121)
+    # plt.imshow(crop(phase_wrap(create_coords(size*2)[0], phase), size), interpolation = 'Nearest', cmap = 'RdYlBu')#, clim = [-10, 10])
+    # plt.subplot(122)
+    # plt.imshow(crop(phase_wrap(create_coords(size*2)[1], phase), size), interpolation = 'Nearest', cmap = 'RdYlBu')#, clim = [-10, 10])
     
-#    mpl.rc('axes', edgecolor='white')
-#    mpl.rc('xtick', color = 'white')
-#    mpl.rc('ytick', color = 'white')
-#    
-#    mode = "Segments"
-#    path = 'patterns/'
-#    rot = 0
-#    rad = 100
-#    amp = 1
-#    steps = 3
-##    
-#    size = np.asarray([1200, 792])
-#    offset = np.asarray([0, 0])
-#
-#    donut = np.uint8(create_donut(size, rot, amp)*255)
-#    bottle = np.uint8(create_bottleneck(size, rad, amp)*255)
-#    print(np.min(donut), np.max(donut))    
-#    print(np.min(bottle), np.max(bottle))
-#    
-#    im = Image.fromarray(donut)
-#    im.save("/Users/wjahr/Seafile/Synch/2P_STED/Patterns_Python/Donut.bmp")
-#    im = Image.fromarray(bottle)
-#    im.save("/Users/wjahr/Seafile/Synch/2P_STED/Patterns_Python/Bottle.bmp")
-    
-#    f1 = plt.figure(1)
-#    plt.imshow(create_donut(size, rot, amp))
-    
-#    f2 = plt.figure(2)
-#    plt.imshow(create_bottleneck(size, rad, amp))
-#    plt.subplot(222)
-#    plt.imshow(create_halfmoon(size, 45, 1))
-#    plt.subplot(223)
-#    plt.imshow(create_halfmoon(size, 90, 1))
-#    plt.subplot(224)
-#    plt.imshow(create_halfmoon(size, 180, 1))
-#
-#
     orders = [[0,0],
               [1,-1], [1,1],
               [2,-2], [2,0], [2,2],
@@ -334,33 +311,56 @@ if __name__ == "__main__":
               [5,-5], [5,-3], [5,-1], [5,1], [5,3], [5,5],
               [6,-6], [6,-4], [6,-2], [6,0], [6,2], [6,4], [6,6]]
        
-    f2 = plt.figure(num = 3, figsize = (5,5), dpi = 100)
+    f1 = plt.figure(num = 3, figsize = (10,10), dpi = 100)
+    #print(np.max(orders), np.max(np.max(orders)))
+    f1.canvas.manager.window.move(0,0)
     
     for ii, oo in enumerate(orders):
-#        plt.figure(ii)
-#        zernike = create_zernike(2*size, oo)        
-#        plt.imshow(crop(zernike, size, [0,0]))
-#        plt.show()
         
         zernike = create_zernike(size*2, oo, 1)
         
-        #ax = plt.subplot(gs[oo[0], oo[1] + 6])
         print(ii, oo)
-#        if oo == [1, -1]:
-#            zernike = np.zeros_like(zernike)
-        ax = plt.subplot2grid((7,14), (oo[0], oo[1] + 6), colspan = 2)
+        ax = plt.subplot2grid((np.max(orders)+1,(np.max(orders)+1)*2), 
+                                (oo[0], oo[1] + np.max(orders)), colspan = 2)
         
-        #im = ax.imshow(zernike, interpolation = 'Nearest', cmap = 'RdYlBu', clim = [-1,1])
         im = ax.imshow(crop(zernike, size, offset), interpolation = 'Nearest', cmap = 'RdYlBu', clim = [-1,1])
-        circle = plt.Circle((size[0]/2, size[0]/2), size[0]/2, edgecolor = 'k', facecolor='None')
+ 
+        circle = plt.Circle((size[1]/2, size[0]/2), size[0]/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        ax.add_artist(circle)
+        circle = plt.Circle((size[1]/2, size[0]/2), size[1]/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        ax.add_artist(circle)
+        circle = plt.Circle((size[1]/2, size[0]/2), np.mean(size)/2, lw= 0.1, edgecolor = 'k', facecolor='None')
         ax.add_artist(circle)
         
-        #ax.set_aspect(1.0)
         ax.set_xticks([]), ax.set_yticks([])
         cbar_ax = plt.subplot2grid((7,14), (0, 1), rowspan = 3)
-        f2.colorbar(im, cax = cbar_ax)
+        f1.colorbar(im, cax = cbar_ax)
         cbar_ax.yaxis.set_ticks_position('left')
         cbar_ax.invert_yaxis()
+        
+        
+    # from mpl_toolkits.mplot3d import Axes3D
+    # f2 = plt.figure(num = 3, figsize = (10,10), dpi = 100)
+    # f2.canvas.manager.window.move(0,0)
+    # ax = f2.add_subplot(121, projection = '3d')
+    # [x,y] = create_coords(size)
+    # ax.plot_surface(x,y,crop(create_zernike(size*2, [4,0], 1), size, offset), clim = [-1,1],
+    #                 rstride=1, cstride=1, cmap='RdYlBu', linewidth=0, antialiased=False)
+    # ax.set_zlim3d(-1.01, 1.01)
+    # ax = f2.add_subplot(122, projection = '3d')
+    # ax.plot_surface(x,y,crop(create_zernike(size*2, [6,0], 1), size, offset), clim = [-1,1],
+    #                 rstride=1, cstride=1, cmap='RdYlBu', linewidth=0, antialiased=False)
+    # ax.set_zlim3d(-1.01, 1.01)
+    
+    # bn = crop(create_bottleneck(size*2, radius, amp), size, offset)
+    # f2 = plt.figure(num = 4, figsize = (4,8), dpi = 100)
+    # ax = f2.add_subplot(111)
+    # ax.imshow(bn, interpolation = 'Nearest', cmap = 'RdYlBu', clim = [-1,1])
+    # circle = plt.Circle((size[1]/2, size[0]/2), size[0]/2, edgecolor = 'k', facecolor='None')
+    # ax.add_artist(circle)
+    # circle = plt.Circle((size[1]/2, size[0]/2), size[1]/2, edgecolor = 'k', facecolor='None')
+    # ax.add_artist(circle)
+        
     
 #        f3 = plt.figure(num = 3, figsize = (4,8), dpi = 100)
 #        ax = f3.add_subplot(422)

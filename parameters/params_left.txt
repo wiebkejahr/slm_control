@@ -11,7 +11,7 @@
     "radius": 0.5,
     "phase": 1.0,
     "steps": 1.0,
-    "defoc": 0.0,
+    "defoc": 1.0,
     "mode": "Gauss",
     "astig": [
         0.0,

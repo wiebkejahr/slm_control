@@ -148,12 +148,13 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         print("compute pattern vortex ", self.modegui.currentText())
         if self.daddy.blockupdating == False:
             mode = self.modegui.currentText()
-            rad = self.radgui.value()*self.daddy.daddy.slm_radius
+            rad = self.radgui.value()
             phase = self.phasegui.value()
             rot = self.rotgui.value()
             steps = self.stepgui.value()
+            slm_scale = self.daddy.daddy.slm_radius
             
-            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, phase, steps)
+            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, phase, steps, slm_scale)
             
             if update:
                 self.daddy.update()
