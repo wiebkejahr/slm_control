@@ -50,19 +50,14 @@ def test(model, test_loader, logdir, model_store_path):
     
     # load the model
     model.load_state_dict(torch.load(model_store_path))
-    # criterion = nn.MSELoss()
 
     ideal_coeffs = np.asarray([0.0]*12)
     donut = get_psf(ideal_coeffs) # (64,64)
-    # m_vals = []
 
     # Test the model
     model.eval()
     for i, (images, labels) in enumerate(test_loader): # i is 0 when batch_size is 1
             
-        # mean=torch.from_numpy(np.asarray([0.1928]))
-        # std=torch.from_numpy(np.asarray([0.2254]))
-        # images = images*std + mean
     
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             # Get model outputs (the predicted Zernike coefficients)
@@ -171,72 +166,3 @@ if __name__ == "__main__":
     ARGS=parser.parse_args()
 
     main(ARGS)
-
-
-
-    # # VALIDATION LOOP   
-    #     model.eval()
-    #     for i, (images, labels) in enumerate(data_loaders['val']):
-    #         images = images.to(device)
-    #         labels = labels.to(device)
-            
-    #         # zero the parameter gradients
-    #         optimizer.zero_grad()
-
-    #         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
-    #             # Get model outputs (the predicted Zernike coefficients)
-    #             outputs = model(images)
-    #             loss = criterion(outputs, labels) # performing  mean squared error calculation
-
-    #             # statistics logging
-    #             val_loss += loss.item()
-    #             total_step= len(data_loaders['val']) # number of batches
-    #             update_num = 2
-    #             if (i + 1) % update_num == 0:
-    #                 # ...log the validation loss
-    #                 train_writer.add_scalar('validation loss',
-    #                             val_loss/update_num,
-    #                             epoch * total_step + i)
-    #                 val_loss = 0.0
-    #             # comparing a 'corrected' psf from the predicted coeffs with the ideal donut
-    #             # if the correlation coefficient is above a certain threshold, it's counted as 'correct'
-    #             m_vals.append(corr_coeff(outputs, images, donut=donut))
-    #             # val_accuracy = val_corrects/outputs.shape[0]
-    #     m_vals = np.asarray(m_vals)
-    #     m_vals = m_vals.flatten()
-    #     print(m_vals)
-
-    #     epoch_acc = np.sum([m_vals > 0.97])/dataset_sizes['val'] # average accuracy over the validation set
-    #     # considered correct if the correlative 
-    #     print('accuracy: {}'.format(epoch_acc))
-    #     #epoch_acc = val_corrects / total_step
-    #     # # ...log the validation accuracy
-    #     # train_writer.add_scalar('validation accuracy',
-    #     #             epoch_acc,
-    #     #             epoch * total_step + i)
-    #     # running_loss = 0.0
-        
-    # #     epoch_val_loss = train_loss / dataset_sizes['val']
-    # #     epoch_val_acc = train_corrects.double() / dataset_sizes['val']
-
-    # #     print('Validation Loss: {:.4f} Acc: {:.4f}'.format(epoch_val_loss, epoch_val_acc))
-
-    #     # deep copy the model
-    #     if epoch_acc > best_acc:
-    #         best_acc = epoch_acc
-    #         best_model_wts = copy.deepcopy(model.state_dict())
-    #         # average loss over the epoch
-    #         # epoch_loss = epoch_loss / len(data_loaders[phase]) # I'm thinking this is the number of examples in the batch
-    #         # check to make sure
-            
-    # #         # ...log the epoch loss
-    # #         # train_writer.add_scalar('epoch loss',
-    # #         #             epoch_loss, epoch+1)
-
-    # print()
-    
-    # print('Best val Acc: {:4f}'.format(best_acc))
-    
-    # # load best model weights
-    # model.load_state_dict(best_model_wts)
-    

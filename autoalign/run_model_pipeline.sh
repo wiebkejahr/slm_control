@@ -41,6 +41,7 @@ fi
 
 MODEL_NAME="${NAME}_${NUM_EPOCHS}_epochs_${OPTIM}_lr_${LEARNING_RATE}_batchsize_${BATCH_SIZE}_custom_loss"
 MODEL_STORE_PATH="${OUTPUT_DIR}/Models/${MODEL_NAME}.pth"
+# Currently hardcoded
 WARM_START_PATH="${OUTPUT_DIR}/Models/08.01.20_corrected_pattern_calc_w_val_50_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
 LOGDIR="${OUTPUT_DIR}/Runs/${MODEL_NAME}"
 
@@ -54,6 +55,7 @@ if [ "$TRAIN" = true ]; then
     echo "Training ${MODEL_NAME}"
     if [ "$WARM_START" = true ]; then
         python cnn.py ${NUM_EPOCHS} ${BATCH_SIZE} ${LEARNING_RATE} "${DATASET_DIR}" "${LOGDIR}" "${MODEL_STORE_PATH}" "${WARM_START_PATH}"
+    # this else doesn't work yet, it still requires the warm start path to be there
     else
         python cnn.py ${NUM_EPOCHS} ${BATCH_SIZE} ${LEARNING_RATE} "${DATASET_DIR}" "${LOGDIR}" "${MODEL_STORE_PATH}"
     fi
