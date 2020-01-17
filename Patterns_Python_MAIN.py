@@ -45,6 +45,8 @@ mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
 
+# NOTE: hardcoded for now:
+MODEL_STORE_PATH="local_models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
 
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
@@ -172,11 +174,11 @@ class Main_Window(QtWidgets.QMainWindow):
         #self.init_images()   
 
     # NOTE: I WROTE THIS
-    def auto_align(self):
+    def auto_align(self, model_store_path):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
 
-        self.zernike = abberior() # returns a dictionary
+        self.zernike = abberior(model_store_path) # returns a dictionary
         # print(self.zernike)
         # self.p exists bc load_params() is called during creation of mainframe
         # this is setting each value to its current value plus the correction
@@ -237,7 +239,7 @@ class Main_Window(QtWidgets.QMainWindow):
         vbox = QtWidgets.QVBoxLayout()     
         self.crea_but(vbox, self._quit, "Quit")
         # NOTE: I WROTE THIS
-        self.crea_but(vbox, self.auto_align, "Auto Align")
+        self.crea_but(vbox, self.auto_align(MODEL_STORE_PATH), "Auto Align")
 
                     
         # doesn't do anything at the moment, could be used to set another path
