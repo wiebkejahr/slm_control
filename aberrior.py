@@ -27,11 +27,6 @@ def test(model, input_image, model_store_path):
     # load the model weights from training
     checkpoint = torch.load(model_store_path)
     model.load_state_dict(checkpoint['model_state_dict'])
-    # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    # epoch = checkpoint['epoch']
-    # loss = checkpoint['loss']
-    
-    # model.load_state_dict(torch.load(model_store_path))
 
     ideal_coeffs = np.asarray([0.0]*12)
 
@@ -41,32 +36,29 @@ def test(model, input_image, model_store_path):
     model.eval()
     
     with torch.no_grad():
-        # mean=torch.from_numpy(np.asarray([0.1251]))
-        # std=torch.from_numpy(np.asarray([0.2146]))
-        # image = image*std + mean
-        
-         # adds 3rd color channel dim and batch dim 
+        # adds 3rd color channel dim and batch dim 
         image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
        
-        avg = []
-        i = 0
-        while i < 20:
+        # avg = []
+        # i = 0
+        # while i < 20:
             # pass it through the trained model to get the predicted coeffs
-            outputs = model(image)
-            coeffs = outputs.numpy().squeeze()
-            avg.append(coeffs)
-            i += 1
-    avg = np.stack(avg)
-    avg = np.average(avg, axis=0)
-    coeffs = avg
-    corrected = normalize_img(input_image) + normalize_img(get_psf(-coeffs))
-    plt.figure()
-    plt.imshow(corrected)
-    plt.show()
+        outputs = model(image)
+    coeffs = outputs.numpy().squeeze()
+        # avg.append(coeffs)
+        # i += 1
+    # avg = np.stack(avg)
+    # avg = np.average(avg, axis=0)
+    # coeffs = avg
+    # corrected = normalize_img(input_image) + normalize_img(get_psf(-coeffs))
+    # plt.figure()
+    # plt.imshow(corrected)
+    # plt.show()
 
    
-    print("\n\n correlation coeff is: {} \n\n".format(np.corrcoef(donut.flat, corrected.flat)[0][1]))
-    return coeffs, np.corrcoef(donut.flat, corrected.flat)[0][1], corrected
+    # print("\n\n correlation coeff is: {} \n\n".format(np.corrcoef(donut.flat, corrected.flat)[0][1]))
+    # return coeffs, np.corrcoef(donut.flat, corrected.flat)[0][1], corrected
+    return coeffs
     
 
 def main(args):
@@ -81,7 +73,7 @@ def main(args):
     im = sp.Imspector()
     
     # print Imspector host and version
-    print('Connected to Imspector {} on {}'.format(im.version(), im.host()))
+    # print('Connected to Imspector {} on {}'.format(im.version(), im.host()))
 
     # get active measurement 
     msr = im.active_measurement()
@@ -93,11 +85,8 @@ def main(args):
     image = normalize_img(image) # renormalize
     image = resize(image, (64,64)) # resize
     
-    coeffs, _, image = test(model, image, model_store_path)
-    
-    # if corr_coeff < 0.94:
-    #     coeffs, corr_coeff, image = test(model, image, model_store_path)
-
+    # coeffs, _, image = test(model, image, model_store_path)
+    coeffs = test(model, image, model_store_path)
 
     # a dictionary of correction terms to be passed to SLM control
     corrections = {
@@ -119,7 +108,6 @@ def main(args):
             ]
         }
 
-    print(corrections)
     return corrections
     
 

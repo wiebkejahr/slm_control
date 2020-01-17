@@ -9,8 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 
-from SLM_interface.Pattern_Calculator import create_zernike, create_donut, crop
-from .integration import integrate
+from pattern_calculator import create_zernike, create_donut, crop
+from integration import integrate
 
 def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
