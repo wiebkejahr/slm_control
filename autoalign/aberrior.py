@@ -61,9 +61,7 @@ def test(model, input_image, model_store_path):
     return coeffs
     
 
-def main(args):
-    
-    model_store_path = args.model_store_path
+def abberior(model_store_path):
     
     # creates an instance of CNN
     model = Net()
@@ -112,10 +110,10 @@ def main(args):
     
 
 
-if __name__ == "__main__":
-    parser = ap.ArgumentParser(description='Model Hyperparameters and File I/O')
-    parser.add_argument('model_store_path', type=str, help='path to model checkpoint dir')
+# if __name__ == "__main__":
+#     parser = ap.ArgumentParser(description='Model Hyperparameters and File I/O')
+#     parser.add_argument('model_store_path', type=str, help='path to model checkpoint dir')
     
-    ARGS=parser.parse_args()
+#     ARGS=parser.parse_args()
 
-    main(ARGS)
+#     main(ARGS)
