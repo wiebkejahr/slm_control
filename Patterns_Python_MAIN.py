@@ -39,6 +39,8 @@ import SLM
 
 from Parameters import param
 
+from autoalign.abberior import *
+
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
@@ -167,7 +169,39 @@ class Main_Window(QtWidgets.QMainWindow):
         #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
         
         self.recalc_images()
-        #self.init_images()    
+        #self.init_images()   
+
+    # NOTE: I WROTE THIS
+    def auto_align(self):
+        """This function calls abberior from AutoAlign module, passes the resulting dictionary
+        through a constructor for a param object"""
+
+        self.zernike = abberior() # returns a dictionary
+        # print(self.zernike)
+        # self.p exists bc load_params() is called during creation of mainframe
+        # this is setting each value to its current value plus the correction
+
+        self.p.left["astig"] = [x+y for x,y in zip(self.p.left["astig"], self.zernike["astig"])]
+        self.p.left["coma"] = [x+y for x,y in zip(self.p.left["coma"], self.zernike["coma"])]
+        self.p.left["sphere"] = [x+y for x,y in zip(self.p.left["sphere"], self.zernike["sphere"])]
+        self.p.left["trefoil"] = [x+y for x,y in zip(self.p.left["trefoil"], self.zernike["trefoil"])]
+
+        self.p.right["astig"] = [x+y for x,y in zip(self.p.right["astig"], self.zernike["astig"])]
+        self.p.right["coma"] = [x+y for x,y in zip(self.p.right["coma"], self.zernike["coma"])]
+        self.p.right["sphere"] = [x+y for x,y in zip(self.p.right["sphere"], self.zernike["sphere"])]
+        self.p.right["trefoil"] = [x+y for x,y in zip(self.p.right["trefoil"], self.zernike["trefoil"])]
+
+        # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
+        self.img_l.update_guivalues(self.p, self.p.left)
+        self.img_r.update_guivalues(self.p, self.p.right)
+
+        self.objective_changed()
+        #self.split_image(self.splt_img_state.checkState())
+        #self.single_correction(self.sngl_corr_state.checkState())
+        #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
+
+        self.recalc_images()
+
         
     def save_params(self, fname):
         """" Calls write_file implemented in parameters class to save the 
@@ -202,6 +236,9 @@ class Main_Window(QtWidgets.QMainWindow):
         # vertical box to place the controls above the image in
         vbox = QtWidgets.QVBoxLayout()     
         self.crea_but(vbox, self._quit, "Quit")
+        # NOTE: I WROTE THIS
+        self.crea_but(vbox, self.auto_align, "Auto Align")
+
                     
         # doesn't do anything at the moment, could be used to set another path
         # to load the images from
