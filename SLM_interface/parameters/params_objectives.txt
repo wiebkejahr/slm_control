@@ -1,0 +1,30 @@
+{
+    "100xOil NA 1.40": {
+        "Mag": 100,
+        "NA": 1.4,
+        "f_tl": 200,
+        "Immersion": "Oil",
+        "Backaperture": 5.6
+    },
+    "100xSil NA 1.35": {
+        "Mag": 100,
+        "NA": 1.35,
+        "f_tl": 200,
+        "Immersion": "Sil",
+        "Backaperture": 5.0
+    },
+    "60xWat NA 1.35": {
+        "Mag": 60,
+        "NA": 1.2,
+        "f_tl": 200,
+        "Immersion": "Wat",
+        "Backaperture": 5.0
+    },
+    "20xAir NA 0.7": {
+        "Mag": 20,
+        "NA": 0.7,
+        "f_tl": 200,
+        "Immersion": "Air",
+        "Backaperture": 5.0
+    }
+}
