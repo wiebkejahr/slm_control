@@ -72,8 +72,9 @@ def normalize_radius(obj_ba, mag, slm_px, size_slm):
     """ Normalizes the radius to the size of the SLM pixels and the radius of
         the laser beam. """
     
-    #radius_slm = obj_ba / 2 / mag / slm_px / np.mean(size_slm * 2)
-    radius_slm = 1
+    radius_slm = obj_ba / 2 / mag / slm_px / np.mean(size_slm * 2)
+    print("radius_sln ", radius_slm, "mag ", mag)
+    #radius_slm = 1
     
     return radius_slm
 
