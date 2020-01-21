@@ -72,8 +72,9 @@ def normalize_radius(obj_ba, mag, slm_px, size_slm):
     """ Normalizes the radius to the size of the SLM pixels and the radius of
         the laser beam. """
     
+    #TODO radius_slm = obj_ba / 2 / mag / slm_px / np.mean(size_slm * 2)
     radius_slm = obj_ba / 2 / mag / slm_px / np.mean(size_slm * 2)
-    print("radius_sln ", radius_slm, "mag ", mag)
+    print("radius_slm ", radius_slm, "mag ", mag)
     #radius_slm = 1
     
     return radius_slm
@@ -131,7 +132,8 @@ def create_zernike(size, order, radscale=1):
     # double the size for subsequent cropping. Factor of 2 / sqrt(2) is needed 
     # because I'm working on a square whereas the polynomials are defined on a 
     # circle
-    rho = rho * 4 / radscale
+    #TODO rho = rho * 4 / radscale
+    rho = rho * 4 * np.sqrt(2) / radscale
     #rho = rho * 2 * 2 / (np.sqrt(np.sum(np.square(size))) / np.sqrt(np.prod(size)))
     if order[1] < 0:
         zernike = zernike_coeff(rho, np.abs(order)) * np.sin(np.abs(order[1]) * phi)
@@ -162,6 +164,7 @@ def create_bottleneck(size, radius, amp, radscale = 1):
         radius and amplitude. """
     xcoord, ycoord = create_coords(size)
     rho = cart2polar(xcoord, ycoord)[0]
+    #TODO rho = rho * 4 / radscale
     rho = rho * 4 / radscale
     
     bn = (rho <= radius) * amp
