@@ -139,8 +139,20 @@ def create_zernike(size, order, radscale=1):
         zernike = zernike_coeff(rho, np.abs(order)) * np.sin(np.abs(order[1]) * phi)
     elif order[1] >= 0:
         zernike = zernike_coeff(rho, order) * np.cos(order[1] * phi)
- 
-    
+
+    # ugly fixes to scale according to abberior
+    if order == [2,0]:
+        zernike = zernike / 4.1
+    elif order == [2,-2] or order == [2, 2]:
+        zernike = zernike / 4.55 * 1.0989
+    elif order == [3,-3] or order == [3, 3]:
+        zernike = zernike / 5.95
+    elif order == [3,-1] or order == [3, 1]:
+        zernike = zernike / 5.95
+    elif order == [4,0]:
+        zernike = zernike / 8.75
+    elif order == [6,0]:
+        zernike = zernike / 18.22
     #mask = (rho <= 1)
     #zernike = zernike * mask
     return zernike

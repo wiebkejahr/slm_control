@@ -126,6 +126,10 @@ class Main_Window(QtWidgets.QMainWindow):
                     self.meas = imspec.active_measurement()
                 except:
                     print("no active measurement")
+                    try:
+                        self.meas = imspec.create_measurement()
+                    except:
+                        print("no active measurement. cannot create measurement")
                 
                 self.stk = self.meas.create_stack(np.float, 
                                                 [self.p.general["size_full"][1], #792
