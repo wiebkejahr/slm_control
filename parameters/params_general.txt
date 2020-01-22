@@ -1,5 +1,5 @@
 {
-    "abberior": 1,
+    "abberior": 0,
     "size_slm_mm": [
         7.5,
         10
@@ -16,7 +16,7 @@
         396
     ],
     "displaywidth": 300,
-    "slm_mag": 1.524,
+    "slm_mag": 3,
     "laser_radius": 1.2,
     "objective": "100xOil NA 1.40",
     "path": "patterns/",

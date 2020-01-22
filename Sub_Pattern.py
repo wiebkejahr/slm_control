@@ -134,7 +134,7 @@ class Sub_Pattern_Vortex(Sub_Pattern):
             
         self.modegui.setCurrentText(defval[0])
         
-        self.radgui = self.double_spin(defval[1], [3, 0.1, 0, 1], gui)
+        self.radgui = self.double_spin(defval[1], [3, 0.1, 0, 5], gui)
         self.phasegui = self.double_spin(defval[2], [3, 0.1, -5, 5], gui)
         self.rotgui = self.double_spin(defval[3], [2, 10, 0, 360], gui)
         self.stepgui = self.double_spin(defval[4], [0, 1, 0, 360], gui)
