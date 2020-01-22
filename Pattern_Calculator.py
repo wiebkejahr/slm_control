@@ -86,11 +86,12 @@ def bfp_radius(M, NA, f_TL):
     return NA * f_TL / M
 
 def crop(full, size, offset = [0,0]):
-    """ Crops the full data to half the size, using the provided offset. """
-    minx = int(size[0]/2 + offset[0])
-    maxx = int(size[0]*3/2 + offset[0])
-    miny = int(size[1]/2 + offset[1])
-    maxy = int(size[1]*3/2 + offset[1])    
+    """ Crops the full data to half the size, using the provided offset. 
+        Convention for directions and signs agrees with Abberior. """
+    minx = int(size[0]/2 - offset[1])
+    maxx = int(size[0]*3/2 - offset[1])
+    miny = int(size[1]/2 - offset[0])
+    maxy = int(size[1]*3/2 - offset[0])    
     cropped = full[minx:maxx, miny:maxy]
     return cropped
 
@@ -266,7 +267,7 @@ def blazed_grating(size, slope, slm_px):
         units of 1/mm. Phasewraps to create the blazed grating from the tilted
         surface. """
     xcoord, ycoord = create_coords(size, [0,0])
-    surf = (xcoord * slope[0] + ycoord * slope[1])
+    surf = - (xcoord * slope[0] + ycoord * slope[1])
     
     # different cases are necessary because arctan is ugly:
     # for gratings blazed only in one direction  (i.e. one of the slopes = 0)
