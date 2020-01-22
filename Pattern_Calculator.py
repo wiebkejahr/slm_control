@@ -73,7 +73,7 @@ def normalize_radius(obj_ba, mag, slm_px, size_slm):
         the laser beam. """
     
     #TODO radius_slm = obj_ba / 2 / mag / slm_px / np.mean(size_slm * 2)
-    radius_slm = obj_ba / 2 / mag / slm_px / np.mean(size_slm * 2)
+    radius_slm = obj_ba / mag / slm_px / np.mean(size_slm * 2)
     print("radius_slm ", radius_slm, "mag ", mag)
     #radius_slm = 1
     
@@ -178,8 +178,9 @@ def create_bottleneck(size, radius, amp, radscale = 1):
     rho = cart2polar(xcoord, ycoord)[0]
     #TODO rho = rho * 4 / radscale
     rho = rho * 4 / radscale
-    
-    bn = (rho <= radius) * amp
+    mask = (rho <= radius)
+    bn = mask * np.ones(size) * amp + 0
+ #   bn = (rho <= radius) * amp
     return bn
 
 
@@ -205,7 +206,9 @@ def create_bivortex(size, radius, rot, amp, radscale = 1):
         more robust to spherical aberrations as in Pereira ... Maiato et al.,
         Optics Express, 2019. """
     xcoord, ycoord = create_coords(size)
-    mask = (cart2polar(xcoord, ycoord)[0] <= radius * 4 * radscale)
+    rho = cart2polar(xcoord, ycoord)[0]
+    rho = rho * 4 / radscale
+    mask = (rho <= radius)
     bivortex = (mask * create_donut(size, rot, amp) + 
                 (mask * (-1) + 1) * create_donut(size, rot + 180, amp))
     return bivortex
