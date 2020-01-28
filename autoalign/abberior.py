@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 try:
     import specpy as sp
 except:
-    raise("Specpy not installed!")
+    # raise("Specpy not installed!")
     exit(0)
 
 from autoalign.utils.integration import integrate
