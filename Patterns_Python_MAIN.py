@@ -538,16 +538,15 @@ class Main_Window(QtWidgets.QMainWindow):
         pcalc.save_image(img_data_scaled, self.p.general["path"], self.p.general["last_img_nm"])
         self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
         #self.img_frame.setPixmap(self.image.scaledToWidth(self.p.general["displaywidth"]))
-            
-        if self.slm != None:
-            if self.p.general["abberior"] == 1:
+        
+        if self.p.general["abberior"] == 1:
                 try:
                     self.stk.data()[:]=img_data_scaled
                     self.meas.update()
                 except:
-                    print("Still cannot communicate with the Abberior.")
-            else:
-                self.slm.update_image(self.p.general["path"]+self.p.general["last_img_nm"])
+                    print("Still cannot communicate with the Abberior.")            
+        elif self.slm != None:
+            self.slm.update_image(self.p.general["path"]+self.p.general["last_img_nm"])
         self.plt_frame.plot(self.img_data)
  
     

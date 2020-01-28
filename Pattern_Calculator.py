@@ -162,7 +162,7 @@ def create_zernike(size, order, radscale=1):
         
     #mask = (rho <= 1)
     #zernike = zernike * mask
-    return zernike
+    return zernike#/2
 
 
 def create_gauss(size):
