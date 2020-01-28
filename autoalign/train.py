@@ -22,10 +22,10 @@ import copy
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
-import utils.my_classes as my_classes
-import utils.helpers as helpers
-from utils.integration import integrate
-import utils.my_models as my_models
+import autoalign.utils.my_classes as my_classes
+import autoalign.utils.helpers as helpers
+from autoalign.utils.integration import integrate
+import autoalign.utils.my_models as my_models
 
 def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path):
 

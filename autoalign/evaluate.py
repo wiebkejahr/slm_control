@@ -19,10 +19,10 @@ from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
-import utils.my_models as my_models
-import utils.my_classes as my_classes
-from utils.integration import *
-from utils.helpers import *
+import autoalign.utils.my_models as my_models
+import autoalign.utils.my_classes as my_classes
+from autoalign.utils.integration import *
+from autoalign.utils.helpers import *
 
 def log_images(logdir, images, coeffs):
     logdir_test = logdir + '/test'

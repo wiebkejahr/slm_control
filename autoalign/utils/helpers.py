@@ -12,9 +12,8 @@ from math import factorial as mfac
 from torch.utils.data import Dataset, DataLoader
 
 # local modules
-from utils.integration import *
-import utils.my_classes as my_classes
-
+from autoalign.utils.integration import *
+import autoalign.utils.my_classes as my_classes
 
 
 def normalize_img(img):

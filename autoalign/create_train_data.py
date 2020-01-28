@@ -14,8 +14,8 @@ from tqdm import tqdm
 import h5py
 from skimage.transform import resize
 
-from utils.integration import *
-from utils.helpers import get_psf as get_psf
+from autoalign.utils.integration import *
+from autoalign.utils.helpers import get_psf as get_psf
 
 ###############################################################################    
     
