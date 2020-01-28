@@ -111,10 +111,32 @@ def correct(model_store_path):
                     coeffs[6]
                 ]
             }
-
-        return corrections
+        print('alignment successful')
+       
     else:
-        pass
+        coeffs = np.asarray(0.0*12)
+        print('alignment failed')
+        corrections = {
+                "sphere": [
+                    coeffs[9],
+                    0.0
+                ],
+                "astig": [
+                    coeffs[0],
+                    coeffs[2]
+                ],
+                "coma": [
+                    coeffs[4],
+                    coeffs[5]
+                ],
+                "trefoil": [
+                    coeffs[3],
+                    coeffs[6]
+                ]
+            }
+        
+        
+    return corrections
         
 
 
