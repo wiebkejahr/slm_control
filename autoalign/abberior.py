@@ -19,7 +19,8 @@ try:
     import specpy as sp
 except:
     # raise("Specpy not installed!")
-    exit(0)
+    specpy = False
+    print('specpy not installed')
 
 from autoalign.utils.integration import integrate
 import autoalign.utils.helpers as helpers
@@ -71,46 +72,49 @@ def correct(model_store_path):
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
-    im = sp.Imspector()
-    
-    # print Imspector host and version
-    # print('Connected to Imspector {} on {}'.format(im.version(), im.host()))
+    if specpy:
+        im = sp.Imspector()
+        
+        # print Imspector host and version
+        # print('Connected to Imspector {} on {}'.format(im.version(), im.host()))
 
-    # get active measurement 
-    msr = im.active_measurement()
-    image = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    
-    # a little preprocessing
-    image = helpers.normalize_img(np.squeeze(image)) # normalized (200,200) array
-    image = helpers.crop_image(image, tol=0.1) # get rid of dark line on edge
-    image = helpers.normalize_img(image) # renormalize
-    image = helpers.resize(image, (64,64)) # resize
-    
-    # coeffs, _, image = test(model, image, model_store_path)
-    coeffs = test(model, image, model_store_path)
+        # get active measurement 
+        msr = im.active_measurement()
+        image = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+        
+        # a little preprocessing
+        image = helpers.normalize_img(np.squeeze(image)) # normalized (200,200) array
+        image = helpers.crop_image(image, tol=0.1) # get rid of dark line on edge
+        image = helpers.normalize_img(image) # renormalize
+        image = helpers.resize(image, (64,64)) # resize
+        
+        # coeffs, _, image = test(model, image, model_store_path)
+        coeffs = test(model, image, model_store_path)
 
-    # a dictionary of correction terms to be passed to SLM control
-    corrections = {
-            "sphere": [
-                coeffs[9],
-                0.0
-            ],
-            "astig": [
-                coeffs[0],
-                coeffs[2]
-            ],
-            "coma": [
-                coeffs[4],
-                coeffs[5]
-            ],
-            "trefoil": [
-                coeffs[3],
-                coeffs[6]
-            ]
-        }
+        # a dictionary of correction terms to be passed to SLM control
+        corrections = {
+                "sphere": [
+                    coeffs[9],
+                    0.0
+                ],
+                "astig": [
+                    coeffs[0],
+                    coeffs[2]
+                ],
+                "coma": [
+                    coeffs[4],
+                    coeffs[5]
+                ],
+                "trefoil": [
+                    coeffs[3],
+                    coeffs[6]
+                ]
+            }
 
-    return corrections
-    
+        return corrections
+    else:
+        pass
+        
 
 
 # if __name__ == "__main__":
