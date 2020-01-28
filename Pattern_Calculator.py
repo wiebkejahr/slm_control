@@ -119,7 +119,11 @@ def zernike_coeff(rho, order):
              mfac((nn + mm)/2 - kk) * \
              mfac((nn - mm)/2 - kk))
         r = (np.power(rho, nn - 2 * kk))
+        #print("c ", c)
         coeff = coeff + c * r
+    
+    #print(np.shape(coeff))
+    #print(coeff, np.power(coeff, 2))
     return coeff
 
 def create_zernike(size, order, radscale=1):
@@ -134,7 +138,8 @@ def create_zernike(size, order, radscale=1):
     # because I'm working on a square whereas the polynomials are defined on a 
     # circle
     #TODO rho = rho * 4 / radscale
-    rho = rho * 4 * np.sqrt(2) / radscale
+    rho = rho * 4 / radscale
+    #rho = rho * 4 * np.sqrt(2) / radscale
     #rho = rho * 2 * 2 / (np.sqrt(np.sum(np.square(size))) / np.sqrt(np.prod(size)))
     if order[1] < 0:
         zernike = zernike_coeff(rho, np.abs(order)) * np.sin(np.abs(order[1]) * phi)
@@ -142,18 +147,19 @@ def create_zernike(size, order, radscale=1):
         zernike = zernike_coeff(rho, order) * np.cos(order[1] * phi)
 
     # ugly fixes to scale according to abberior
-    if order == [2,0]:
-        zernike = zernike / 4.1
-    elif order == [2,-2] or order == [2, 2]:
-        zernike = zernike / 4.55 * 1.0989
-    elif order == [3,-3] or order == [3, 3]:
-        zernike = zernike / 5.95
-    elif order == [3,-1] or order == [3, 1]:
-        zernike = zernike / 5.95
-    elif order == [4,0]:
-        zernike = zernike / 8.75
-    elif order == [6,0]:
-        zernike = zernike / 18.22
+    # if order == [2,0]:
+    #     zernike = zernike / 4.19#008686765457332652
+    # elif order == [2,-2] or order == [2, 2]:
+    #     zernike = zernike / 5.26 #315263157894736842 #4.55 * 1.0989 / 0.95
+    # elif order == [3,-3] or order == [3, 3]:
+    #     zernike = zernike /  6.24 #069140567640703992 5.95 / 0.95 / 1.00366
+    # elif order == [3,-1] or order == [3, 1]:
+    #     zernike = zernike / 6.26 #315789473684210526 5.95 /0.95
+    # elif order == [4,0]:
+    #     zernike = zernike / 9.21 #052631578947368421 #8.75 / 0.95
+    # elif order == [6,0]:
+    #     zernike = zernike / 19.17 #894736842105263158 # 18.22 / 0.95
+        
     #mask = (rho <= 1)
     #zernike = zernike * mask
     return zernike
@@ -294,7 +300,7 @@ def blazed_grating(size, slope, slm_px):
 if __name__ == "__main__":
     
     #size = np.asarray([600, 792])
-    size = np.asarray([100,250])
+    size = np.asarray([100,100])
     path = 'patterns/'
     imgname = 'test.bmp'
     rot = 0
@@ -325,12 +331,16 @@ if __name__ == "__main__":
         
         zernike = create_zernike(size*2, oo, 1)
         
-        print(ii, oo)
+        print("mean zernike ", ii, oo, np.mean(zernike))
         ax = plt.subplot2grid((np.max(orders)+1,(np.max(orders)+1)*2), 
                                 (oo[0], oo[1] + np.max(orders)), colspan = 2)
         
         im = ax.imshow(crop(zernike, size, offset), interpolation = 'Nearest', cmap = 'RdYlBu', clim = [-1,1])
- 
+        im.cmap.set_over('white')
+        im.cmap.set_under('black')
+         
+        #cs = ax.contour(crop(zernike, size, offset), levels = [-1, 0, 1], colors=['green', 'orange', 'magenta'])
+        
         circle = plt.Circle((size[1]/2, size[0]/2), size[0]/2, lw= 0.1, edgecolor = 'k', facecolor='None')
         ax.add_artist(circle)
         circle = plt.Circle((size[1]/2, size[0]/2), size[1]/2, lw= 0.1, edgecolor = 'k', facecolor='None')
