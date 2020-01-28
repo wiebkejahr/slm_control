@@ -14,8 +14,8 @@ from tqdm import tqdm
 import h5py
 from skimage.transform import resize
 
-from utils.integration import integrate
-from utils.helpers import get_psf as get_psf
+from autoalign.utils.integration import *
+from autoalign.utils.helpers import get_psf as get_psf
 
 ###############################################################################    
     
@@ -35,7 +35,6 @@ def gen_coeffs():
     return c[3:]
 
 
-
 def main(args):
     """Using input arugments and some constants, this makes training, validation, and test sets for 
     training and evaluating a model. 90/10 train/validation split, and additional parameter for 
@@ -51,6 +50,8 @@ def main(args):
     hdf5_path = args.dataset_dir
     res = args.resolution
     label_dim = 12
+    # NOTE: not sure about this syntax. want multi to reflect if the flag exists
+    multi = args.multi
 
     # create partition: 90/10 train/val split
     train_num = int(0.9*num_data_pts)
@@ -61,9 +62,15 @@ def main(args):
     print('number of validation examples: {}'.format(val_num))
     print('number of test images: {}'.format(test_num))
 
-    train_shape = (train_num, 1, res, res)
-    val_shape = (val_num, 1, res, res)
-    test_shape = (test_num, 1, res, res)
+    # if the flag for multi-channel is there, give it 3 color channels
+    if multi:
+        train_shape = (train_num, 3, res, res)
+        val_shape = (val_num, 3, res, res)
+        test_shape = (test_num, 3, res, res)
+    else:
+        train_shape = (train_num, 1, res, res)
+        val_shape = (val_num, 1, res, res)
+        test_shape = (test_num, 1, res, res)
     
     # open a hdf5 file and create arrays
     hdf5_file = h5py.File(hdf5_path, mode='w-')
@@ -82,7 +89,7 @@ def main(args):
         # generate coefficient list
         label = gen_coeffs()
         # create 64 x 64 image from coefficient list
-        img = get_psf(label, res)
+        img = get_psf(label, res, multi)
         # save the label and image
         train_labels.append(label)
         hdf5_file["train_img"][i, ...] = img[None]
@@ -91,7 +98,7 @@ def main(args):
     for i in tqdm(range(val_num)):
         label = gen_coeffs()
         # create 64 x 64 image from coefficient list
-        img = get_psf(label, res)
+        img = get_psf(label, res, multi)
         # save the label and image
         val_labels.append(label)
         hdf5_file["val_img"][i, ...] = img[None]
@@ -100,7 +107,7 @@ def main(args):
     for i in tqdm(range(test_num)):
         label = gen_coeffs()
         # create 64 x 64 image from coefficient list
-        img = get_psf(label, res)
+        img = get_psf(label, res, multi)
         # save the label and image
         test_labels.append(label)
         hdf5_file["test_img"][i, ...] = img[None]
@@ -126,6 +133,8 @@ if __name__ == '__main__':
         help='resolution of training example psf image. Default is 64 x 64')
     parser.add_argument('test_num', type=int, default=2000, \
         help='number of points to use in test set')
+    parser.add_argument('--multi', type=bool, default=False, \
+        help='whether or not to use multichannel')  
     ARGS = parser.parse_args()
     
     main(ARGS)

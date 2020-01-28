@@ -39,7 +39,7 @@ import SLM
 
 from Parameters import param
 
-#from autoalign.abberior import *
+import autoalign.abberior as abberior
 
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
@@ -178,13 +178,14 @@ class Main_Window(QtWidgets.QMainWindow):
         #self.init_images()   
 
     # NOTE: I WROTE THIS
-    def auto_align(self, model_store_path):
+    def auto_align(self, model_store_path=MODEL_STORE_PATH):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
-
-        #self.zernike = abberior(model_store_path) # returns a dictionary
+        
+        self.zernike = abberior.correct(model_store_path) # returns a dictionary
         # print(self.zernike)
-        # self.p exists bc load_params() is called during creation of mainframe
+        
+        # NOTE: self.p exists bc load_params() is called during creation of mainframe
         # this is setting each value to its current value plus the correction
 
         self.p.left["astig"] = [x+y for x,y in zip(self.p.left["astig"], self.zernike["astig"])]
@@ -196,11 +197,11 @@ class Main_Window(QtWidgets.QMainWindow):
         self.p.right["coma"] = [x+y for x,y in zip(self.p.right["coma"], self.zernike["coma"])]
         self.p.right["sphere"] = [x+y for x,y in zip(self.p.right["sphere"], self.zernike["sphere"])]
         self.p.right["trefoil"] = [x+y for x,y in zip(self.p.right["trefoil"], self.zernike["trefoil"])]
+        
 
         # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
-
         self.objective_changed()
         #self.split_image(self.splt_img_state.checkState())
         #self.single_correction(self.sngl_corr_state.checkState())
@@ -238,7 +239,6 @@ class Main_Window(QtWidgets.QMainWindow):
             that are used to change the parameters for pattern creation. """
         
         self.main_frame = QtWidgets.QWidget()  
-        
         # vertical box to place the controls above the image in
         vbox = QtWidgets.QVBoxLayout()     
         hbox = QtWidgets.QHBoxLayout()
@@ -258,8 +258,8 @@ class Main_Window(QtWidgets.QMainWindow):
         
         vbox.addLayout(hbox)
         # NOTE: I WROTE THIS
-        #self.crea_but(vbox, self.auto_align(MODEL_STORE_PATH), "Auto Align")
-
+        self.crea_but(hbox, self.auto_align, "Auto Align")
+        
                     
         # doesn't do anything at the moment, could be used to set another path
         # to load the images from
@@ -286,6 +286,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.crea_but(hbox, self.save_params, "Save Config", "parameters/params")
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
+        
 
         hbox = QtWidgets.QHBoxLayout()
         self.crea_but(hbox, self.open_SLMDisplay, "Initialize SLM")
@@ -354,12 +355,14 @@ class Main_Window(QtWidgets.QMainWindow):
         c.setAlignment(QtCore.Qt.AlignRight)
         c.setContentsMargins(0,0,0,0)
         
+
         # add all the widgets
         vbox.addLayout(imgbox)
         vbox.addLayout(c)
         vbox.setContentsMargins(0,0,0,0)
         self.main_frame.setLayout(vbox)       
         self.setCentralWidget(self.main_frame)
+        
 
     def openFileDialog(self, path):
         """ Creates a dialog to open a file. At the moement, it is only used 

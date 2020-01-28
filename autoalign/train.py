@@ -22,46 +22,10 @@ import copy
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
-import utils.my_classes as my_classes
-import utils.helpers as helpers
-from utils.integration import integrate
-
-
-class Net(nn.Module):
-    """
-    A simple CNN based on AlexNet
-    Architecture followed exactly from Zhang et. al, "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
-    """
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2)
-        self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
-        self.conv4 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
-        self.conv5 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
-        
-        self.fc1 = nn.Linear(8 * 8 * 64, 512)  # 64 channels, final img size 8x8
-        self.fc2 = nn.Linear(512, 512)
-        
-
-        self.fc3 = nn.Linear(512, 12)
-
-    def forward(self, x):
-        
-        x = x.float()
-        x = F.dropout(F.max_pool2d(F.relu(self.conv1(x)), (2, 2)), p=0.1)
-        x = F.dropout(F.max_pool2d(F.relu(self.conv2(x)), (2, 2)), p=0.1)
-        x = F.relu(self.conv3(x))
-        x = F.relu(self.conv4(x))
-        
-        x = F.max_pool2d(F.relu(self.conv5(x)), (2, 2))
-        # flatten
-        x = x.reshape(x.size(0), -1)
-        x = F.dropout(F.relu(self.fc1(x)), p=0.2)
-        x = F.dropout(F.relu(self.fc2(x)), p=0.2)
-        x = self.fc3(x)
-        return x
-
+import autoalign.utils.my_classes as my_classes
+import autoalign.utils.helpers as helpers
+from autoalign.utils.integration import integrate
+import autoalign.utils.my_models as my_models
 
 def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path):
 
@@ -93,7 +57,6 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             loss = criterion(outputs, labels) # MSE
             # sum of averages for each coeff position
             loss = torch.sum(torch.mean(loss, dim=0))
- 
             
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -106,7 +69,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         
 
             total_step= len(data_loaders['train']) 
-            update_num = 20
+            update_num = 1
             if (i + 1) % update_num == 0: # will log to tensorboard after `update_num` batches, roughly
                 # ...log the running loss
                 train_writer.add_scalar('training loss',
@@ -137,7 +100,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 # statistics logging
                 val_loss += loss.item()
                 total_step= len(data_loaders['val']) # number of batches
-                update_num = 20
+                update_num = 2
                 if (i + 1) % update_num == 0:
                     # ...log the validation loss
                     train_writer.add_scalar('validation loss',
@@ -147,26 +110,6 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
     
         
     return model
-
-
-def get_stats(data_path, batch_size, mode='train'):
-    """ Finding Dataset Stats for Normalization """
-    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, transform=my_classes.ToTensor())
-    loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=0)
-    mean = 0.
-    std = 0.
-    nb_samples = 0.
-    for images, _ in loader:
-        batch_samples = images.size(0)
-        images = images.view(batch_samples, images.size(1), -1)
-        mean += images.mean(2).sum(0)
-        std += images.std(2).sum(0)
-        nb_samples += batch_samples
-    
-    mean /= nb_samples
-    std /= nb_samples
-    print('mean is: {}  |   std is: {}'.format(mean, std))
-    return mean, std
 
 def main(args):
     """Trains a CNN based on AlexNet on a custom dataset. 
@@ -185,30 +128,36 @@ def main(args):
     if args.warm_start_path:
         warm_start_path = args.warm_start_path
 
-    mean, std = get_stats(data_path, batch_size)
-    Norm = my_classes.MyNormalize(mean=mean, std=std)
+    mean, std = helpers.get_stats(data_path, batch_size)
+    # Norm = my_classes.MyNormalize(mean=mean, std=std)
 
     # this is for reproducibility, it renders the model deterministic
     seed = 0
     np.random.seed(seed)
     torch.manual_seed(seed)
     
-    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=transforms.Compose([my_classes.ToTensor(), Norm]))
-    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([my_classes.ToTensor(), Norm]))
+    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=transforms.Compose([
+        my_classes.ToTensor(), 
+        my_classes.Normalize(mean=mean, std=std)]))
+    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
+        my_classes.ToTensor(), 
+        my_classes.Normalize(mean=mean, std=std)]))
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
     val_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
 
-
-
     data_loaders = {'train': train_loader, 'val': val_loader}
     dataset_sizes = {'train': len(train_dataset), 'val': len(val_dataset)}
+    print(torch.cuda.is_available())
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     ################################## running ###################################
-    model = Net()
-    
+    if args.multi:
+        model = my_models.MultiNet()
+    else:
+        model = my_models.Net()
+    print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     # if a warm start was specified, load model and optimizer state parameters
@@ -230,7 +179,8 @@ if __name__ == '__main__':
     parser.add_argument('dataset_dir', type=str, help='path to dataset')
     parser.add_argument('logdir', type=str, help='keyword for path to tensorboard logging info')
     parser.add_argument('model_store_path', type=str, help='path to model checkpoint dir')
-    parser.add_argument('warm_start_path', type=str, help='path to a previous checkpoint dir for a warm start')    
+    parser.add_argument('--warm_start_path', type=str, help='path to a previous checkpoint dir for a warm start') 
+    parser.add_argument('--multi', type=bool, help='whether or not to use multichannel')     
     ARGS=parser.parse_args()
 
     main(ARGS)

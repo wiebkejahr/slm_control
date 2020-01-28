@@ -49,8 +49,7 @@ class PSFDataset(data.Dataset):
         
         if self.transform:
             sample = self.transform(sample)
-        #print('type of transformed image is {}'.format(type(sample['image'])))
-        #print('type of transformed label is {}'.format(type(sample['label'])))
+
         return (sample['image'], sample['label'])
 
 class ToTensor(object):
@@ -67,7 +66,7 @@ class ToTensor(object):
         return {'image': torch.from_numpy(image),
                 'label': torch.from_numpy(label)}
 
-class MyNormalize(object):
+class Normalize(object):
     """Given a mean and std with constructor call, it normalizes the input. 
     Mean and std must be calculatedfirst."""
     def __init__(self, mean, std):
@@ -76,23 +75,11 @@ class MyNormalize(object):
 
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
-        # for the 20k datapoint set
-        # mean=torch.from_numpy(np.asarray([0.1251]))
-        # std=torch.from_numpy(np.asarray([0.2146]))
+        
+        for channel in range(image.size(0)):
+            image[channel] = (image[channel] - self.mean[channel])/ self.std[channel]
 
-        # for dataset_500.hdf5
-        # mean=torch.from_numpy(np.asarray([0.1229]))
-        # std=torch.from_numpy(np.asarray([0.2120]))
-
-        # for some other dataset
-        #mean=torch.from_numpy(np.asarray([0.9780]))
-        #std=torch.from_numpy(np.asarray([0.3355]))
-        # print(self.mean)
-        # print(self.std)
-        # mean = torch.from_numpy(self.mean)
-        # std = torch.from_numpy(self.std)
-
-        return {'image': (image - self.mean) / self.std,
+        return {'image': image,
                 'label': label}
 
 

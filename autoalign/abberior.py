@@ -13,14 +13,14 @@ saves the important ones in a dictionary, which is passed to the GUI"""
 import torch
 import numpy as np
 import argparse as ap
-from cnn import Net
 from skimage.transform import resize
 import matplotlib.pyplot as plt
 import specpy as sp
 
 
-from utils.integration import integrate
-from utils.helpers import *
+from autoalign.utils.integration import integrate
+import autoalign.utils.helpers as helpers
+import autoalign.utils.my_models as my_models
 
 
 def test(model, input_image, model_store_path):
@@ -30,7 +30,7 @@ def test(model, input_image, model_store_path):
 
     ideal_coeffs = np.asarray([0.0]*12)
 
-    donut = get_psf(ideal_coeffs)
+    donut = helpers.get_psf(ideal_coeffs)
     
     # Test the model
     model.eval()
@@ -61,10 +61,10 @@ def test(model, input_image, model_store_path):
     return coeffs
     
 
-def abberior(model_store_path):
+def correct(model_store_path):
     
     # creates an instance of CNN
-    model = Net()
+    model = my_models.Net()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -78,10 +78,10 @@ def abberior(model_store_path):
     image = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
     
     # a little preprocessing
-    image = normalize_img(np.squeeze(image)) # normalized (200,200) array
-    image = crop_image(image, tol=0.1) # get rid of dark line on edge
-    image = normalize_img(image) # renormalize
-    image = resize(image, (64,64)) # resize
+    image = helpers.normalize_img(np.squeeze(image)) # normalized (200,200) array
+    image = helpers.crop_image(image, tol=0.1) # get rid of dark line on edge
+    image = helpers.normalize_img(image) # renormalize
+    image = helpers.resize(image, (64,64)) # resize
     
     # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
