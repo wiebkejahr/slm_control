@@ -60,6 +60,7 @@ class Sub_Pattern(QtWidgets.QWidget):
         item.setMinimum(setup[2])
         item.setMaximum(setup[3])
         item.setValue(defval)
+        item.setMaximumSize(80,50)
         item.valueChanged.connect(lambda: self.compute_pattern())
         main_layout.addWidget(item)
         return item
@@ -128,7 +129,11 @@ class Sub_Pattern_Vortex(Sub_Pattern):
     def create_gui(self, modes, defval):
         gui = QtWidgets.QVBoxLayout()
         self.modegui = QtWidgets.QComboBox(self)
+        self.modegui.setMaximumSize(80, 50)
+
+
         gui.addWidget(self.modegui)
+        
         for mm in modes:
             self.modegui.addItem(mm)
             
@@ -141,6 +146,7 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         self.modegui.activated.connect(lambda: self.compute_pattern())
         
         gui.setContentsMargins(0,0,0,0)
+        
         return gui
         
         

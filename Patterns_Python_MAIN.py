@@ -39,7 +39,7 @@ import SLM
 
 from Parameters import param
 
-from autoalign.abberior import *
+#from autoalign.abberior import *
 
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
@@ -182,7 +182,7 @@ class Main_Window(QtWidgets.QMainWindow):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
 
-        self.zernike = abberior(model_store_path) # returns a dictionary
+        #self.zernike = abberior(model_store_path) # returns a dictionary
         # print(self.zernike)
         # self.p exists bc load_params() is called during creation of mainframe
         # this is setting each value to its current value plus the correction
@@ -241,9 +241,24 @@ class Main_Window(QtWidgets.QMainWindow):
         
         # vertical box to place the controls above the image in
         vbox = QtWidgets.QVBoxLayout()     
-        self.crea_but(vbox, self._quit, "Quit")
+        hbox = QtWidgets.QHBoxLayout()
+
+        self.crea_but(hbox, self._quit, "Quit")
+        
+        self.rad_but = QtWidgets.QDoubleSpinBox()
+        self.rad_but.setDecimals(3)
+        self.rad_but.setSingleStep(0.01)
+        self.rad_but.setMinimum(0.01)
+        self.rad_but.setMaximum(10)
+        self.rad_but.setValue(1.68)
+        self.rad_but.setMaximumSize(80,50)
+        self.rad_but.valueChanged.connect(lambda: self.radius_changed())
+        hbox.addWidget(self.rad_but)
+
+        
+        vbox.addLayout(hbox)
         # NOTE: I WROTE THIS
-        self.crea_but(vbox, self.auto_align(MODEL_STORE_PATH), "Auto Align")
+        #self.crea_but(vbox, self.auto_align(MODEL_STORE_PATH), "Auto Align")
 
                     
         # doesn't do anything at the moment, could be used to set another path
@@ -254,6 +269,7 @@ class Main_Window(QtWidgets.QMainWindow):
         # horizontal box for buttons that go side by side        
         hbox = QtWidgets.QHBoxLayout()
         self.obj_sel = QtWidgets.QComboBox(self)
+        self.obj_sel.setMaximumSize(100, 50)
         hbox.addWidget(self.obj_sel)            
         for mm in self.p.objectives:
             self.obj_sel.addItem(self.p.objectives[mm]["name"])
@@ -286,10 +302,10 @@ class Main_Window(QtWidgets.QMainWindow):
                                                  "Split image", 
                                                  self.p.general["split_image"])
         self.sngl_corr_state = self.crea_checkbox(hbox, self.single_correction, 
-                                                  "Use single correction", 
+                                                  "Single correction", 
                                                   self.p.general["single_aberr"])
         self.flt_fld_state = self.crea_checkbox(hbox, self.flat_field, 
-                                                "Flatfield correction", 
+                                                "Flatfield", 
                                                 self.p.general["flat_field"])
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
@@ -398,6 +414,7 @@ class Main_Window(QtWidgets.QMainWindow):
             button.clicked.connect(action)
         else:
             button.clicked.connect(lambda: action(param))
+        button.setMaximumSize(120,50)
         box.addWidget(button)
         box.setAlignment(button, QtCore.Qt.AlignVCenter)
         box.setContentsMargins(0,0,0,0)
@@ -456,6 +473,21 @@ class Main_Window(QtWidgets.QMainWindow):
             self.img_r.aberr.trefoil.xgui.setValue(self.img_l.aberr.trefoil.xgui.value())
             self.img_r.aberr.trefoil.ygui.setValue(self.img_l.aberr.trefoil.ygui.value())
             
+    def radius_changed(self):
+        """ Action called when the users selects a different objective. 
+            Calculates the diameter of the BFP; then recalculates the the
+            patterns based on the selected objective. """
+        self.current_objective = self.p.objectives[self.obj_sel.currentText()]
+        
+        self.radius_input = self.rad_but.value()
+        print("radius changed")
+
+        self.slm_radius = pcalc.normalize_radius(self.radius_input, 
+                                                1, 
+                                                self.p.general["slm_px"], 
+                                                self.p.general["size_slm"])
+        self.recalc_images()
+
             
     def objective_changed(self):
         """ Action called when the users selects a different objective. 
@@ -503,16 +535,16 @@ class Main_Window(QtWidgets.QMainWindow):
         pcalc.save_image(img_data_scaled, self.p.general["path"], self.p.general["last_img_nm"])
         self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
         #self.img_frame.setPixmap(self.image.scaledToWidth(self.p.general["displaywidth"]))
-        
-        if self.p.general["abberior"] == 1:
-            try:
-                self.stk.data()[:]=img_data_scaled
-                self.meas.update()
-            except:
-                print("Still cannot communicate with the Abberior.")
             
-        elif self.slm != None:
-            self.slm.update_image(self.p.general["path"]+self.p.general["last_img_nm"])
+        if self.slm != None:
+            if self.p.general["abberior"] == 1:
+                try:
+                    self.stk.data()[:]=img_data_scaled
+                    self.meas.update()
+                except:
+                    print("Still cannot communicate with the Abberior.")
+            else:
+                self.slm.update_image(self.p.general["path"]+self.p.general["last_img_nm"])
         self.plt_frame.plot(self.img_data)
  
     
