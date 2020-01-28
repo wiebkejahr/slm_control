@@ -15,8 +15,11 @@ import numpy as np
 import argparse as ap
 from skimage.transform import resize
 import matplotlib.pyplot as plt
-import specpy as sp
-
+try:
+    import specpy as sp
+except:
+    raise("Specpy not installed!")
+    exit(0)
 
 from autoalign.utils.integration import integrate
 import autoalign.utils.helpers as helpers
