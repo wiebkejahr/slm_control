@@ -114,7 +114,7 @@ def correct(model_store_path):
         print('alignment successful')
        
     else:
-        coeffs = np.asarray(0.0*12)
+        coeffs = np.zeros(15)
         print('alignment failed')
         corrections = {
                 "sphere": [
