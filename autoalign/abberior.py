@@ -17,9 +17,10 @@ from skimage.transform import resize
 import matplotlib.pyplot as plt
 try:
     import specpy as sp
+    SPECPY = True
 except:
     # raise("Specpy not installed!")
-    specpy = False
+    SPECPY = False
     print('specpy not installed')
 
 from autoalign.utils.integration import integrate
@@ -72,7 +73,7 @@ def correct(model_store_path):
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
-    if specpy:
+    if SPECPY:
         im = sp.Imspector()
         
         # print Imspector host and version
