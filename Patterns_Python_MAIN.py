@@ -46,7 +46,8 @@ mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
 
 # NOTE: hardcoded for now:
-MODEL_STORE_PATH="local_models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
+MODEL_STORE_PATH="models/04.02.20_xsection_10_epochs_Adam_lr_0.001_batchsize_64.pth"
+# MODEL_STORE_PATH="models/24.01.20_multi_test_20_epochs_Adam_lr_0.001_batchsize_64.pth"
 
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
@@ -182,7 +183,9 @@ class Main_Window(QtWidgets.QMainWindow):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
         
-        self.zernike = abberior.correct(model_store_path) # returns a dictionary
+        # try:
+        self.zernike = abberior.abberior_multi(MODEL_STORE_PATH)
+        # self.zernike = abberior.correct(MODEL_STORE_PATH) # returns a dictionary
         # print(self.zernike)
         
         # NOTE: self.p exists bc load_params() is called during creation of mainframe
@@ -202,10 +205,10 @@ class Main_Window(QtWidgets.QMainWindow):
         # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
-        self.objective_changed()
-        #self.split_image(self.splt_img_state.checkState())
-        #self.single_correction(self.sngl_corr_state.checkState())
-        #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
+        # self.objective_changed()
+        # self.split_image(self.splt_img_state.checkState())
+        # self.single_correction(self.sngl_corr_state.checkState())
+        # self.flat_field(self.flt_fld_state.checkState(), recalc = False)
 
         self.recalc_images()
 
