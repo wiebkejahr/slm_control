@@ -46,8 +46,8 @@ mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
 
 # NOTE: hardcoded for now:
-MODEL_STORE_PATH="models/04.02.20_xsection_10_epochs_Adam_lr_0.001_batchsize_64.pth"
-# MODEL_STORE_PATH="models/24.01.20_multi_test_20_epochs_Adam_lr_0.001_batchsize_64.pth"
+# MODEL_STORE_PATH="models/04.02.20_xsection_10_epochs_Adam_lr_0.001_batchsize_64.pth"
+MODEL_STORE_PATH="models/24.01.20_multi_test_20_epochs_Adam_lr_0.001_batchsize_64.pth"
 
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"

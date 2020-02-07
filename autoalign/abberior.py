@@ -151,6 +151,7 @@ def abberior_multi(model_store_path):
     plt.show()
     # ##################
     
+    # exit()
     
 
     image = np.stack((image_xy, image_xz, image_yz), axis=0)
@@ -159,6 +160,7 @@ def abberior_multi(model_store_path):
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
 
+    print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
     corrections = {
             "sphere": [
