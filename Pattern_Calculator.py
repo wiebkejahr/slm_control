@@ -21,11 +21,13 @@ def load_image(img_path):
     image = np.array(im)
     return image
 
+
 def save_image(img, img_path, img_name):
     """ Saves the provided matrix img as an image under the path img_path and
         the name img_name. """
     image = Image.fromarray((img*255).astype(np.uint8))
     image.save(img_path+img_name)   
+
         
 def add_images(images):
     """ Takes and array of input images, and the image size. Then adds all
@@ -35,11 +37,13 @@ def add_images(images):
         image = image + img
     return image
 
+
 def stitch_images(img_l, img_r):
     """ Stitches the provided left and right images into one image of twice the
         width."""
     stitched = np.hstack((img_l, img_r))
     return stitched
+
 
 def phase_wrap(image, phase):
     """ Phase wraps the image into the available contrast by performing a
@@ -47,17 +51,19 @@ def phase_wrap(image, phase):
     pw = np.mod(image, phase)
     return pw
 
+
 def cart2polar(x, y):
     """ Returns normalized polar coordinates for cartesian inputs x and y. """
     z = x + 1j * y
     z_norm = np.mean([(np.max(x) - np.min(x)), (np.max(y) - np.min(y))])
     return(np.abs(z) / z_norm, np.angle(z))
-    #return (np.abs(z)/np.max(np.abs(z)), np.angle(z))
+
 
 def polar2cart(r, theta):
     """ Returns cartesian coordinates for r and theta polar coordinates. """
     z = r * np.exp( 1j * theta)
     return (np.real(z), np.imag(z))
+
 
 def normalize_img(img):
     """ Normalizes the image data  to [0,1]."""
@@ -68,22 +74,22 @@ def normalize_img(img):
 
     return img_norm
 
+
 def normalize_radius(obj_ba, mag, slm_px, size_slm):
     """ Normalizes the radius to the size of the SLM pixels and the radius of
         the laser beam. """
-    
-    #TODO radius_slm = obj_ba / 2 / mag / slm_px / np.mean(size_slm * 2)
     radius_slm = obj_ba / mag / slm_px / np.mean(size_slm * 2)
     print("radius_slm ", radius_slm, "mag ", mag)
-    #radius_slm = 1
     
     return radius_slm
+
 
 def bfp_radius(M, NA, f_TL):
     """ Takes magnification M and NA of the objective, as well as focal length
         of the tube lens, to calculate the radius of the objective's back focal
         plane. """
     return NA * f_TL / M
+
 
 def crop(full, size, offset = [0,0]):
     """ Crops the full data to half the size, using the provided offset. 
@@ -94,6 +100,7 @@ def crop(full, size, offset = [0,0]):
     maxy = int(size[1]*3/2 - offset[0])    
     cropped = full[minx:maxx, miny:maxy]
     return cropped
+
 
 def create_coords(size, off = [0,0]):
     """ Returns the cartesian coordinates of each pixel in a matrix from the 
@@ -119,12 +126,9 @@ def zernike_coeff(rho, order):
              mfac((nn + mm)/2 - kk) * \
              mfac((nn - mm)/2 - kk))
         r = (np.power(rho, nn - 2 * kk))
-        #print("c ", c)
-        coeff = coeff + c * r
-    
-    #print(np.shape(coeff))
-    #print(coeff, np.power(coeff, 2))
+        coeff = coeff + c * r   
     return coeff
+
 
 def create_zernike(size, order, amp = 1, radscale=1):
     """ Calculates the Zernike polynomial of a given order, for the given 
@@ -151,10 +155,7 @@ def create_rect(size, a, b, rot, amp = 1, radscale = 1):
     xcoord, ycoord = create_coords(size)
     rho, phi = cart2polar(xcoord, ycoord)
     rho = rho * 4 / radscale
-        
-    #rect1 = (rho <= a / 2 / np.cos(phi)) * (np.tan(phi) <= b / a )
-    #rect2 = (rho <= b / 2 / np.sin(phi)) * (np.tan(phi) > b / a )
-    #rect = rect1 + rect2
+
     rect = rho <= np.minimum(a / np.abs(np.cos(phi - (rot + 180) / 180 * np.pi)), 
                              b / np.abs(np.sin(phi - (rot + 180) / 180 * np.pi)))
     return rect * amp
