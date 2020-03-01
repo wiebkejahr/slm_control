@@ -93,14 +93,11 @@ class Main_Window(QtWidgets.QMainWindow):
                          screen0.width()/4, .9*screen0.height())
             
         self.load_params('parameters/params')
-        self.current_objective = self.p.objectives[self.p.general["objective"]]
+        self.current_objective = self.p.objectives[
+            self.p.general["objective"]["name"]]
         self.slm_radius = self.calc_slmradius(
             self.p.objectives[self.current_objective["name"]]["backaperture"],
             self.p.general["slm_mag"])
-        # self.slm_radius = pcalc.normalize_radius(
-        #     self.p.objectives[self.p.general["objective"]]["backaperture"], 
-        #     self.p.general["slm_mag"], self.p.general["slm_px"], 
-        #     self.p.general["size_slm"])
         
         self.init_zernikes()
         self.init_images()
