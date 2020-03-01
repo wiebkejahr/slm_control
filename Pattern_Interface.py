@@ -169,11 +169,11 @@ class Half_Pattern(QtWidgets.QWidget):
             self.off.compute_pattern(update = False)
         
         #TODO: change back once scaling of grids is fixed
-        self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.aberr.data])
-        self.data = self.crop(update = False)
-        #self.full = pcalc.add_images([self.vort.data, self.defoc.data, self.aberr.data])
+        #self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.aberr.data])
         #self.data = self.crop(update = False)
-        #self.data = pcalc.add_images([self.data, self.gr.data])
+        self.full = pcalc.add_images([self.vort.data, self.defoc.data, self.aberr.data])
+        self.data = self.crop(update = False)
+        self.data = pcalc.add_images([self.data, self.gr.data])
         
         if update:
             self.daddy.combine_images()
