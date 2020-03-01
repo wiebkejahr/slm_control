@@ -107,7 +107,8 @@ class Sub_Pattern_Grid(Sub_Pattern):
             
             z = self.daddy.daddy.zernikes_normalized
             self.data = pcalc.add_images([z["tiptiltx"] * slope[0],
-                                          z["tiptilty"] * slope[1]]) * 4 / self.daddy.daddy.slm_radius
+                                          z["tiptilty"] * slope[1]])
+
             if update:
                 self.daddy.update()
         return self.data

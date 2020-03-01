@@ -168,10 +168,9 @@ class Half_Pattern(QtWidgets.QWidget):
             self.defoc.compute_pattern(update = False)
             self.off.compute_pattern(update = False)
         
-        
         self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.aberr.data])
-        #self.full = pcalc.add_images([self.vort.data, self.defoc.data, self.aberr.data])
         self.data = self.crop(update = False)
+        #self.full = pcalc.add_images([self.vort.data, self.defoc.data, self.aberr.data])
         #self.data = pcalc.add_images([self.data, self.gr.data])
         
         if update:

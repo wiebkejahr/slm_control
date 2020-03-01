@@ -234,9 +234,20 @@ class Main_Window(QtWidgets.QMainWindow):
             
         size = 2 * np.asarray(self.p.general["size_slm"])
         print(self.slm_radius)
+
+        # freak factor of 4 for tip/tilt is coming from the radius normalization
+        # for all other Zernikes: This is done when scaling the SLM radius
+        # However: grating periods are in /mm on the Abberior, and therefore 
+        # independent from the objective backaperture which makes sense, 
+        # because beam should be centered regardless of which objective is used
+        # and since we're using the SLM off-axis, this would otherwise influence it
+        # TODO: scaling is not yet correct, maybe revise SLM radius calculation 
+        # and take the factors that are needed in here; for now corrected with 
+        # amplitude = 10
+        # but overwritten anyway since I'm using the old grating calc
         self.zernikes_normalized = {
-            "tiptiltx" : pcalc.create_zernike(size, [ 1,  1], 1, self.slm_radius),
-            "tiptilty" : pcalc.create_zernike(size, [ 1, -1], 1, self.slm_radius),
+            "tiptiltx" : pcalc.create_zernike(size, [ 1,  1], 10, 4),#self.slm_radius),
+            "tiptilty" : pcalc.create_zernike(size, [ 1, -1], 10, 4),#self.slm_radius),
             "defocus"  : pcalc.create_zernike(size, [ 2,  0], 1, self.slm_radius),
             "astigx"   : pcalc.create_zernike(size, [ 2,  2], 1, self.slm_radius),
             "astigy"   : pcalc.create_zernike(size, [ 2, -2], 1, self.slm_radius),
