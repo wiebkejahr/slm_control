@@ -106,7 +106,15 @@ class Sub_Pattern_Grid(Sub_Pattern):
     def compute_pattern(self, update = True):
         if self.daddy.blockupdating == False:
             slope = [self.xgui.value(), self.ygui.value()]
-            self.data = pcalc.blazed_grating(self.size, slope, self.slm_px)
+            
+            z = self.daddy.daddy.zernikes_normalized
+            self.data = pcalc.add_images([z["tiptiltx"] * slope[0],
+                                          z["tiptilty"] * slope[1]]) * 4 / self.daddy.daddy.slm_radius
+            
+            #print(self.size)
+            #self.data = pcalc.crop(self.data, self.size)
+            #self.data = self.data  - np.min(self.data)
+            #self.data = pcalc.blazed_grating(self.size, slope, self.slm_px)
             if update:
                 self.daddy.update()
         return self.data
@@ -159,7 +167,7 @@ class Sub_Pattern_Vortex(Sub_Pattern):
             steps = self.stepgui.value()
             slm_scale = self.daddy.daddy.slm_radius
             
-            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, phase, steps, slm_scale)
+            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, steps, phase, slm_scale)
             
             if update:
                 self.daddy.update()
@@ -186,7 +194,9 @@ class Sub_Pattern_Defoc(Sub_Pattern):
     def compute_pattern(self, update = True):
         """ Zernike mode (2,0) """
         if self.daddy.blockupdating == False:
-            self.data = self.defocgui.value() * pcalc.create_zernike(self.size, [2,0], self.daddy.daddy.slm_radius)       
+            #self.data = self.defocgui.value() * pcalc.create_zernike(self.size, [2,0], self.daddy.daddy.slm_radius)       
+            self.data = self.daddy.daddy.zernikes_normalized["defocus"] * self.defocgui.value()
+            
             if update:
                 self.daddy.update()
         return self.data

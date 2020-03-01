@@ -45,9 +45,9 @@ mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
 
+
 # NOTE: hardcoded for now:
-# MODEL_STORE_PATH="models/04.02.20_xsection_10_epochs_Adam_lr_0.001_batchsize_64.pth"
-MODEL_STORE_PATH="models/24.01.20_multi_test_20_epochs_Adam_lr_0.001_batchsize_64.pth"
+MODEL_STORE_PATH="local_models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
 
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
@@ -108,6 +108,11 @@ class Main_Window(QtWidgets.QMainWindow):
         self.setGeometry(screen0.left(), screen0.top(), screen0.width()/4, .9*screen0.height())
             
         self.load_params('parameters/params')
+        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.p.general["objective"]]["backaperture"], 
+                                                 self.p.general["slm_mag"], 
+                                                 self.p.general["slm_px"], 
+                                                 self.p.general["size_slm"])
+        self.init_zernikes()
         self.init_images()
         self.create_main_frame()
 
@@ -183,7 +188,7 @@ class Main_Window(QtWidgets.QMainWindow):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
         
-        # try:
+        #try:
         self.zernike = abberior.abberior_multi(MODEL_STORE_PATH)
         # self.zernike = abberior.correct(MODEL_STORE_PATH) # returns a dictionary
         # print(self.zernike)
@@ -205,10 +210,10 @@ class Main_Window(QtWidgets.QMainWindow):
         # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
-        # self.objective_changed()
-        # self.split_image(self.splt_img_state.checkState())
-        # self.single_correction(self.sngl_corr_state.checkState())
-        # self.flat_field(self.flt_fld_state.checkState(), recalc = False)
+        self.objective_changed()
+        #self.split_image(self.splt_img_state.checkState())
+        #self.single_correction(self.sngl_corr_state.checkState())
+        #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
 
         self.recalc_images()
 
@@ -234,6 +239,29 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_r.set_name("img_r")
         
         #self.img_aberr = PZ.Aberr_Pattern(self.p)
+        
+    def init_zernikes(self):
+        """ Creates a dictionary containing all of the Zernike polynomials by
+            their names. Updates in the GUI only change the weight of each 
+            polynomial. Thus, polynomials do not have to be updated, just their
+            weights. """
+            
+        size = 2 * np.asarray(self.p.general["size_slm"])
+        print(self.slm_radius)
+        self.zernikes_normalized = {
+            "tiptiltx" : pcalc.create_zernike(size, [ 1, -1], self.slm_radius),
+            "tiptilty" : pcalc.create_zernike(size, [ 1,  1], self.slm_radius),
+            "defocus"  : pcalc.create_zernike(size, [ 2,  0], self.slm_radius),
+            "astigx"   : pcalc.create_zernike(size, [ 2, -2], self.slm_radius),
+            "astigy"   : pcalc.create_zernike(size, [ 2,  2], self.slm_radius),
+            "comax"    : pcalc.create_zernike(size, [ 3, -1], self.slm_radius),
+            "comay"    : pcalc.create_zernike(size, [ 3,  1], self.slm_radius),
+            "trefoilx" : pcalc.create_zernike(size, [ 3, -3], self.slm_radius),
+            "trefoily" : pcalc.create_zernike(size, [ 3,  3], self.slm_radius),           
+            "sphere1"  : pcalc.create_zernike(size, [ 4,  0], self.slm_radius),
+            "sphere2"  : pcalc.create_zernike(size, [ 6,  0], self.slm_radius)
+            }
+    
         
     def create_main_frame(self):
         """ Creates the UI: Buttons to load/save parameters and flatfield 
@@ -279,11 +307,6 @@ class Main_Window(QtWidgets.QMainWindow):
         self.current_objective = self.p.general["objective"]
         self.obj_sel.setCurrentText(self.current_objective)
         self.obj_sel.activated.connect(lambda: self.objective_changed())
-        
-        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.p.general["objective"]]["backaperture"], 
-                                                 self.p.general["slm_mag"], 
-                                                 self.p.general["slm_px"], 
-                                                 self.p.general["size_slm"])
             
         self.crea_but(hbox, self.reload_params, "Load Config", "parameters/params")
         self.crea_but(hbox, self.save_params, "Save Config", "parameters/params")
