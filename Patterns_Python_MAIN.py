@@ -298,7 +298,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.obj_sel = QtWidgets.QComboBox(self)
         self.obj_sel.setMaximumSize(100, 50)
         hbox.addWidget(self.obj_sel)            
-        for mm in self.p.objectives.keys():
+        for mm in self.p.objectives:
             self.obj_sel.addItem(mm)
         self.obj_sel.setCurrentText(self.current_objective)
         self.obj_sel.activated.connect(lambda: self.objective_changed())
@@ -522,9 +522,9 @@ class Main_Window(QtWidgets.QMainWindow):
             patterns based on the selected objective. """
         
         print(self.obj_sel.currentText())
-        self.current_objective = self.p.objectives[self.obj_sel.currentText()]#["name"]
+        self.current_objective = self.obj_sel.currentText()#["name"]
         self.slm_radius = self.calc_slmradius(
-            self.p.objectives[self.current_objective["name"]]["backaperture"],
+            self.p.objectives[self.current_objective]["backaperture"],
             self.p.general["slm_mag"])
         self.init_zernikes()
         self.recalc_images()
