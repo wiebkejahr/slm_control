@@ -7,6 +7,7 @@ Created on Tue Oct 16 11:13:09 2018
 """
 
 import json
+import os
 
 class param():
     """ Class containing the dictionary for the parameters to be saved.
@@ -26,9 +27,9 @@ class param():
                     "size_full"    : [600, 792],
                     "size_slm"     : [600, 396],
                     "displaywidth" : 300,
-                    "slm_mag"      :  7.059,
+                    "slm_mag"      :  3,
                     "laser_radius" : 1.2,
-                    "objective"    : "100xOil NA 1.40",
+                    "objective"    : "100xOil_NA_140",
                     "path"         : 'patterns/',                    
                     "cal0"         : "patterns/Black_Full.bmp",
                     "last_img_nm"  : 'latest.bmp',
@@ -37,6 +38,7 @@ class param():
                     "split_image"  : 1,
                     "flat_field"   : 0,
                     "single_aberr" : 0,
+                    "double_pass"  : 0,
                     }
        
         self.left = {
@@ -76,32 +78,32 @@ class param():
                     }
         
         self.objectives = {
-                        "100xOil NA 1.40": {
-                                            "name": "100xOil NA 1.40",
+                        "100xOil_NA_140": {
+                                            "name": "100xOil_NA_140",
                                             "mag": 100,
                                             "NA": 1.4,
                                             "f_tl": 200,
                                             "immersion": "Oil",
                                             "backaperture": 5.04
                                             },
-                        "100xSil NA 1.35": {
-                                            "name": "100xSil NA 1.35",
+                        "100xSil_NA_135": {
+                                            "name": "100xSil_NA_135",
                                             "mag": 100,
                                             "NA": 1.35,
                                             "f_tl": 200,
                                             "immersion": "Sil",
                                             "backaperture": 4.86
                                             },
-                        "60xWat NA 1.20": {
-                                            "name": "60xWat NA 1.20",
+                        "60xWat_NA_120": {
+                                            "name": "60xWat_NA_120",
                                             "mag": 60,
                                             "NA": 1.2,
                                             "f_tl": 200,
                                             "immersion": "Wat",
                                             "backaperture": 7.2
                                             },
-                        "20xAir NA 0.70": {
-                                            "name": "20xAir NA 0.70",
+                        "20xAir_NA_070": {
+                                            "name": "20xAir_NA_070",
                                             "mag": 20,
                                             "NA": 0.7,
                                             "f_tl": 200,
@@ -130,6 +132,9 @@ class param():
         sngl_corr = 0
         if daddy.sngl_corr_state.checkState():
             sngl_corr = 1
+        dbl_ps = 0
+        if daddy.dbl_pass_state.checkState():
+            dbl_ps = 1
         abberior = 0
         if daddy.p.general["abberior"] == 1:
             abberior = 1
@@ -151,6 +156,7 @@ class param():
                     "split_image"  : splt_img,
                     "flat_field"   : flt_fld,
                     "single_aberr" : sngl_corr,
+                    "double_pass"  : dbl_ps,
                     }
 #        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.current_objective["name"]]["backaperture"], 
 
@@ -209,29 +215,52 @@ class param():
 #                            }
 
 
-    def write_file(self, filename):
-        with open(filename + "_general.txt", 'w') as f:
+    def write_file(self, path, obj_path, name_base):
+        print("Writing parameters to: ", path + obj_path + '/' + name_base)
+
+        if not os.path.exists(os.path.dirname(path + obj_path)):
+            try:
+                os.makedirs(os.path.dirname(path + obj_path))
+            except:
+                print("cannot create directory")
+        
+        with open(path + name_base + "_general.txt", 'w') as f:
             json.dump(self.general, f , indent = 4)        
-        with open(filename + "_left.txt", 'w') as f:    
-            json.dump(self.left, f, indent = 4)
-        with open(filename + "_right.txt", 'w') as f:  
-            json.dump(self.right, f, indent = 4)
-        with open(filename + "_objectives.txt", 'w') as f:
+        with open(path + name_base + "_objectives.txt", 'w') as f:
             json.dump(self.objectives, f, indent =4)
-#        with open(filename + "_aberrations.txt", 'w') as f:  
-#            json.dump(self.aberrations, f, indent = 4)
-            
-    def load_file(self, filename):
-        with open(filename + "_general.txt", 'r') as f:
+        with open(path + obj_path + '/' + name_base + "_left.txt", 'w') as f:    
+            json.dump(self.left, f, indent = 4)
+        with open(path + obj_path + '/' + name_base + "_right.txt", 'w') as f:  
+            json.dump(self.right, f, indent = 4)
+                
+  
+    def load_file_general(self, path, name_base):
+        with open(path + name_base + "_general.txt", 'r') as f:
             self.general = json.load(f)        
-        with open(filename + "_left.txt", 'r') as f:    
-            self.left = json.load(f)
-        with open(filename + "_right.txt", 'r') as f:  
-            self.right = json.load(f)
-        with open(filename + "_objectives.txt", 'r') as f:
+        with open(path + name_base + "_objectives.txt", 'r') as f:
             self.objectives =json.load(f)
-#        with open(filename + "_aberrations.txt", 'r') as f:  
-#            self.aberrations = json.load(f)
+            
+            
+    def load_file_obj(self, path, obj_path, name_base):
+        print("Loading parameters from: ", path + obj_path + '/' + name_base)
+        with open(path + obj_path + '/' + name_base + "_left.txt", 'r') as f:    
+            self.left = json.load(f)
+        with open(path + obj_path + '/' + name_base + "_right.txt", 'r') as f:  
+            self.right = json.load(f)
+        return 
+            
+          
+    def load_file(self, path, obj_path, name_base):
+        print("Loading parameters from: ", path + obj_path + '/' + name_base)
+        with open(path + name_base + "_general.txt", 'r') as f:
+            self.general = json.load(f)        
+        with open(path + name_base + "_objectives.txt", 'r') as f:
+            self.objectives =json.load(f)
+        with open(path + obj_path + '/' + name_base + "_left.txt", 'r') as f:    
+            self.left = json.load(f)
+        with open(path + obj_path + '/' + name_base + "_right.txt", 'r') as f:  
+            self.right = json.load(f)
+
 
     def get(self, param):
         return param
@@ -253,4 +282,12 @@ if __name__ == "__main__":
         here. """
     p = param()
     p.init_defaults()
-    p.write_file("parameters/params")
+    path = ["parameters/", "params"]
+    objectives = ["100xOil_NA_140", "100xSil_NA_135", "60xWat_NA_120",
+                  "20xAir_NA_070"]
+    
+    for o in objectives:
+        p.write_file(path[0], o , path[1])
+        
+        
+        

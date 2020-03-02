@@ -91,9 +91,14 @@ class Main_Window(QtWidgets.QMainWindow):
         screen0 = QtWidgets.QDesktopWidget().screenGeometry()
         self.setGeometry(screen0.left(), screen0.top(), 
                          screen0.width()/4, .9*screen0.height())
-            
-        self.load_params('parameters/params')
+        
+        self.param_path = ['parameters/', 'params']
+        self.p = param()
+        self.p.load_file_general(self.param_path[0], self.param_path[1])
+        #self.load_params(self.param_path[0] + self.param_path[1])
         self.current_objective = self.p.general["objective"]
+        self.p.load_file_obj(self.param_path[0], self.current_objective, self.param_path[1])
+        
         #print(self.current_objective)
         #print(self.p.objectives[self.current_objective]["backaperture"])
         self.slm_radius = self.calc_slmradius(
@@ -143,23 +148,27 @@ class Main_Window(QtWidgets.QMainWindow):
         self.raise_()
 
         
-    def load_params(self, fname):
-        """ Calls the load_file function implemented in the parameters class, 
-            which loads the parameter lists from the text file. Called after
-            startup of the program. """
-        self.p = param()
-        self.p.load_file(fname)
+    # def load_params(self, fname):
+    #     """ Calls the load_file function implemented in the parameters class, 
+    #         which loads the parameter lists from the text file. Called after
+    #         startup of the program. """
+    #     self.p = param()
+    #     self.p.load_file(fname[0], self.current_objective["name"], fname[1])
         
 
     def reload_params(self, fname):
         """ Calls the load_file function implemented in the parameters class, 
             which loads the parameter lists from the text file. Called after
             button is clicked. """
-        self.load_params(fname)
+        #self.load_params(fname)
+        #self.p = param()
+        self.p.load_file_obj(fname[0], self.current_objective, fname[1])
+        print("left", self.p.left)
+        print("right", self.p.right)
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
         
-        self.objective_changed()
+        #self.objective_changed()
         # TODO WJ
         #self.split_image(self.splt_img_state.checkState())
         #self.single_correction(self.sngl_corr_state.checkState())
@@ -168,6 +177,16 @@ class Main_Window(QtWidgets.QMainWindow):
         self.recalc_images()
         #self.init_images()   
 
+        
+    def save_params(self, fname):
+        """" Calls write_file implemented in parameters class to save the 
+            current parameters to the file provided in fname. These are then 
+            loaded as default on next startup."""
+        self.p.update(self)
+        
+        self.p.write_file(fname[0], self.current_objective, fname[1])
+        
+        
     # NOTE: I WROTE THIS
     def auto_align(self, model_store_path=MODEL_STORE_PATH):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
@@ -195,20 +214,12 @@ class Main_Window(QtWidgets.QMainWindow):
         # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
-        self.objective_changed()
+        #self.objective_changed()
         #self.split_image(self.splt_img_state.checkState())
         #self.single_correction(self.sngl_corr_state.checkState())
         #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
 
         self.recalc_images()
-
-        
-    def save_params(self, fname):
-        """" Calls write_file implemented in parameters class to save the 
-            current parameters to the file provided in fname. These are then 
-            loaded as default on next startup."""
-        self.p.update(self)
-        self.p.write_file(fname)
         
         
     def init_images(self):
@@ -299,8 +310,8 @@ class Main_Window(QtWidgets.QMainWindow):
             self.obj_sel.addItem(mm)
         self.obj_sel.setCurrentText(self.current_objective)
         self.obj_sel.activated.connect(lambda: self.objective_changed())
-        self.crea_but(hbox, self.reload_params, "Load Config", "parameters/params")
-        self.crea_but(hbox, self.save_params, "Save Config", "parameters/params")
+        self.crea_but(hbox, self.reload_params, "Load Config", self.param_path)
+        self.crea_but(hbox, self.save_params, "Save Config", self.param_path)
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
         
@@ -317,13 +328,17 @@ class Main_Window(QtWidgets.QMainWindow):
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
 
-        # checkboxes for the different modes of operation (split image, 
-        # flatfield and single correction (as on the Abberior))
+        # checkboxes for the different modes of operation: split image (currently
+        # full display operation is not supported), flatfield correction
+        # and single correction and cross correction for double pass geometry
+        # (as on the Abberior))
         hbox = QtWidgets.QHBoxLayout()
         self.splt_img_state = self.crea_checkbox(hbox, self.split_image, 
                         "Split image", self.p.general["split_image"])
         self.sngl_corr_state = self.crea_checkbox(hbox, self.single_correction, 
                         "Single correction", self.p.general["single_aberr"])
+        self.dbl_pass_state = self.crea_checkbox(hbox, self.double_pass,
+                        "Double pass", self.p.general["double_pass"])
         self.flt_fld_state = self.crea_checkbox(hbox, self.flat_field, 
                         "Flatfield", self.p.general["flat_field"])
         hbox.setContentsMargins(0,0,0,0)
@@ -497,6 +512,14 @@ class Main_Window(QtWidgets.QMainWindow):
             self.img_r.aberr.trefoil.xgui.setValue(self.img_l.aberr.trefoil.xgui.value())
             self.img_r.aberr.trefoil.ygui.setValue(self.img_l.aberr.trefoil.ygui.value())
             
+    def double_pass(self, state):
+        """ Activates the double pass geometry cross correction as on Abberior.
+            The laser beam hits the SLM twice, once it's modulated, once not 
+            (because it has the wrong polarization). To still correct for SLM
+            curvature during the unmodulated reflection, the flatfield pattern
+            from the first impact needs to be shifted by the offset and added 
+            to the flatfield correction of the second impact. """
+        print("needs to be implemented")
     
     def calc_slmradius(self, backaperture, mag):
         """ Calculates correct scaling factor for SLM based on objective
@@ -526,15 +549,14 @@ class Main_Window(QtWidgets.QMainWindow):
         """ Action called when the users selects a different objective. 
             Calculates the diameter of the BFP; then recalculates the the
             patterns based on the selected objective. """
-        
-        print(self.obj_sel.currentText())
+            
         self.current_objective = self.obj_sel.currentText()#["name"]
+        self.reload_params(self.param_path)
         self.slm_radius = self.calc_slmradius(
             self.p.objectives[self.current_objective]["backaperture"],
             self.p.general["slm_mag"])
         self.init_zernikes()
         self.recalc_images()
-        
         
     def apply_correction(self):
         print("applying corrections")
@@ -547,45 +569,6 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_l.update(update = False, completely = True)
         self.img_r.update(update = False, completely = True)
         self.combine_and_update()
-
-
-    # def combine_images(self):
-    #     """ Stitches the images for left and right side of the SLM, adds the 
-    #         flatfield correction and phasewraps everything. Updates
-    #         self.img_data with the new image data. """
-    #     l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
-    #                      self.flatfield[0]]), self.p.left["phasewrap"])
-    #     r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
-    #                     self.flatfield[1]]), self.p.right["phasewrap"])
-        
-    #     self.img_data = pcalc.stitch_images(l, r)
-        
-    #     #self.img_data = pcalc.stitch_images(self.img_l.data, self.img_r.data)
-    #     #self.img_data = pcalc.add_images([self.flatfield, self.img_data])
-    #     #self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
-
-
-    # def update_display(self):
-    #     """ Updates the displayed images in the control window and (if active)
-    #         on the SLM. To do so, rescales the image date to the SLM's required
-    #         pitch (depends on the wavelength, and is set in the general 
-    #         parameters). Saves the image patterns/latest.bmp and then reloads
-    #         into the Pixmap for display. """
-    #     img_data_scaled = self.img_data * self.p.general["slm_range"] / 255
-    #     pcalc.save_image(img_data_scaled, self.p.general["path"], 
-    #                      self.p.general["last_img_nm"])
-    #     self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
-        
-    #     if self.p.general["abberior"] == 1:
-    #             try:
-    #                 self.stk.data()[:]=img_data_scaled
-    #                 self.meas.update()
-    #             except:
-    #                 print("Still cannot communicate with the Abberior.")            
-    #     elif self.slm != None:
-    #         self.slm.update_image(self.p.general["path"] + 
-    #                               self.p.general["last_img_nm"])
-    #     self.plt_frame.plot(self.img_data)
         
         
         
@@ -605,11 +588,6 @@ class Main_Window(QtWidgets.QMainWindow):
                         self.flatfield[1]]), self.p.right["phasewrap"])
         
         self.img_data = pcalc.stitch_images(l, r)
-        
-        #self.img_data = pcalc.stitch_images(self.img_l.data, self.img_r.data)
-        #self.img_data = pcalc.add_images([self.flatfield, self.img_data])
-        #self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
-
         img_data_scaled = pcalc.stitch_images(l * self.p.left["slm_range"],
                                               r * self.p.right["slm_range"])
         

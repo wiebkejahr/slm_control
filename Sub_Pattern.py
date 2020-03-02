@@ -115,10 +115,11 @@ class Sub_Pattern_Grid(Sub_Pattern):
 
 class Sub_Pattern_Vortex(Sub_Pattern):
     """ Subpattern containing the image data of the vortex. GUI contains a 
-        ComboBox to select the donut mode ("2D STED", "3D STED", "Gauss", "Halfmoon", Bivortex) and 
-        three boxes for radius, phase and rotation. Recalculates the vortices
-        based on the parameters and calls an update to the Half Pattern to 
-        recalculate the whole image data. """
+        ComboBox to select the donut mode ("2D STED", "3D STED", "Gauss", 
+        "Halfmoon", Bivortex) and four boxes for radius, phase rotation and 
+        number of steps. Recalculates the vortices based on the parameters 
+        and calls an update to the Half Pattern to recalculate the whole 
+        image data. """
     def __init__(self, params, parent = None):
         super(Sub_Pattern, self).__init__(parent) 
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -155,7 +156,8 @@ class Sub_Pattern_Vortex(Sub_Pattern):
             steps = self.stepgui.value()
             slm_scale = self.daddy.daddy.slm_radius
             
-            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, steps, phase, slm_scale)
+            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, steps, 
+                                             phase, slm_scale)
             
             if update:
                 self.daddy.update()
