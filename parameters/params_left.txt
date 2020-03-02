@@ -1,14 +1,14 @@
 {
     "sl": [
-        4.96,
-        0.59
+        0.0,
+        0.0
     ],
     "off": [
-        -40.0,
-        38.0
+        0.0,
+        0.0
     ],
-    "rot": 90.0,
-    "radius": 0.5,
+    "rot": 180.0,
+    "radius": 1.0,
     "phase": 1.0,
     "steps": 1.0,
     "defoc": 0.0,
@@ -28,5 +28,8 @@
     "trefoil": [
         0.0,
         0.0
-    ]
+    ],
+    "slm_range": 205,
+    "phasewrap": 1,
+    "cal1": "patterns/CAL_LSH0801608_780nm.bmp"
 }

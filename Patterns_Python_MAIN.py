@@ -137,9 +137,8 @@ class Main_Window(QtWidgets.QMainWindow):
                           If you're at the Abberior, check that Imspector is 
                           running and a measurement is active. """)
 
-        self.load_flat_field(self.p.general["cal1"])
-        self.combine_images()
-        self.update_display()
+        self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
+        self.combine_and_update()
         self.show()
         self.raise_()
 
@@ -214,8 +213,7 @@ class Main_Window(QtWidgets.QMainWindow):
         
     def init_images(self):
         """ Called upon startup of the program. Initizialises the variables
-            containing the images for flatfield correction, for the left and
-            right halves of the SLM and for aberration correction. """
+            containing the left and right halves of the SLM. """
             
         self.img_l = PI.Half_Pattern(self.p)
         self.img_l.call_daddy(self)
@@ -225,7 +223,6 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_r.call_daddy(self)
         self.img_r.set_name("img_r")
         
-        #self.img_aberr = PZ.Aberr_Pattern(self.p)
         
     def init_zernikes(self):
         """ Creates a dictionary containing all of the Zernike polynomials by
@@ -312,8 +309,11 @@ class Main_Window(QtWidgets.QMainWindow):
         hbox = QtWidgets.QHBoxLayout()
         self.crea_but(hbox, self.open_SLMDisplay, "Initialize SLM")
         self.crea_but(hbox, self.close_SLMDisplay, "Close SLM")
-        self.crea_but(hbox, self.openFlatFieldDialog, "load SLM calib", 
-                      self.p.general["path"]+self.p.general["cal1"])        
+        
+        # TODO: currently does not work; need to figure out a way to implement
+        # two paths, one for left, one for right side
+        #self.crea_but(hbox, self.openFlatFieldDialog, "load SLM calib", 
+        #              self.p.general["path"]+self.p.general["cal1"])        
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
 
@@ -397,17 +397,23 @@ class Main_Window(QtWidgets.QMainWindow):
         work_dir = os.path.dirname(os.path.realpath(__file__))
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
                         "Load flat field correction", work_dir +'/'+ path)
-        if fileName:
-            self.load_flat_field(fileName)
-            self.combine_images()
-            self.update_display()
+        # TODO: needs to be implemented to work for two paths, one for left, 
+        # one for right side
+        print("Currently not implemented. Please add paths in the files for \
+              left and right side parameters as 'cal1'.")
+        #if fileName:
+        #    self.load_flat_field(fileName)
+        #    self.combine_and_update()
 
     
-    def load_flat_field(self, path):
-        """ Opens the image in the parameter path and sets as new flatfield
-            correction. """
-        self.flatfieldcor = np.asarray(pcalc.load_image(path))/255
-        #self.flatfield = self.flatfieldcor
+    def load_flat_field(self, path_l, path_r):
+        """ Opens the images in the parameter paths, combines two halves to 
+            one image and sets as new flatfield correction. """
+            
+        l = np.asarray(pcalc.load_image(path_l))/255
+        r = np.asarray(pcalc.load_image(path_r))/255
+        split = self.p.general["size_slm"][1]
+        self.flatfieldcor = [l[:, 0 : split], r[:, split - 1 : -1]]
         self.flat_field(self.flt_fld_state.checkState())
 
 
@@ -417,7 +423,7 @@ class Main_Window(QtWidgets.QMainWindow):
         if state:
             self.flatfield = self.flatfieldcor
         else:
-            self.flatfield = np.zeros_like(self.flatfieldcor)
+            self.flatfield = [np.zeros_like(self.flatfieldcor[0]), np.zeros_like(self.flatfieldcor[1])]
         if recalc:
             self.recalc_images()
 
@@ -540,33 +546,80 @@ class Main_Window(QtWidgets.QMainWindow):
             the recalculation. Image display is only updated once at the end. """
         self.img_l.update(update = False, completely = True)
         self.img_r.update(update = False, completely = True)
-        self.combine_images()
-        self.update_display()
+        self.combine_and_update()
 
 
-    def combine_images(self):
+    # def combine_images(self):
+    #     """ Stitches the images for left and right side of the SLM, adds the 
+    #         flatfield correction and phasewraps everything. Updates
+    #         self.img_data with the new image data. """
+    #     l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
+    #                      self.flatfield[0]]), self.p.left["phasewrap"])
+    #     r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
+    #                     self.flatfield[1]]), self.p.right["phasewrap"])
+        
+    #     self.img_data = pcalc.stitch_images(l, r)
+        
+    #     #self.img_data = pcalc.stitch_images(self.img_l.data, self.img_r.data)
+    #     #self.img_data = pcalc.add_images([self.flatfield, self.img_data])
+    #     #self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
+
+
+    # def update_display(self):
+    #     """ Updates the displayed images in the control window and (if active)
+    #         on the SLM. To do so, rescales the image date to the SLM's required
+    #         pitch (depends on the wavelength, and is set in the general 
+    #         parameters). Saves the image patterns/latest.bmp and then reloads
+    #         into the Pixmap for display. """
+    #     img_data_scaled = self.img_data * self.p.general["slm_range"] / 255
+    #     pcalc.save_image(img_data_scaled, self.p.general["path"], 
+    #                      self.p.general["last_img_nm"])
+    #     self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
+        
+    #     if self.p.general["abberior"] == 1:
+    #             try:
+    #                 self.stk.data()[:]=img_data_scaled
+    #                 self.meas.update()
+    #             except:
+    #                 print("Still cannot communicate with the Abberior.")            
+    #     elif self.slm != None:
+    #         self.slm.update_image(self.p.general["path"] + 
+    #                               self.p.general["last_img_nm"])
+    #     self.plt_frame.plot(self.img_data)
+        
+        
+        
+    def combine_and_update(self):
         """ Stitches the images for left and right side of the SLM, adds the 
             flatfield correction and phasewraps everything. Updates
-            self.img_data with the new image data. """
-        self.img_data = pcalc.stitch_images(self.img_l.data, self.img_r.data)
-        self.img_data = pcalc.add_images([self.flatfield, self.img_data])
-        self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
-
-
-    def update_display(self):
-        """ Updates the displayed images in the control window and (if active)
+            self.img_data with the new image data.
+            Updates the displayed images in the control window and (if active)
             on the SLM. To do so, rescales the image date to the SLM's required
             pitch (depends on the wavelength, and is set in the general 
             parameters). Saves the image patterns/latest.bmp and then reloads
             into the Pixmap for display. """
-        img_data_scaled = self.img_data * self.p.general["slm_range"] / 255
+            
+        l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
+                         self.flatfield[0]]), self.p.left["phasewrap"])
+        r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
+                        self.flatfield[1]]), self.p.right["phasewrap"])
+        
+        self.img_data = pcalc.stitch_images(l, r)
+        
+        #self.img_data = pcalc.stitch_images(self.img_l.data, self.img_r.data)
+        #self.img_data = pcalc.add_images([self.flatfield, self.img_data])
+        #self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
+
+        img_data_scaled = pcalc.stitch_images(l * self.p.left["slm_range"],
+                                              r * self.p.right["slm_range"])
+        
         pcalc.save_image(img_data_scaled, self.p.general["path"], 
                          self.p.general["last_img_nm"])
         self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
         
         if self.p.general["abberior"] == 1:
                 try:
-                    self.stk.data()[:]=img_data_scaled
+                    self.stk.data()[:]=img_data_scaled / 255
                     self.meas.update()
                 except:
                     print("Still cannot communicate with the Abberior.")            

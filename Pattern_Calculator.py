@@ -25,7 +25,7 @@ def load_image(img_path):
 def save_image(img, img_path, img_name):
     """ Saves the provided matrix img as an image under the path img_path and
         the name img_name. """
-    image = Image.fromarray((img*255).astype(np.uint8))
+    image = Image.fromarray((img).astype(np.uint8))
     image.save(img_path+img_name)   
 
         
