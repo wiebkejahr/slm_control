@@ -100,27 +100,17 @@ class Sub_Pattern_Grid(Sub_Pattern):
         self.size = np.asarray(params.general["size_slm"])
         self.slm_px = params.general["slm_px"]
         self.data = np.zeros(self.size)
-
-
+        
+        
     def compute_pattern(self, update = True):
         if self.daddy.blockupdating == False:
-            slope = [self.xgui.value(), self.ygui.value()]
-            self.data = pcalc.blazed_grating(self.size, slope, self.slm_px)
+            slope = [-self.xgui.value(), -self.ygui.value()]
+            z = self.daddy.daddy.zernikes_normalized
+            self.data = pcalc.add_images([z["tiptiltx"] * slope[0],
+                                          z["tiptilty"] * slope[1]])
             if update:
                 self.daddy.update()
         return self.data
-        
-    # def compute_pattern(self, update = True):
-    #     if self.daddy.blockupdating == False:
-    #         slope = [self.xgui.value(), self.ygui.value()]
-            
-    #         #TODO: fix scaling of grids
-    #         #z = self.daddy.daddy.zernikes_normalized
-    #         #self.data = pcalc.add_images([z["tiptiltx"] * slope[0],
-    #         #                              z["tiptilty"] * slope[1]])
-    #         if update:
-    #             self.daddy.update()
-    #     return self.data
     
 
 class Sub_Pattern_Vortex(Sub_Pattern):

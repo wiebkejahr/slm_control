@@ -232,22 +232,23 @@ class Main_Window(QtWidgets.QMainWindow):
             polynomial. Thus, polynomials do not have to be updated, just their
             weights. """
             
-        size = 2 * np.asarray(self.p.general["size_slm"])
-        print(self.slm_radius)
+        # normalisation for tip / tilt is different from the other Zernikes:
+        # grating periods should be in /mm and they should be independent of
+        # the objective's diameter:
+        # we're using the SLM off-axis to reflect the beam into the center of
+        # the objective's backaperture. None of the actual optics depends on the
+        # objective used.
+        # I'm using the SLM radius calculation with backaperture = mag = 1
+        # to determine correct size for tip/tilt. Extra factor of two is because
+        # patterns are created at double size, then cropped.
 
-        # freak factor of 4 for tip/tilt is coming from the radius normalization
-        # for all other Zernikes: This is done when scaling the SLM radius
-        # However: grating periods are in /mm on the Abberior, and therefore 
-        # independent from the objective backaperture which makes sense, 
-        # because beam should be centered regardless of which objective is used
-        # and since we're using the SLM off-axis, this would otherwise influence it
-        # TODO: scaling is not yet correct, maybe revise SLM radius calculation 
-        # and take the factors that are needed in here; for now corrected with 
-        # amplitude = 10
-        # but overwritten anyway since I'm using the old grating calc
+        size = 2 * np.asarray(self.p.general["size_slm"])
+        rtiptilt = 2 * pcalc.normalize_radius(1, 1, self.p.general["slm_px"], 
+                                              self.p.general["size_slm"])
+        
         self.zernikes_normalized = {
-            "tiptiltx" : pcalc.create_zernike(size, [ 1,  1], 10, 4),#self.slm_radius),
-            "tiptilty" : pcalc.create_zernike(size, [ 1, -1], 10, 4),#self.slm_radius),
+            "tiptiltx" : pcalc.create_zernike(size, [ 1,  1], 1, rtiptilt),
+            "tiptilty" : pcalc.create_zernike(size, [ 1, -1], 1, rtiptilt),
             "defocus"  : pcalc.create_zernike(size, [ 2,  0], 1, self.slm_radius),
             "astigx"   : pcalc.create_zernike(size, [ 2,  2], 1, self.slm_radius),
             "astigy"   : pcalc.create_zernike(size, [ 2, -2], 1, self.slm_radius),
