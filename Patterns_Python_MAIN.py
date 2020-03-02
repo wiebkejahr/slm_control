@@ -93,10 +93,11 @@ class Main_Window(QtWidgets.QMainWindow):
                          screen0.width()/4, .9*screen0.height())
             
         self.load_params('parameters/params')
-        self.current_objective = self.p.objectives[
-            self.p.general["objective"]["name"]]
+        self.current_objective = self.p.general["objective"]
+        #print(self.current_objective)
+        #print(self.p.objectives[self.current_objective]["backaperture"])
         self.slm_radius = self.calc_slmradius(
-            self.p.objectives[self.current_objective["name"]]["backaperture"],
+            self.p.objectives[self.current_objective]["backaperture"],
             self.p.general["slm_mag"])
         
         self.init_zernikes()
@@ -297,9 +298,9 @@ class Main_Window(QtWidgets.QMainWindow):
         self.obj_sel = QtWidgets.QComboBox(self)
         self.obj_sel.setMaximumSize(100, 50)
         hbox.addWidget(self.obj_sel)            
-        for mm in self.p.objectives:
-            self.obj_sel.addItem(self.p.objectives[mm]["name"])
-        self.obj_sel.setCurrentText(self.current_objective["name"])
+        for mm in self.p.objectives.keys():
+            self.obj_sel.addItem(mm)
+        self.obj_sel.setCurrentText(self.current_objective)
         self.obj_sel.activated.connect(lambda: self.objective_changed())
         self.crea_but(hbox, self.reload_params, "Load Config", "parameters/params")
         self.crea_but(hbox, self.save_params, "Save Config", "parameters/params")
