@@ -172,5 +172,4 @@ class Half_Pattern(QtWidgets.QWidget):
         self.data = self.crop(update = False)
         
         if update:
-            self.daddy.combine_images()
-            self.daddy.update_display()
+            self.daddy.combine_and_update()
