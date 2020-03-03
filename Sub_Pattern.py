@@ -40,13 +40,11 @@ class Sub_Pattern(QtWidgets.QWidget):
             gui = QtWidgets.QHBoxLayout()
         self.xgui = self.double_spin(defval[0], setup[0], gui)
         self.ygui = self.double_spin(defval[1], setup[1], gui) 
-        
         return gui
     
     def compute_pattern(self):
         """ Dummy function for updating the pattern data. Is overwritten by the
             Subclasses. """
-        
         if self.daddy.blockupdating == False:
             self.daddy.update()
         return self.data
@@ -103,10 +101,13 @@ class Sub_Pattern_Grid(Sub_Pattern):
         self.slm_px = params.general["slm_px"]
         self.data = np.zeros(self.size)
         
+        
     def compute_pattern(self, update = True):
         if self.daddy.blockupdating == False:
-            slope = [self.xgui.value(), self.ygui.value()]
-            self.data = pcalc.blazed_grating(self.size, slope, self.slm_px)
+            slope = [-self.xgui.value(), -self.ygui.value()]
+            z = self.daddy.daddy.zernikes_normalized
+            self.data = pcalc.add_images([z["tiptiltx"] * slope[0],
+                                          z["tiptilty"] * slope[1]])
             if update:
                 self.daddy.update()
         return self.data
@@ -114,15 +115,15 @@ class Sub_Pattern_Grid(Sub_Pattern):
 
 class Sub_Pattern_Vortex(Sub_Pattern):
     """ Subpattern containing the image data of the vortex. GUI contains a 
-        ComboBox to select the donut mode ("2D STED", "3D STED", "Gauss", "Halfmoon", Bivortex) and 
-        three boxes for radius, phase and rotation. Recalculates the vortices
-        based on the parameters and calls an update to the Half Pattern to 
-        recalculate the whole image data. """
+        ComboBox to select the donut mode ("2D STED", "3D STED", "Gauss", 
+        "Halfmoon", Bivortex) and four boxes for radius, phase rotation and 
+        number of steps. Recalculates the vortices based on the parameters 
+        and calls an update to the Half Pattern to recalculate the whole 
+        image data. """
     def __init__(self, params, parent = None):
         super(Sub_Pattern, self).__init__(parent) 
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.size = np.asarray(params.general["size_slm"]) * 2
-        
         self.data = np.zeros(self.size)
         self.path = params.general["path"]
         
@@ -131,20 +132,16 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         self.modegui = QtWidgets.QComboBox(self)
         self.modegui.setMaximumSize(80, 50)
 
-
         gui.addWidget(self.modegui)
-        
         for mm in modes:
             self.modegui.addItem(mm)
             
         self.modegui.setCurrentText(defval[0])
-        
         self.radgui = self.double_spin(defval[1], [3, 0.1, 0, 5], gui)
         self.phasegui = self.double_spin(defval[2], [3, 0.1, -5, 5], gui)
         self.rotgui = self.double_spin(defval[3], [2, 10, 0, 360], gui)
         self.stepgui = self.double_spin(defval[4], [0, 1, 0, 360], gui)
         self.modegui.activated.connect(lambda: self.compute_pattern())
-        
         gui.setContentsMargins(0,0,0,0)
         
         return gui
@@ -159,7 +156,8 @@ class Sub_Pattern_Vortex(Sub_Pattern):
             steps = self.stepgui.value()
             slm_scale = self.daddy.daddy.slm_radius
             
-            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, phase, steps, slm_scale)
+            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, steps, 
+                                             phase, slm_scale)
             
             if update:
                 self.daddy.update()
@@ -173,7 +171,6 @@ class Sub_Pattern_Defoc(Sub_Pattern):
     def __init__(self, params, parent = None):
         super(Sub_Pattern, self).__init__(parent)
         self.size = np.asarray(params.general["size_slm"]) * 2
-        #self.radnorm = params.general["laser_radius"] / params.general["slm_px"] / self.size[0] / 2
         self.data = np.zeros(self.size)
         
     def create_gui(self, defval, setup):
@@ -186,7 +183,8 @@ class Sub_Pattern_Defoc(Sub_Pattern):
     def compute_pattern(self, update = True):
         """ Zernike mode (2,0) """
         if self.daddy.blockupdating == False:
-            self.data = self.defocgui.value() * pcalc.create_zernike(self.size, [2,0], self.daddy.daddy.slm_radius)       
+            self.data = self.daddy.daddy.zernikes_normalized["defocus"] * self.defocgui.value()
+            
             if update:
                 self.daddy.update()
         return self.data

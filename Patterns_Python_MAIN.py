@@ -45,9 +45,9 @@ mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
 
+
 # NOTE: hardcoded for now:
-# MODEL_STORE_PATH="models/04.02.20_xsection_10_epochs_Adam_lr_0.001_batchsize_64.pth"
-MODEL_STORE_PATH="models/24.01.20_multi_test_20_epochs_Adam_lr_0.001_batchsize_64.pth"
+MODEL_STORE_PATH="local_models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
 
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
@@ -70,22 +70,6 @@ class PlotCanvas(FigureCanvas):
  
     def plot(self, data):
         self.img_ax.imshow(data, interpolation = 'nearest', clim = [0,1], cmap = 'RdYlBu')#'PRGn')
-        
-        #TODO wj: remove circles
-        # circle = plt.Circle((396/2, 600/2), 396/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        # self.img_ax.add_artist(circle)
-        # circle = plt.Circle((396/2, 600/2), 600/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        # self.img_ax.add_artist(circle)
-        # circle = plt.Circle((396/2, 600/2), np.mean([600,396])/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        # self.img_ax.add_artist(circle)
-        
-        # circle = plt.Circle((3*396/2, 600/2), 396/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        # self.img_ax.add_artist(circle)
-        # circle = plt.Circle((3*396/2, 600/2), 600/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        # self.img_ax.add_artist(circle)
-        # circle = plt.Circle((3*396/2, 600/2), np.mean([600,396])/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-        # self.img_ax.add_artist(circle)
-        
         self.draw()
 
 
@@ -105,24 +89,38 @@ class Main_Window(QtWidgets.QMainWindow):
         self.slm = None
         
         screen0 = QtWidgets.QDesktopWidget().screenGeometry()
-        self.setGeometry(screen0.left(), screen0.top(), screen0.width()/4, .9*screen0.height())
-            
-        self.load_params('parameters/params')
+        self.setGeometry(screen0.left(), screen0.top(), 
+                         screen0.width()/4, .9*screen0.height())
+        
+        self.param_path = ['parameters/', 'params']
+        self.p = param()
+        self.p.load_file_general(self.param_path[0], self.param_path[1])
+        #self.load_params(self.param_path[0] + self.param_path[1])
+        self.current_objective = self.p.general["objective"]
+        self.p.load_file_obj(self.param_path[0], self.current_objective, self.param_path[1])
+        
+        #print(self.current_objective)
+        #print(self.p.objectives[self.current_objective]["backaperture"])
+        self.slm_radius = self.calc_slmradius(
+            self.p.objectives[self.current_objective]["backaperture"],
+            self.p.general["slm_mag"])
+        
+        self.init_zernikes()
         self.init_images()
         self.create_main_frame()
 
+        # Handling of all the different things that could potentially go wrong
+        # when communicating with the Abberior
         if self.p.general["abberior"] == 1:
             try:
                 try:
                     import specpy
                 except:
-                    print("specpy not installed")
-                
+                    print("specpy not installed")         
                 try:
                     imspec = specpy.Imspector()
                 except:
                     print("cannot connect to Imspector")
-                    
                 try:
                     self.meas = imspec.active_measurement()
                 except:
@@ -130,8 +128,7 @@ class Main_Window(QtWidgets.QMainWindow):
                     try:
                         self.meas = imspec.create_measurement()
                     except:
-                        print("no active measurement. cannot create measurement")
-                
+                        print("no active measurement. cannot create measurement")             
                 self.stk = self.meas.create_stack(np.float, 
                                                 [self.p.general["size_full"][1], #792
                                                  self.p.general["size_full"][0], #600
@@ -145,32 +142,34 @@ class Main_Window(QtWidgets.QMainWindow):
                           If you're at the Abberior, check that Imspector is 
                           running and a measurement is active. """)
 
-            
-        self.load_flat_field(self.p.general["cal1"])
-        self.combine_images()
-        self.update_display()
-        
+        self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
+        self.combine_and_update()
         self.show()
         self.raise_()
 
         
-    def load_params(self, fname):
-        """ Calls the load_file function implemented in the parameters class, 
-            which loads the parameter lists from the text file. Called after
-            startup of the program. """
-        self.p = param()
-        self.p.load_file(fname)
+    # def load_params(self, fname):
+    #     """ Calls the load_file function implemented in the parameters class, 
+    #         which loads the parameter lists from the text file. Called after
+    #         startup of the program. """
+    #     self.p = param()
+    #     self.p.load_file(fname[0], self.current_objective["name"], fname[1])
         
 
     def reload_params(self, fname):
         """ Calls the load_file function implemented in the parameters class, 
             which loads the parameter lists from the text file. Called after
             button is clicked. """
-        self.load_params(fname)
+        #self.load_params(fname)
+        #self.p = param()
+        self.p.load_file_obj(fname[0], self.current_objective, fname[1])
+        print("left", self.p.left)
+        print("right", self.p.right)
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
         
-        self.objective_changed()
+        #self.objective_changed()
+        # TODO WJ
         #self.split_image(self.splt_img_state.checkState())
         #self.single_correction(self.sngl_corr_state.checkState())
         #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
@@ -178,12 +177,22 @@ class Main_Window(QtWidgets.QMainWindow):
         self.recalc_images()
         #self.init_images()   
 
+        
+    def save_params(self, fname):
+        """" Calls write_file implemented in parameters class to save the 
+            current parameters to the file provided in fname. These are then 
+            loaded as default on next startup."""
+        self.p.update(self)
+        
+        self.p.write_file(fname[0], self.current_objective, fname[1])
+        
+        
     # NOTE: I WROTE THIS
     def auto_align(self, model_store_path=MODEL_STORE_PATH):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
         
-        # try:
+        #try:
         self.zernike = abberior.abberior_multi(MODEL_STORE_PATH)
         # self.zernike = abberior.correct(MODEL_STORE_PATH) # returns a dictionary
         # print(self.zernike)
@@ -205,25 +214,17 @@ class Main_Window(QtWidgets.QMainWindow):
         # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
-        # self.objective_changed()
-        # self.split_image(self.splt_img_state.checkState())
-        # self.single_correction(self.sngl_corr_state.checkState())
-        # self.flat_field(self.flt_fld_state.checkState(), recalc = False)
+        #self.objective_changed()
+        #self.split_image(self.splt_img_state.checkState())
+        #self.single_correction(self.sngl_corr_state.checkState())
+        #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
 
         self.recalc_images()
-
         
-    def save_params(self, fname):
-        """" Calls write_file implemented in parameters class to save the 
-            current parameters to the file provided in fname. These are then 
-            loaded as default on next startup."""
-        self.p.update(self)
-        self.p.write_file(fname)
         
     def init_images(self):
         """ Called upon startup of the program. Initizialises the variables
-            containing the images for flatfield correction, for the left and
-            right halves of the SLM and for aberration correction. """
+            containing the left and right halves of the SLM. """
             
         self.img_l = PI.Half_Pattern(self.p)
         self.img_l.call_daddy(self)
@@ -233,7 +234,41 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_r.call_daddy(self)
         self.img_r.set_name("img_r")
         
-        #self.img_aberr = PZ.Aberr_Pattern(self.p)
+        
+    def init_zernikes(self):
+        """ Creates a dictionary containing all of the Zernike polynomials by
+            their names. Updates in the GUI only change the weight of each 
+            polynomial. Thus, polynomials do not have to be updated, just their
+            weights. """
+            
+        # normalisation for tip / tilt is different from the other Zernikes:
+        # grating periods should be in /mm and they should be independent of
+        # the objective's diameter:
+        # we're using the SLM off-axis to reflect the beam into the center of
+        # the objective's backaperture. None of the actual optics depends on the
+        # objective used.
+        # I'm using the SLM radius calculation with backaperture = mag = 1
+        # to determine correct size for tip/tilt. Extra factor of two is because
+        # patterns are created at double size, then cropped.
+
+        size = 2 * np.asarray(self.p.general["size_slm"])
+        rtiptilt = 2 * pcalc.normalize_radius(1, 1, self.p.general["slm_px"], 
+                                              self.p.general["size_slm"])
+        
+        self.zernikes_normalized = {
+            "tiptiltx" : pcalc.create_zernike(size, [ 1,  1], 1, rtiptilt),
+            "tiptilty" : pcalc.create_zernike(size, [ 1, -1], 1, rtiptilt),
+            "defocus"  : pcalc.create_zernike(size, [ 2,  0], 1, self.slm_radius),
+            "astigx"   : pcalc.create_zernike(size, [ 2,  2], 1, self.slm_radius),
+            "astigy"   : pcalc.create_zernike(size, [ 2, -2], 1, self.slm_radius),
+            "comax"    : pcalc.create_zernike(size, [ 3,  1], 1, self.slm_radius),
+            "comay"    : pcalc.create_zernike(size, [ 3, -1], 1, self.slm_radius),
+            "trefoilx" : pcalc.create_zernike(size, [ 3,  3], 1, self.slm_radius),
+            "trefoily" : pcalc.create_zernike(size, [ 3, -3], 1, self.slm_radius),           
+            "sphere1"  : pcalc.create_zernike(size, [ 4,  0], 1, self.slm_radius),
+            "sphere2"  : pcalc.create_zernike(size, [ 6,  0], 1, self.slm_radius)
+            }
+    
         
     def create_main_frame(self):
         """ Creates the UI: Buttons to load/save parameters and flatfield 
@@ -242,12 +277,11 @@ class Main_Window(QtWidgets.QMainWindow):
             that are used to change the parameters for pattern creation. """
         
         self.main_frame = QtWidgets.QWidget()  
-        # vertical box to place the controls above the image in
         vbox = QtWidgets.QVBoxLayout()     
-        hbox = QtWidgets.QHBoxLayout()
 
+        # Quit, objective diameter and autoaling buttons
+        hbox = QtWidgets.QHBoxLayout()
         self.crea_but(hbox, self._quit, "Quit")
-        
         self.rad_but = QtWidgets.QDoubleSpinBox()
         self.rad_but.setDecimals(3)
         self.rad_but.setSingleStep(0.01)
@@ -258,76 +292,66 @@ class Main_Window(QtWidgets.QMainWindow):
         self.rad_but.valueChanged.connect(lambda: self.radius_changed())
         hbox.addWidget(self.rad_but)
 
-        
         vbox.addLayout(hbox)
         # NOTE: I WROTE THIS
         self.crea_but(hbox, self.auto_align, "Auto Align")
-        
                     
         # doesn't do anything at the moment, could be used to set another path
         # to load the images from
         #strng_path = self.labeled_qt(QtWidgets.QLineEdit, "Path for images", vbox)
         #strng_path.setText(self.p.general["path"])
 
-        # horizontal box for buttons that go side by side        
+        # controls to change objectives and to load/save calibration files         
         hbox = QtWidgets.QHBoxLayout()
         self.obj_sel = QtWidgets.QComboBox(self)
         self.obj_sel.setMaximumSize(100, 50)
         hbox.addWidget(self.obj_sel)            
         for mm in self.p.objectives:
-            self.obj_sel.addItem(self.p.objectives[mm]["name"])
-        self.current_objective = self.p.general["objective"]
+            self.obj_sel.addItem(mm)
         self.obj_sel.setCurrentText(self.current_objective)
         self.obj_sel.activated.connect(lambda: self.objective_changed())
-        
-        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.p.general["objective"]]["backaperture"], 
-                                                 self.p.general["slm_mag"], 
-                                                 self.p.general["slm_px"], 
-                                                 self.p.general["size_slm"])
-            
-        self.crea_but(hbox, self.reload_params, "Load Config", "parameters/params")
-        self.crea_but(hbox, self.save_params, "Save Config", "parameters/params")
+        self.crea_but(hbox, self.reload_params, "Load Config", self.param_path)
+        self.crea_but(hbox, self.save_params, "Save Config", self.param_path)
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
         
-
+        # controls for basic SLM operation: opening/closing the display,
+        # changing calibration
         hbox = QtWidgets.QHBoxLayout()
         self.crea_but(hbox, self.open_SLMDisplay, "Initialize SLM")
         self.crea_but(hbox, self.close_SLMDisplay, "Close SLM")
         
-        self.crea_but(hbox, self.openFlatFieldDialog, "load SLM calib", 
-                      self.p.general["path"]+self.p.general["cal1"])        
+        # TODO: currently does not work; need to figure out a way to implement
+        # two paths, one for left, one for right side
+        #self.crea_but(hbox, self.openFlatFieldDialog, "load SLM calib", 
+        #              self.p.general["path"]+self.p.general["cal1"])        
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
 
+        # checkboxes for the different modes of operation: split image (currently
+        # full display operation is not supported), flatfield correction
+        # and single correction and cross correction for double pass geometry
+        # (as on the Abberior))
         hbox = QtWidgets.QHBoxLayout()
-        
         self.splt_img_state = self.crea_checkbox(hbox, self.split_image, 
-                                                 "Split image", 
-                                                 self.p.general["split_image"])
+                        "Split image", self.p.general["split_image"])
         self.sngl_corr_state = self.crea_checkbox(hbox, self.single_correction, 
-                                                  "Single correction", 
-                                                  self.p.general["single_aberr"])
+                        "Single correction", self.p.general["single_aberr"])
+        self.dbl_pass_state = self.crea_checkbox(hbox, self.double_pass,
+                        "Double pass", self.p.general["double_pass"])
         self.flt_fld_state = self.crea_checkbox(hbox, self.flat_field, 
-                                                "Flatfield", 
-                                                self.p.general["flat_field"])
+                        "Flatfield", self.p.general["flat_field"])
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
         
+        # creates the Widget to display the image that's being sent to the SLM
         imgbox = QtWidgets.QHBoxLayout()
-        #self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
-        #self.img_frame = QtWidgets.QLabel(self)
-        #self.img_frame.setPixmap(self.image.scaledToWidth(self.p.general["displaywidth"]))
-        #imgbox.addWidget(self.img_frame)
         imgbox.setAlignment(QtCore.Qt.AlignRight)
-        
-        # this creates the matplotlib canvas for testing purposes
-        # uncomment if needed, also uncomment the 
-        #"self.plt_frame.plot()" line in the update_display function"
         self.plt_frame = PlotCanvas(self)      
         imgbox.addWidget(self.plt_frame)
 
-        # create the labels beneath image
+        # create the labels beneath image. Numeric controls are added in the
+        # respective subfunctions.
         lbox_img = QtWidgets.QVBoxLayout()
         lbox_img.addWidget(QtWidgets.QLabel('Offset X')) 
         lbox_img.addWidget(QtWidgets.QLabel('Offset Y'))
@@ -353,12 +377,9 @@ class Main_Window(QtWidgets.QMainWindow):
         c.addLayout(lbox_img, 0, 0, 1, 1)
         c.addLayout(self.img_l.create_gui(self.p, self.p.left), 0, 1, 1, 2)
         c.addLayout(self.img_r.create_gui(self.p, self.p.right), 0, 3, 1, 2)
-        #c.addLayout(lbox_aber, 1, 0, 1, 1)
-        #c.addLayout(self.img_aberr.create_gui(self.p), 1, 2, 1, 4)
         c.setAlignment(QtCore.Qt.AlignRight)
         c.setContentsMargins(0,0,0,0)
         
-
         # add all the widgets
         vbox.addLayout(imgbox)
         vbox.addLayout(c)
@@ -374,7 +395,8 @@ class Main_Window(QtWidgets.QMainWindow):
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.DontUseNativeDialog
         work_dir = os.path.dirname(os.path.realpath(__file__))
-        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Load flat field correction", work_dir +'/'+ path)
+        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
+                        "Load flat field correction", work_dir +'/'+ path)
         if fileName:
             return fileName
         else:
@@ -388,18 +410,27 @@ class Main_Window(QtWidgets.QMainWindow):
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.DontUseNativeDialog
         work_dir = os.path.dirname(os.path.realpath(__file__))
-        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Load flat field correction", work_dir +'/'+ path)
-        if fileName:
-            self.load_flat_field(fileName)
-            self.combine_images()
-            self.update_display()
+        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
+                        "Load flat field correction", work_dir +'/'+ path)
+        # TODO: needs to be implemented to work for two paths, one for left, 
+        # one for right side
+        print("Currently not implemented. Please add paths in the files for \
+              left and right side parameters as 'cal1'.")
+        #if fileName:
+        #    self.load_flat_field(fileName)
+        #    self.combine_and_update()
+
     
-    def load_flat_field(self, path):
-        """ Opens the image in the parameter path and sets as new flatfield
-            correction. """
-        self.flatfieldcor = np.asarray(pcalc.load_image(path))/255
-        #self.flatfield = self.flatfieldcor
+    def load_flat_field(self, path_l, path_r):
+        """ Opens the images in the parameter paths, combines two halves to 
+            one image and sets as new flatfield correction. """
+            
+        l = np.asarray(pcalc.load_image(path_l))/255
+        r = np.asarray(pcalc.load_image(path_r))/255
+        split = self.p.general["size_slm"][1]
+        self.flatfieldcor = [l[:, 0 : split], r[:, split - 1 : -1]]
         self.flat_field(self.flt_fld_state.checkState())
+
 
     def flat_field(self, state, recalc = True):
         """ Opens the image in the parameter path and sets as new flatfield
@@ -407,9 +438,10 @@ class Main_Window(QtWidgets.QMainWindow):
         if state:
             self.flatfield = self.flatfieldcor
         else:
-            self.flatfield = np.zeros_like(self.flatfieldcor)
+            self.flatfield = [np.zeros_like(self.flatfieldcor[0]), np.zeros_like(self.flatfieldcor[1])]
         if recalc:
             self.recalc_images()
+
             
     def crea_but(self, box, action, name, param = None):
         """ Creates and labels a button and connects button and action. Input: 
@@ -438,6 +470,7 @@ class Main_Window(QtWidgets.QMainWindow):
         main_layout.addLayout(box)
         return item
 
+
     def crea_checkbox(self, box, action, name, state, param = None):
         """ Creates and labels a checkbox and connects button and action. Input: 
             Qt layout to place the button, function: action to perform, string: 
@@ -455,7 +488,6 @@ class Main_Window(QtWidgets.QMainWindow):
         return checkbox
 
 
-
     def split_image(self, state = True):
         """ Action called when the "Split image" checkbox is selected. Toggles
             between split image operation and single image operation."""
@@ -463,6 +495,7 @@ class Main_Window(QtWidgets.QMainWindow):
             print(state, "TODO splitimage")
         else:
             print(state, "TODO nosplitimage")
+        
         
     def single_correction(self, state):
         """ Action called when the "Single Correction" checkbox is selected.
@@ -479,19 +512,36 @@ class Main_Window(QtWidgets.QMainWindow):
             self.img_r.aberr.trefoil.xgui.setValue(self.img_l.aberr.trefoil.xgui.value())
             self.img_r.aberr.trefoil.ygui.setValue(self.img_l.aberr.trefoil.ygui.value())
             
+    def double_pass(self, state):
+        """ Activates the double pass geometry cross correction as on Abberior.
+            The laser beam hits the SLM twice, once it's modulated, once not 
+            (because it has the wrong polarization). To still correct for SLM
+            curvature during the unmodulated reflection, the flatfield pattern
+            from the first impact needs to be shifted by the offset and added 
+            to the flatfield correction of the second impact. """
+        print("needs to be implemented")
+    
+    def calc_slmradius(self, backaperture, mag):
+        """ Calculates correct scaling factor for SLM based on objective
+            backaperture, optical magnification of the beampath, SLM pixel
+            size and size of the SLM. Required values are directly taken from
+            the parameters files. """
+            
+        rad = pcalc.normalize_radius(backaperture, mag, 
+                    self.p.general["slm_px"], self.p.general["size_slm"])
+        return rad
+    
+    
     def radius_changed(self):
-        """ Action called when the users selects a different objective. 
-            Calculates the diameter of the BFP; then recalculates the the
-            patterns based on the selected objective. """
-        self.current_objective = self.p.objectives[self.obj_sel.currentText()]
-        
+        """ Radius of pattern on SLM can be hardcoded instead of calculating
+            from the objectives backaperture and optical magnification. """
+        #self.current_objective = self.p.objectives[self.obj_sel.currentText()]
         self.radius_input = self.rad_but.value()
         print("radius changed")
-
-        self.slm_radius = pcalc.normalize_radius(self.radius_input, 
-                                                1, 
-                                                self.p.general["slm_px"], 
-                                                self.p.general["size_slm"])
+        self.slm_radius = self.calc_slmradius(self.radius_input, 1)
+        self.init_zernikes()
+        #pcalc.normalize_radius(self.radius_input, 1, 
+        #                self.p.general["slm_px"], self.p.general["size_slm"])
         self.recalc_images()
 
             
@@ -499,13 +549,14 @@ class Main_Window(QtWidgets.QMainWindow):
         """ Action called when the users selects a different objective. 
             Calculates the diameter of the BFP; then recalculates the the
             patterns based on the selected objective. """
-        self.current_objective = self.p.objectives[self.obj_sel.currentText()]
-        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.current_objective["name"]]["backaperture"], 
-                                                 self.p.general["slm_mag"], 
-                                                 self.p.general["slm_px"], 
-                                                 self.p.general["size_slm"])
+            
+        self.current_objective = self.obj_sel.currentText()#["name"]
+        self.reload_params(self.param_path)
+        self.slm_radius = self.calc_slmradius(
+            self.p.objectives[self.current_objective]["backaperture"],
+            self.p.general["slm_mag"])
+        self.init_zernikes()
         self.recalc_images()
-        
         
     def apply_correction(self):
         print("applying corrections")
@@ -517,47 +568,49 @@ class Main_Window(QtWidgets.QMainWindow):
             the recalculation. Image display is only updated once at the end. """
         self.img_l.update(update = False, completely = True)
         self.img_r.update(update = False, completely = True)
-        self.combine_images()
-        self.update_display()
-
-
-    def combine_images(self):
+        self.combine_and_update()
+        
+        
+        
+    def combine_and_update(self):
         """ Stitches the images for left and right side of the SLM, adds the 
             flatfield correction and phasewraps everything. Updates
-            self.img_data with the new image data. """
-        self.img_data = pcalc.stitch_images(self.img_l.data, self.img_r.data)
-        self.img_data = pcalc.add_images([self.flatfield, self.img_data])
-        #TODO put back in
-        self.img_data = pcalc.phase_wrap(self.img_data, self.p.general["phasewrap"])
-
-
-    def update_display(self):
-        """ Updates the displayed images in the control window and (if active)
+            self.img_data with the new image data.
+            Updates the displayed images in the control window and (if active)
             on the SLM. To do so, rescales the image date to the SLM's required
             pitch (depends on the wavelength, and is set in the general 
             parameters). Saves the image patterns/latest.bmp and then reloads
             into the Pixmap for display. """
-        img_data_scaled = self.img_data * self.p.general["slm_range"] / 255
-        pcalc.save_image(img_data_scaled, self.p.general["path"], self.p.general["last_img_nm"])
+            
+        l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
+                         self.flatfield[0]]), self.p.left["phasewrap"])
+        r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
+                        self.flatfield[1]]), self.p.right["phasewrap"])
+        
+        self.img_data = pcalc.stitch_images(l, r)
+        img_data_scaled = pcalc.stitch_images(l * self.p.left["slm_range"],
+                                              r * self.p.right["slm_range"])
+        
+        pcalc.save_image(img_data_scaled, self.p.general["path"], 
+                         self.p.general["last_img_nm"])
         self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
-        #self.img_frame.setPixmap(self.image.scaledToWidth(self.p.general["displaywidth"]))
         
         if self.p.general["abberior"] == 1:
                 try:
-                    self.stk.data()[:]=img_data_scaled
+                    self.stk.data()[:]=img_data_scaled / 255
                     self.meas.update()
                 except:
                     print("Still cannot communicate with the Abberior.")            
         elif self.slm != None:
-            self.slm.update_image(self.p.general["path"]+self.p.general["last_img_nm"])
+            self.slm.update_image(self.p.general["path"] + 
+                                  self.p.general["last_img_nm"])
         self.plt_frame.plot(self.img_data)
  
     
     def open_SLMDisplay(self):
         """ Opens a widget fullscreen on the secondary screen that displays
             the latest image. """
-        
-        self.slm = SLM.SLM_Display(self.p.general["path"]+self.p.general["last_img_nm"])
+        self.slm = SLM.SLM_Display(self.p.general["path"] + self.p.general["last_img_nm"])
         self.slm.show()
         self.slm.raise_()
 
@@ -573,7 +626,6 @@ class Main_Window(QtWidgets.QMainWindow):
     def _quit(self):
         """ Action called when the Quit button is pressed. Closes the SLM 
             control window and exits the main window. """
-        #self.save_params("parameters/params")
         self.close_SLMDisplay()           
         self.close()
 
@@ -598,6 +650,7 @@ def main(args):
     global app
     app = App(args)
     app.exec_()
+
 
 if __name__ == "__main__":
     """ makes sure that main is only executed if this code is the main program.

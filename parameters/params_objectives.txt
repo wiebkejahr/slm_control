@@ -1,34 +1,34 @@
 {
-    "100xSil NA 1.35": {
-        "backaperture": 4.86,
-        "name": "100xSil NA 1.35",
-        "f_tl": 200,
-        "immersion": "Sil",
-        "NA": 1.35,
-        "mag": 100
-    },
-    "100xOil NA 1.40": {
-        "backaperture": 5.04,
-        "name": "100xOil NA 1.40",
+    "100xOil_NA_140": {
+        "name": "100xOil_NA_140",
+        "mag": 100,
+        "NA": 1.4,
         "f_tl": 200,
         "immersion": "Oil",
-        "NA": 1.4,
-        "mag": 100
+        "backaperture": 5.04
     },
-    "60xWat NA 1.20": {
-        "backaperture": 7.2,
-        "name": "60xWat NA 1.20",
+    "100xSil_NA_135": {
+        "name": "100xSil_NA_135",
+        "mag": 100,
+        "NA": 1.35,
+        "f_tl": 200,
+        "immersion": "Sil",
+        "backaperture": 4.86
+    },
+    "60xWat_NA_120": {
+        "name": "60xWat_NA_120",
+        "mag": 60,
+        "NA": 1.2,
         "f_tl": 200,
         "immersion": "Wat",
-        "NA": 1.2,
-        "mag": 60
+        "backaperture": 7.2
     },
-    "20xAir NA 0.70": {
-        "backaperture": 12.6,
-        "name": "20xAir NA 0.70",
+    "20xAir_NA_070": {
+        "name": "20xAir_NA_070",
+        "mag": 20,
+        "NA": 0.7,
         "f_tl": 200,
         "immersion": "Air",
-        "NA": 0.7,
-        "mag": 20
+        "backaperture": 12.6
     }
 }
