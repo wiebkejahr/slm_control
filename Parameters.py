@@ -34,7 +34,8 @@ class param():
                     "cal0"         : "patterns/Black_Full.bmp",
                     "last_img_nm"  : 'latest.bmp',
                     "modes"        : ["Gauss", "2D STED", "3D STED", 
-                                      "Segments", "Bivortex", "From File"],
+                                      "Segments", "Bivortex", "Code Input",
+                                      "From File"],
                     "split_image"  : 1,
                     "flat_field"   : 0,
                     "single_aberr" : 0,
@@ -216,7 +217,7 @@ class param():
 
 
     def write_file(self, path, obj_path, name_base):
-        print("Writing parameters to: ", path + obj_path + '/' + name_base)
+        print("Writing parameters to: ", path + obj_path + '_' + name_base)
 
         if not os.path.exists(os.path.dirname(path + obj_path)):
             try:
@@ -228,9 +229,9 @@ class param():
             json.dump(self.general, f , indent = 4)        
         with open(path + name_base + "_objectives.txt", 'w') as f:
             json.dump(self.objectives, f, indent =4)
-        with open(path + obj_path + '/' + name_base + "_left.txt", 'w') as f:    
+        with open(path + obj_path + '_' + name_base + "_left.txt", 'w') as f:    
             json.dump(self.left, f, indent = 4)
-        with open(path + obj_path + '/' + name_base + "_right.txt", 'w') as f:  
+        with open(path + obj_path + '_' + name_base + "_right.txt", 'w') as f:  
             json.dump(self.right, f, indent = 4)
                 
   
@@ -242,23 +243,23 @@ class param():
             
             
     def load_file_obj(self, path, obj_path, name_base):
-        print("Loading parameters from: ", path + obj_path + '/' + name_base)
-        with open(path + obj_path + '/' + name_base + "_left.txt", 'r') as f:    
+        print("Loading parameters from: ", path + obj_path + '_' + name_base)
+        with open(path + obj_path + '_' + name_base + "_left.txt", 'r') as f:    
             self.left = json.load(f)
-        with open(path + obj_path + '/' + name_base + "_right.txt", 'r') as f:  
+        with open(path + obj_path + '_' + name_base + "_right.txt", 'r') as f:  
             self.right = json.load(f)
         return 
             
           
     def load_file(self, path, obj_path, name_base):
-        print("Loading parameters from: ", path + obj_path + '/' + name_base)
+        print("Loading parameters from: ", path + obj_path + '_' + name_base)
         with open(path + name_base + "_general.txt", 'r') as f:
             self.general = json.load(f)        
         with open(path + name_base + "_objectives.txt", 'r') as f:
             self.objectives =json.load(f)
-        with open(path + obj_path + '/' + name_base + "_left.txt", 'r') as f:    
+        with open(path + obj_path + '_' + name_base + "_left.txt", 'r') as f:    
             self.left = json.load(f)
-        with open(path + obj_path + '/' + name_base + "_right.txt", 'r') as f:  
+        with open(path + obj_path + '_' + name_base + "_right.txt", 'r') as f:  
             self.right = json.load(f)
 
 

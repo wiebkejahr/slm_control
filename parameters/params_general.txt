@@ -26,6 +26,7 @@
         "3D STED",
         "Segments",
         "Bivortex",
+        "Code Input",
         "From File"
     ],
     "split_image": 1,
