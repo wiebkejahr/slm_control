@@ -12,7 +12,6 @@ import numpy as np
 
 import Pattern_Calculator as pcalc
 
-
 class Sub_Pattern(QtWidgets.QWidget):
     """ Parent Widget for all the subpattern widgets. Contains GUI, the image 
         data and a compute_pattern function that's executed upon changes in 
@@ -156,12 +155,76 @@ class Sub_Pattern_Vortex(Sub_Pattern):
             steps = self.stepgui.value()
             slm_scale = self.daddy.daddy.slm_radius
             
-            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, steps, 
-                                             phase, slm_scale)
+            # execute all 'standard' cases via Pattern Calculator
+            if mode != "Code Input" and mode != "From File":
+                self.data = pcalc.compute_vortex(mode, self.size, rot, rad, 
+                                                 steps, phase, slm_scale)
+            
+            # handle the two cases that need additional GUI separately
+            elif mode == "Code Input":
+                self.create_text_box(self.size, rot, rad, steps, phase, slm_scale)
+
+            elif mode == "From File":
+                self.data = pcalc.compute_vortex('Gauss', self.size, rot, rad, 
+                                                 steps, phase, slm_scale)
+                print("From File")
             
             if update:
                 self.daddy.update()
         return self.data
+
+
+    def create_text_box(self, size, rot, rad, steps, phase, slm_scale):
+        self.tdialog = QtWidgets.QDialog()
+        screen = QtWidgets.QDesktopWidget().screenGeometry(0)
+        self.tdialog.setGeometry(screen.left() + screen.width() / 4, 
+                                 screen.top() + screen.height() / 4, 
+                                 screen.width() / 2, screen.height() / 2)
+        vbox = QtWidgets.QVBoxLayout()
+        self.text_box = QtWidgets.QPlainTextEdit()
+        hstring = "# default parameters:\n" +\
+            "mode = 'Gauss' \n" +\
+            "size = [" + str(size[0]) + ", " + str(size[1]) + "]\n" +\
+            "rot = " + str(rot) + "\n" +\
+            "rad = " + str(rad) + "\n" +\
+            "steps = " + str(steps) + "\n" +\
+            "phase = " + str(phase) + "\n" +\
+            "slm_scale = " + str(slm_scale) + "\n" +\
+            "self.data = pcalc.compute_vortex(mode, size, rot, rad, steps, phase, slm_scale)"
+        self.text_box.insertPlainText(hstring)
+        vbox.addWidget(self.text_box)
+        hbox = QtWidgets.QHBoxLayout()
+        self.crea_but(hbox, self._quit, "Cancel")
+        self.crea_but(hbox, self.update_text, "Go")
+        vbox.addLayout(hbox)
+        self.tdialog.setLayout(vbox)
+        self.tdialog.exec()
+
+
+    def crea_but(self, box, action, name, param = None):
+        button = QtWidgets.QPushButton(name, self)
+        if param == None:
+            button.clicked.connect(action)
+        else:
+            button.clicked.connect(lambda: action(param))
+        button.setMaximumSize(120,50)
+        box.addWidget(button)
+        box.setAlignment(button, QtCore.Qt.AlignVCenter)
+        box.setContentsMargins(0,0,0,0)
+        return button
+        
+    
+    def update_text(self):
+        """ updates the  displayed image with the pattern created by the code
+            from the text box"""
+        text = self.text_box.toPlainText()
+        exec(text)
+        self.tdialog.accept()
+        
+    
+    def _quit(self):
+        print("Closing text input ...")
+        self.tdialog.reject()
 
 
 class Sub_Pattern_Defoc(Sub_Pattern):

@@ -252,10 +252,17 @@ def compute_vortex(mode, size, rot, rad, steps, amp = 1, radscale = 1):
         img = create_segments(size, rot, steps, amp)
     elif mode == "Bivortex":
         img = create_bivortex(size, rad, rot, amp, radscale)
-    elif mode == "From File":
-        img = np.zeros(size)
-        print(img.size)
-        print("TODO From File")
+        
+    # These two cases need to be handled by the GUI, therefore commented here
+    # for now; will be deleted.
+    # elif mode == "Code Input":
+    #     img = np.zeros(size)
+    #     print("TODO code input")
+    # elif mode == "From File":
+    #     img = np.zeros(size)
+    #     print(img.size)
+    #     print("TODO From File")
+    
     return img
 
 
