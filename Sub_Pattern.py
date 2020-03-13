@@ -9,6 +9,7 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 import Pattern_Calculator as pcalc
 
@@ -181,17 +182,10 @@ class Sub_Pattern_Vortex(Sub_Pattern):
                                  screen.top() + screen.height() / 4, 
                                  screen.width() / 2, screen.height() / 2)
         vbox = QtWidgets.QVBoxLayout()
-        self.text_box = QtWidgets.QPlainTextEdit()
-        hstring = "# default parameters:\n" +\
-            "mode = 'Gauss' \n" +\
-            "size = [" + str(size[0]) + ", " + str(size[1]) + "]\n" +\
-            "rot = " + str(rot) + "\n" +\
-            "rad = " + str(rad) + "\n" +\
-            "steps = " + str(steps) + "\n" +\
-            "phase = " + str(phase) + "\n" +\
-            "slm_scale = " + str(slm_scale) + "\n" +\
-            "self.data = pcalc.compute_vortex(mode, size, rot, rad, steps, phase, slm_scale)"
-        self.text_box.insertPlainText(hstring)
+        self.text_box = QtWidgets.QPlainTextEdit()            
+        textfile = open('CodeInput.py', 'r')
+        self.text_box.setPlainText(textfile.read())
+
         vbox.addWidget(self.text_box)
         hbox = QtWidgets.QHBoxLayout()
         self.crea_but(hbox, self._quit, "Cancel")
@@ -218,7 +212,12 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         """ updates the  displayed image with the pattern created by the code
             from the text box"""
         text = self.text_box.toPlainText()
-        exec(text)
+        try:
+            exec(text)
+        except:
+            print("Invalid code:")
+            import sys
+            print(sys.exc_info())
         self.tdialog.accept()
         
     
