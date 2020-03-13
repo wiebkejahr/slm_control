@@ -587,30 +587,32 @@ class Main_Window(QtWidgets.QMainWindow):
         r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
                         self.flatfield[1]]), self.p.right["phasewrap"])
         
-        self.img_data = pcalc.stitch_images(l, r)
-        img_data_scaled = pcalc.stitch_images(l * self.p.left["slm_range"],
-                                              r * self.p.right["slm_range"])
+        #self.img_data = pcalc.stitch_images(l, r)
+        self.img_data = pcalc.stitch_images(l * self.p.left["slm_range"],
+                                            r * self.p.right["slm_range"])
         
-        pcalc.save_image(img_data_scaled, self.p.general["path"], 
-                         self.p.general["last_img_nm"])
-        self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
+        #pcalc.save_image(self.img_data, self.p.general["path"], 
+        #                 self.p.general["last_img_nm"])
+        #self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
         
         if self.p.general["abberior"] == 1:
             try:
-                self.stk.data()[:]=img_data_scaled / 255
+                self.stk.data()[:]=self.img_data / 255
                 self.meas.update()
             except:
                 print("Still cannot communicate with the Abberior.")            
         elif self.slm != None:
-            self.slm.update_image(self.p.general["path"] + 
-                                  self.p.general["last_img_nm"])
-        self.plt_frame.plot(self.img_data)
+            self.slm.update_image(np.uint8(self.img_data))
+            #self.slm.update_image(self.p.general["path"] + 
+            #                      self.p.general["last_img_nm"])
+        self.plt_frame.plot(pcalc.stitch_images(l, r))
  
     
     def open_SLMDisplay(self):
         """ Opens a widget fullscreen on the secondary screen that displays
             the latest image. """
-        self.slm = SLM.SLM_Display(self.p.general["path"] + self.p.general["last_img_nm"])
+        #self.slm = SLM.SLM_Display(self.p.general["path"] + self.p.general["last_img_nm"])
+        self.slm = SLM.SLM_Display(np.uint8(self.img_data))
         self.slm.show()
         self.slm.raise_()
 
