@@ -628,6 +628,8 @@ class Main_Window(QtWidgets.QMainWindow):
     def _quit(self):
         """ Action called when the Quit button is pressed. Closes the SLM 
             control window and exits the main window. """
+        pcalc.save_image(self.img_data, self.p.general["path"], 
+                         self.p.general["last_img_nm"])
         self.close_SLMDisplay()           
         self.close()
 
