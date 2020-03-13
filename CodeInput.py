@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Please edit the code below to calculate the SLM pattern and save into self.data
+# There is currently no sanity checking whether self.data is calculated at all
+# or whether it's the correct data type and size - this is your job!
 
-# default parameters & example code:
+# some default parameters & example code:
 mode = 'Gauss' 
 size = [1200, 792]
 rot = 0.0

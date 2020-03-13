@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import Pattern_Calculator as pcalc
+import syntax
 
 class Sub_Pattern(QtWidgets.QWidget):
     """ Parent Widget for all the subpattern widgets. Contains GUI, the image 
@@ -176,13 +177,18 @@ class Sub_Pattern_Vortex(Sub_Pattern):
 
 
     def create_text_box(self, size, rot, rad, steps, phase, slm_scale):
+        """" Creates dialog window with text box; reads example text from file.
+            Executes the code. Code should be written to calculate self.data
+            (currently no measures to validate self.data is created, and of the
+            correct format). """
         self.tdialog = QtWidgets.QDialog()
         screen = QtWidgets.QDesktopWidget().screenGeometry(0)
         self.tdialog.setGeometry(screen.left() + screen.width() / 4, 
                                  screen.top() + screen.height() / 4, 
                                  screen.width() / 2, screen.height() / 2)
         vbox = QtWidgets.QVBoxLayout()
-        self.text_box = QtWidgets.QPlainTextEdit()            
+        self.text_box = QtWidgets.QPlainTextEdit()
+        highlight = syntax.PythonHighlighter(self.text_box.document())
         textfile = open('CodeInput.py', 'r')
         self.text_box.setPlainText(textfile.read())
 
