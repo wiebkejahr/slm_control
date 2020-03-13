@@ -9,8 +9,6 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 
 import numpy as np
-import matplotlib.pyplot as plt
-
 import Pattern_Calculator as pcalc
 import syntax
 
