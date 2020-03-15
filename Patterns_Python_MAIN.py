@@ -424,11 +424,26 @@ class Main_Window(QtWidgets.QMainWindow):
     def load_flat_field(self, path_l, path_r):
         """ Opens the images in the parameter paths, combines two halves to 
             one image and sets as new flatfield correction. """
-            
+        
+        # check whethere doulbe pass is activated and cross correction as on 
+        # Abberior should be applied: det offsets to [0,0] for not activated
+    
         l = np.asarray(pcalc.load_image(path_l))/255
         r = np.asarray(pcalc.load_image(path_r))/255
-        split = self.p.general["size_slm"][1]
-        self.flatfieldcor = [l[:, 0 : split], r[:, split - 1 : -1]]
+        s = self.p.general["size_slm"]
+        if self.dbl_pass_state.checkState():
+            o_l = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
+            o_r = [self.img_r.off.xgui.value(), self.img_r.off.ygui.value()]
+            print(o_l, o_r)
+            off = np.asarray(o_l) + np.asarray(o_r)
+        else:    
+            ll = pcalc.crop(l, s, [ s[1] / 2, s[0] / 2])
+            rr = pcalc.crop(r, s, [-s[1] / 2, s[0] / 2])
+        
+        self.flatfieldcor = [ll, rr]
+        #split = self.p.general["size_slm"][1]
+        #self.flatfieldcor = [l[:, 0 : split], r[:, split - 1 : -1]]
+
         self.flat_field(self.flt_fld_state.checkState())
 
 
@@ -438,7 +453,8 @@ class Main_Window(QtWidgets.QMainWindow):
         if state:
             self.flatfield = self.flatfieldcor
         else:
-            self.flatfield = [np.zeros_like(self.flatfieldcor[0]), np.zeros_like(self.flatfieldcor[1])]
+            self.flatfield = [np.zeros_like(self.flatfieldcor[0]), 
+                              np.zeros_like(self.flatfieldcor[1])]
         if recalc:
             self.recalc_images()
 
@@ -520,6 +536,8 @@ class Main_Window(QtWidgets.QMainWindow):
             from the first impact needs to be shifted by the offset and added 
             to the flatfield correction of the second impact. """
         print("needs to be implemented")
+        self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
+        
     
     def calc_slmradius(self, backaperture, mag):
         """ Calculates correct scaling factor for SLM based on objective

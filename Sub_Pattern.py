@@ -81,6 +81,8 @@ class Off_Pattern(Sub_Pattern):
         if self.daddy.blockupdating == False:
             self.value = [self.xgui.value(), self.ygui.value()]
             self.daddy.offset = self.value
+            #TODO: put a check for double pass status here & call flatfield if
+            # needed to restitch the two images
             self.daddy.crop(self.value)
         return self.value
     
