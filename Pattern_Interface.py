@@ -52,11 +52,11 @@ class Half_Pattern(QtWidgets.QWidget):
         self.off = spat.Off_Pattern(p_gen)
         self.off.call_daddy(self)
         size = np.asarray(p_gen.general["size_full"])
-        controls.addLayout(self.off.create_gui(p_spec["off"], 
-                                               [[0, 1, -size[0]/2, size[0]/2],
-                                                [0, 1, -size[1]/2, size[1]/2]]),
+        controls.addLayout(self.off.create_gui(
+                            p_spec["off"], 
+                            [[0, 1, -size[1]/4, size[1]/4],
+                            [0, 1, -size[0]/2, size[0]/2]]),
                             0,0,2,2)
-        
         self.gr = spat.Sub_Pattern_Grid(p_gen)
         self.gr.call_daddy(self)
         controls.addLayout(self.gr.create_gui(p_spec["sl"], 
