@@ -428,19 +428,44 @@ class Main_Window(QtWidgets.QMainWindow):
         # check whethere doulbe pass is activated and cross correction as on 
         # Abberior should be applied: det offsets to [0,0] for not activated
     
-        l = np.asarray(pcalc.load_image(path_l))/255
-        r = np.asarray(pcalc.load_image(path_r))/255
-        s = self.p.general["size_slm"]
-        if self.dbl_pass_state.checkState():
-            o_l = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
-            o_r = [self.img_r.off.xgui.value(), self.img_r.off.ygui.value()]
-            print(o_l, o_r)
-            off = np.asarray(o_l) + np.asarray(o_r)
-        else:    
-            ll = pcalc.crop(l, s, [ s[1] / 2, s[0] / 2])
-            rr = pcalc.crop(r, s, [-s[1] / 2, s[0] / 2])
+        ff_l = np.asarray(pcalc.load_image(path_l))/255
+        ff_r = np.asarray(pcalc.load_image(path_r))/255        
+        s = np.asarray(self.p.general["size_slm"])
+    
+        lhalf = pcalc.crop(ff_l, s, [ s[1] / 2, s[0] / 2])
+        rhalf = pcalc.crop(ff_r, s, [-s[1] / 2, s[0] / 2])
         
-        self.flatfieldcor = [ll, rr]
+        if self.dbl_pass_state.checkState():
+            # lhalf = pcalc.crop(ff_l, s, [ s[1] / 2, s[0] / 2])
+            # rhalf = pcalc.crop(ff_r, s, [-s[1] / 2, s[0] / 2])
+
+            # patch with zeros around bc otherwise cropping won't work when
+            # there's offsets
+            # ff_l_patched = np.zeros([2 * s[0], 4 * s[1]])
+            # ff_l_patched[s[0] // 2 : 3 * s[0] // 2, s[1] : 3 * s[1]] = ff_l
+            # ff_r_patched = np.zeros([2 * s[0], 4 * s[1]])
+            # ff_r_patched[s[0] // 2 : 3 * s[0] // 2, s[1] : 3 * s[1]] = ff_r
+            
+            ff_l_patched = np.zeros([2 * s[0], 2 * s[1]])
+            ff_l_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = lhalf
+            ff_r_patched = np.zeros([2 * s[0], 2 * s[1]])
+            ff_r_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = rhalf
+            
+            off_l = [self.img_r.off.xgui.value() - self.img_l.off.xgui.value(),
+                     self.img_r.off.ygui.value() - self.img_l.off.ygui.value()]
+            off_r = [self.img_l.off.xgui.value() - self.img_r.off.xgui.value(), 
+                     self.img_l.off.ygui.value() - self.img_r.off.ygui.value()]
+            l2ndpass = pcalc.crop(ff_l_patched, s, off_l)
+            r2ndpass = pcalc.crop(ff_r_patched, s, off_r)
+            
+            lhalf = lhalf + r2ndpass
+            rhalf = rhalf + l2ndpass
+            
+        # else:
+        #     lhalf = pcalc.crop(ff_l, s, [ s[1] / 2, s[0] / 2])
+        #     rhalf = pcalc.crop(ff_r, s, [-s[1] / 2, s[0] / 2])
+
+        self.flatfieldcor = [lhalf, rhalf]
         #split = self.p.general["size_slm"][1]
         #self.flatfieldcor = [l[:, 0 : split], r[:, split - 1 : -1]]
 
@@ -535,8 +560,9 @@ class Main_Window(QtWidgets.QMainWindow):
             curvature during the unmodulated reflection, the flatfield pattern
             from the first impact needs to be shifted by the offset and added 
             to the flatfield correction of the second impact. """
-        print("needs to be implemented")
-        self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
+        if self.flt_fld_state.checkState():
+            print("calling flatfield")
+            self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
         
     
     def calc_slmradius(self, backaperture, mag):
