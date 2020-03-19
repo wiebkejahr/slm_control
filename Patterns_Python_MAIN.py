@@ -424,51 +424,28 @@ class Main_Window(QtWidgets.QMainWindow):
     def load_flat_field(self, path_l, path_r):
         """ Opens the images in the parameter paths, combines two halves to 
             one image and sets as new flatfield correction. """
+     
+        s = np.asarray(self.p.general["size_slm"])    
+        lhalf = pcalc.crop(np.asarray(pcalc.load_image(path_l))/255, 
+                           s, [ s[1] / 2, s[0] / 2])
+        rhalf = pcalc.crop(np.asarray(pcalc.load_image(path_r))/255, 
+                           s, [-s[1] / 2, s[0] / 2])
         
-        # check whethere doulbe pass is activated and cross correction as on 
-        # Abberior should be applied: det offsets to [0,0] for not activated
-    
-        ff_l = np.asarray(pcalc.load_image(path_l))/255
-        ff_r = np.asarray(pcalc.load_image(path_r))/255        
-        s = np.asarray(self.p.general["size_slm"])
-    
-        lhalf = pcalc.crop(ff_l, s, [ s[1] / 2, s[0] / 2])
-        rhalf = pcalc.crop(ff_r, s, [-s[1] / 2, s[0] / 2])
-        
-        if self.dbl_pass_state.checkState():
-            # lhalf = pcalc.crop(ff_l, s, [ s[1] / 2, s[0] / 2])
-            # rhalf = pcalc.crop(ff_r, s, [-s[1] / 2, s[0] / 2])
-
-            # patch with zeros around bc otherwise cropping won't work when
-            # there's offsets
-            # ff_l_patched = np.zeros([2 * s[0], 4 * s[1]])
-            # ff_l_patched[s[0] // 2 : 3 * s[0] // 2, s[1] : 3 * s[1]] = ff_l
-            # ff_r_patched = np.zeros([2 * s[0], 4 * s[1]])
-            # ff_r_patched[s[0] // 2 : 3 * s[0] // 2, s[1] : 3 * s[1]] = ff_r
-            
+        # check whethere double pass is activated and cross correction as on 
+        # Abberior should be applied: det offsets to [0,0] for not activated        
+        if self.dbl_pass_state.checkState():            
             ff_l_patched = np.zeros([2 * s[0], 2 * s[1]])
             ff_l_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = lhalf
             ff_r_patched = np.zeros([2 * s[0], 2 * s[1]])
             ff_r_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = rhalf
             
-            off_l = [self.img_r.off.xgui.value() - self.img_l.off.xgui.value(),
-                     self.img_r.off.ygui.value() - self.img_l.off.ygui.value()]
-            off_r = [self.img_l.off.xgui.value() - self.img_r.off.xgui.value(), 
-                     self.img_l.off.ygui.value() - self.img_r.off.ygui.value()]
-            l2ndpass = pcalc.crop(ff_l_patched, s, off_l)
-            r2ndpass = pcalc.crop(ff_r_patched, s, off_r)
+            off = np.asarray([self.img_r.off.xgui.value() - self.img_l.off.xgui.value(),
+                              self.img_r.off.ygui.value() - self.img_l.off.ygui.value()])
             
-            lhalf = lhalf + r2ndpass
-            rhalf = rhalf + l2ndpass
-            
-        # else:
-        #     lhalf = pcalc.crop(ff_l, s, [ s[1] / 2, s[0] / 2])
-        #     rhalf = pcalc.crop(ff_r, s, [-s[1] / 2, s[0] / 2])
+            lhalf = lhalf + pcalc.crop(ff_r_patched, s, -off)
+            rhalf = rhalf + pcalc.crop(ff_l_patched, s,  off)
 
         self.flatfieldcor = [lhalf, rhalf]
-        #split = self.p.general["size_slm"][1]
-        #self.flatfieldcor = [l[:, 0 : split], r[:, split - 1 : -1]]
-
         self.flat_field(self.flt_fld_state.checkState())
 
 
