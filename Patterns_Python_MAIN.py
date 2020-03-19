@@ -438,10 +438,7 @@ class Main_Window(QtWidgets.QMainWindow):
             ff_l_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = lhalf
             ff_r_patched = np.zeros([2 * s[0], 2 * s[1]])
             ff_r_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = rhalf
-            
-            off = np.asarray([self.img_r.off.xgui.value() - self.img_l.off.xgui.value(),
-                              self.img_r.off.ygui.value() - self.img_l.off.ygui.value()])
-            
+            off = self.img_r.offset - self.img_l.offset
             lhalf = lhalf + pcalc.crop(ff_r_patched, s, -off)
             rhalf = rhalf + pcalc.crop(ff_l_patched, s,  off)
 
@@ -458,7 +455,7 @@ class Main_Window(QtWidgets.QMainWindow):
             self.flatfield = [np.zeros_like(self.flatfieldcor[0]), 
                               np.zeros_like(self.flatfieldcor[1])]
         if recalc:
-            self.recalc_images()
+            self.combine_and_update()
 
             
     def crea_but(self, box, action, name, param = None):
@@ -590,8 +587,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_l.update(update = False, completely = True)
         self.img_r.update(update = False, completely = True)
         self.combine_and_update()
-        
-        
+
         
     def combine_and_update(self):
         """ Stitches the images for left and right side of the SLM, adds the 

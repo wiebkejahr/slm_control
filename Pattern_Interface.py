@@ -46,7 +46,7 @@ class Half_Pattern(QtWidgets.QWidget):
             parameter list for either left or right side of the image, depending
             on the instance. """
         
-        self.offset = p_spec["off"]
+        self.offset = np.asarray(p_spec["off"])
         
         controls = QtWidgets.QGridLayout()
         self.off = spat.Off_Pattern(p_gen)

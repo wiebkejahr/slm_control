@@ -79,11 +79,13 @@ class Off_Pattern(Sub_Pattern):
 
     def compute_pattern(self, update = True):
         if self.daddy.blockupdating == False:
-            self.value = [self.xgui.value(), self.ygui.value()]
+            self.value = np.asarray([self.xgui.value(), self.ygui.value()])
             self.daddy.offset = self.value
             #TODO: put a check for double pass status here & call flatfield if
             # needed to restitch the two images
-            self.daddy.crop(self.value)
+            if self.daddy.daddy.dbl_pass_state.checkState() and self.daddy.daddy.flt_fld_state.checkState():
+                self.daddy.daddy.load_flat_field(self.daddy.daddy.p.left["cal1"], self.daddy.daddy.p.right["cal1"])
+            self.daddy.crop()
         return self.value
     
     
@@ -255,4 +257,4 @@ class Sub_Pattern_Defoc(Sub_Pattern):
             
             if update:
                 self.daddy.update()
-        return self.data
+        return self.data        
