@@ -17,8 +17,10 @@ TODO:
 + code segmented phase plate out of half moon
 - save paths for corrections etc correctly when saving params (hardcoded atm)
 """
-
+# standard imports
 import sys, os
+
+# third party imports 
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 from PyQt5.QtGui import QPixmap, QImage
@@ -32,17 +34,19 @@ from PIL import Image
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-import Pattern_Calculator as pcalc
-import Pattern_Interface as PI
-import Patterns_Zernike as PZ
-import SLM
+# local packages
+import SLM_control.Pattern_Calculator as pcalc
+import SLM_control.Pattern_Interface as PI
+import SLM_control.Patterns_Zernike as PZ
+import SLM_control.SLM
 
-from Parameters import param
+from SLM_control.Parameters import param
 
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
 
+#TODO: add drop down window to select model w/ which to autoalign
 
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
@@ -82,11 +86,15 @@ class Main_Window(QtWidgets.QMainWindow):
         self.setWindowTitle('Main Window')
         self.app = app
         self.slm = None
+        # I changed this
+        self.param_path = 'SLM_control/parameters/params'
         
         screen0 = QtWidgets.QDesktopWidget().screenGeometry()
         self.setGeometry(screen0.left(), screen0.top(), screen0.width()/4, .9*screen0.height())
             
-        self.load_params('parameters/params')
+        # NOTE: this should be changed to an absolute path
+        self.load_params(self.param_path)
+        #self.load_params('SLM_control/parameters/params')
         self.init_images()
         self.create_main_frame()
 
@@ -203,8 +211,11 @@ class Main_Window(QtWidgets.QMainWindow):
         self.obj_sel.activated.connect(lambda: self.objective_changed())
         self.objective_changed()
             
-        self.crea_but(hbox, self.reload_params, "Load Config", "parameters/params")
-        self.crea_but(hbox, self.save_params, "Save Config", "parameters/params")
+        self.crea_but(hbox, self.reload_params, "Load Config", self.param_path)
+        self.crea_but(hbox, self.save_params, "Save Config", self.param_path)
+        
+        # self.crea_but(hbox, self.reload_params, "Load Config", "SLM_control/parameters/params")
+        # self.crea_but(hbox, self.save_params, "Save Config", "SLM_control/parameters/params")
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
 
