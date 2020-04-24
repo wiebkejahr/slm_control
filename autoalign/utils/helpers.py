@@ -5,27 +5,23 @@ Created on: Thursday, 28th November 2019 10:54:30 am
 @author: hmcgovern
 '''
 # standard imports
-import numpy as np
-import matplotlib.pyplot as plt
-import random
-from sklearn.metrics import mean_squared_error
-from math import factorial as mfac
-from torch.utils.data import Dataset, DataLoader
 import random
 import json
+import random
+from math import factorial as mfac
+
+# third party imports
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
+from torch.utils.data import Dataset, DataLoader
 import skimage
 
 # local modules
-from utils import my_classes as my_classes
-from utils import xysted 
-from utils.xysted import fluor_psf, sted_psf
-from utils.vector_diffraction import vector_diffraction as vd
-#TODO: research how to manage all these freaking imports??!
-# import my_classes as my_classes
-# import xysted 
-# from xysted import fluor_psf, sted_psf
-# from vector_diffraction import vector_diffraction as vd
-
+from autoalign.utils import my_classes as my_classes
+from autoalign.utils import xysted 
+from autoalign.utils.xysted import fluor_psf, sted_psf
+from autoalign.utils.vector_diffraction import vector_diffraction as vd
 
 def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""

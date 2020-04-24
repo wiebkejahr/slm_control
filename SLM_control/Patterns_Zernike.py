@@ -9,8 +9,8 @@ Created on Wed Oct 17 16:20:49 2018
 import PyQt5.QtWidgets as QtWidgets
 import numpy as np
 
-import Pattern_Calculator as pcalc
-from Sub_Pattern import Sub_Pattern
+import SLM_control.Pattern_Calculator as pcalc
+from SLM_control.Sub_Pattern import Sub_Pattern
 
 class Sub_Pattern_Zernike(Sub_Pattern):
     """ Subpattern containing the image data for aberrations. GUI contains the 

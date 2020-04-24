@@ -21,7 +21,6 @@ except:
     print("Specpy not installed!")
     pass
 
-from autoalign.utils.integration import integrate
 import autoalign.utils.helpers as helpers
 import autoalign.utils.my_models as my_models
 

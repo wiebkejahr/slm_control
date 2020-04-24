@@ -137,26 +137,27 @@ def main(args):
     data_path = args.test_dataset_dir
     logdir = args.logdir
     model_store_path = args.model_store_path
-    multi = args.multi   
-    if multi:
-        model = my_models.MultiNet()
-    else:
-        model = my_models.OffsetNet()
+    # NOTE: this part needs work. determine which model to use from loading the data and checking the shape
+    # multi = args.multi   
+    # if multi:
+    #     model = my_models.MultiNet()
+    # else:
+    #     model = my_models.OffsetNet()
 
 
     # model.load_state_dict(torch.load(model_store_path))
-    checkpoint = torch.load(model_store_path)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    # checkpoint = torch.load(model_store_path)
+    # model.load_state_dict(checkpoint['model_state_dict'])
     
-    mean, std = get_stats(data_path, batch_size=10, mode='val')
-    test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
-        my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std)]))
-    test_loader = DataLoader(dataset=test_dataset, batch_size=1, \
-        shuffle=False, num_workers=0)
+    # mean, std = get_stats(data_path, batch_size=10, mode='val')
+    # test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
+    #     my_classes.ToTensor(), 
+    #     my_classes.Normalize(mean=mean, std=std)]))
+    # test_loader = DataLoader(dataset=test_dataset, batch_size=1, \
+    #     shuffle=False, num_workers=0)
 
 
-    test(model, test_loader, logdir, model_store_path)
+    # test(model, test_loader, logdir, model_store_path)
 
 
 

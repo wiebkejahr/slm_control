@@ -38,7 +38,7 @@ from matplotlib.figure import Figure
 import SLM_control.Pattern_Calculator as pcalc
 import SLM_control.Pattern_Interface as PI
 import SLM_control.Patterns_Zernike as PZ
-import SLM_control.SLM
+import SLM_control.SLM as SLM
 
 from SLM_control.Parameters import param
 
@@ -51,7 +51,7 @@ mpl.rc('pdf', fonttype=42)
 
 # TODO: add drop down window to select model w/ which to autoalign
 # NOTE: hardcoded for now:
-MODEL_STORE_PATH="local_models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
+MODEL_STORE_PATH="autoalign/models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
 
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"

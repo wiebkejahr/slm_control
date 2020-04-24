@@ -119,15 +119,13 @@ def main(args):
         params, you get the exact same results.
     Next it instantiates custom PSFDataset objects (definition in utils.my_classes) and then, with those, instantiates pytorch DataLoader objects
     Finally, it checks if GPU is available, sets an optimizer, and starts the training/validation loop."""
+    lr = args.lr
     num_epochs = args.num_epochs
     batch_size = args.batch_size
-    data_path = args.dataset_dir
-    lr = args.lr
-    logdir = args.logdir
+    data_path = args.dataset
     model_store_path = args.model_store_path
+    logdir = args.logdir
     
-    if args.warm_start_path:
-        warm_start_path = args.warm_start_path
 
     mean, std = helpers.get_stats(data_path, batch_size)
     # Norm = my_classes.MyNormalize(mean=mean, std=std)
@@ -172,8 +170,8 @@ def main(args):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     # if a warm start was specified, load model and optimizer state parameters
-    if args.warm_start_path:
-        checkpoint = torch.load(warm_start_path)
+    if args.warm_start:
+        checkpoint = torch.load(warm_start)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     
@@ -190,7 +188,10 @@ if __name__ == '__main__':
     
     parser.add_argument('dataset', type=str, help='path to dataset on which to train')
     parser.add_argument('model_store_path', type=str, help='path to where you want to save model checkpoints')
-    
+    parser.add_argument('--multi', action='store_true', \
+        help='whether or not to use cross-sections')  
+    parser.add_argument('--offset', action='store_true', \
+        help='whether or not to incorporate offset') 
     parser.add_argument('--logdir', type=str, help='path to logging dir for optional tensorboard visualization')
     parser.add_argument('--warm_start', type=str, help='path to a previous checkpoint dir for a warm start')     
     ARGS=parser.parse_args()

@@ -9,8 +9,8 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 
 import numpy as np
-import Pattern_Calculator as pcalc
-import syntax
+import SLM_control.Pattern_Calculator as pcalc
+import SLM_control.syntax
 
 class Sub_Pattern(QtWidgets.QWidget):
     """ Parent Widget for all the subpattern widgets. Contains GUI, the image 

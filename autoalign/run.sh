@@ -42,7 +42,11 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 #   --offset              (FLAG) whether or not to incorporate offset
 #   --mode {fluor,sted,z-sted} which mode of data to create
 
+if [ ! -f ${DATASET} ]; then
 python3 create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --offset --mode 'sted'
+else
+echo "Dataset already exists"
+fi
 
 ######################### 2. TRAIN ##################################
 # HYPERPARAMETERS 
@@ -70,8 +74,11 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --logdir              path to logging dir for optional tensorboard visualization
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
-python3 train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir $LOGDIR
-
+if [ ! -f ${MODEL_STORE_PATH} ]; then
+python3 train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --offset --logdir ${LOGDIR}
+else
+echo "Model already exists"
+fi
 ####################### 3. EVALUATE ################################
 # To see all options, run 'python evaluate.py --help'. Output copied below.
 #
