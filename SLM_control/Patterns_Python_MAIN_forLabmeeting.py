@@ -19,11 +19,11 @@ from PIL import Image
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-import SLM_control.Pattern_Calculator as pcalc
-import SLM_control.Pattern_Interface as PI
-import SLM_control.Patterns_Zernike as PZ
-import SLM_control.SLM_forLabmeeting as SLM
-from SLM_control.Parameters import param
+import slm_control.Pattern_Calculator as pcalc
+import slm_control.Pattern_Interface as PI
+import slm_control.Patterns_Zernike as PZ
+import slm_control.SLM_forLabmeeting as SLM
+from slm_control.Parameters import param
 
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')

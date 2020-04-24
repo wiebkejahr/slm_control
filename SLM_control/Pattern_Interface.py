@@ -11,9 +11,9 @@ import PyQt5.QtWidgets as QtWidgets
 
 import numpy as np
 
-import SLM_control.Pattern_Calculator as pcalc
-import SLM_control.Sub_Pattern as spat
-import SLM_control.Patterns_Zernike as patzern
+import slm_control.Pattern_Calculator as pcalc
+import slm_control.Sub_Pattern as spat
+import slm_control.Patterns_Zernike as patzern
 
 class Half_Pattern(QtWidgets.QWidget):
     """ Contains the image data to create one half of the pattern on the SLM:

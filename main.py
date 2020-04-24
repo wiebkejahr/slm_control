@@ -35,12 +35,12 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 # local packages
-import SLM_control.Pattern_Calculator as pcalc
-import SLM_control.Pattern_Interface as PI
-import SLM_control.Patterns_Zernike as PZ
-import SLM_control.SLM as SLM
+import slm_control.Pattern_Calculator as pcalc
+import slm_control.Pattern_Interface as PI
+import slm_control.Patterns_Zernike as PZ
+import slm_control.SLM as SLM
 
-from SLM_control.Parameters import param
+from slm_control.Parameters import param
 
 import autoalign.abberior as abberior
 
@@ -91,14 +91,13 @@ class Main_Window(QtWidgets.QMainWindow):
         self.setWindowTitle('Main Window')
         self.app = app
         self.slm = None
-        # I changed this
-        self.param_path = 'SLM_control/parameters/params'
         
         screen0 = QtWidgets.QDesktopWidget().screenGeometry()
         self.setGeometry(screen0.left(), screen0.top(), 
                          screen0.width()/4, .9*screen0.height())
         
-        self.param_path = ['parameters/', 'params']
+        # edited this to reflect new file organization
+        self.param_path = ['slm_control/parameters/', 'params']
         self.p = param()
         self.p.load_file_general(self.param_path[0], self.param_path[1])
         #self.load_params(self.param_path[0] + self.param_path[1])
@@ -148,7 +147,8 @@ class Main_Window(QtWidgets.QMainWindow):
                           If you're at the Abberior, check that Imspector is 
                           running and a measurement is active. """)
 
-        self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
+        # NOTE: I could not find where self.p.left is set so I hacked it
+        self.load_flat_field('slm_control/{}'.format(self.p.left["cal1"]), 'slm_control/{}'.format(self.p.right["cal1"]))
         self.combine_and_update()
         self.show()
         self.raise_()
