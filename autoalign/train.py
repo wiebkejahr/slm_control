@@ -5,6 +5,10 @@ Created on: Wednesday, 6th November 2019 9:47:12 am
 @author: hmcgovern
 '''
 """Module docstring goes here."""
+# standard imports
+from datetime import datetime
+
+# third party imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,13 +20,11 @@ from scipy import signal
 import math
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, models, transforms
-import copy
 from torch.utils.tensorboard import SummaryWriter
-from datetime import datetime
 
+# local packages
 import utils.my_classes as my_classes
 import utils.helpers as helpers
 import utils.my_models as my_models

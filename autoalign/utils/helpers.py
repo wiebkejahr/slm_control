@@ -213,6 +213,7 @@ def get_stats(data_path, batch_size, mode='train'):
     return mean, std
 
 
+# TODO: redirect to the original now that it's in the same repo
 #########################################################################################
 #
 #   Functions from Wiebke's Pattern Calculator code that are necessary for redundancy.
@@ -304,24 +305,6 @@ def crop(full, size, offset = [0,0]):
     return cropped
 
 
-# if __name__ == "__main__":
-#     c = gen_coeffs()
-#     print(c)
-#     phase = create_phase(c)
-#     plt.figure()
-#     plt.imshow(phase)
-#     plt.show()
-#     psf = get_fluor_psf(c)
-#     # plt.figure()
-#     # plt.imshow(psf)
-#     fig = plt.figure()
-#     ax1 = fig.add_subplot(1,2,1)
-#     ax1.imshow(get_fluor_psf(np.asarray([0.0]*12)))
-#     ax2 = fig.add_subplot(1,2,2)
-#     ax2.imshow(psf)
-#     # ax3 = fig.add_subplot(1,3,3)
-#     # ax3.imshow(psf[2])
-#     plt.show()
 
 
 

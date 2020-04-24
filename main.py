@@ -48,8 +48,8 @@ mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
 
-#TODO: add drop down window to select model w/ which to autoalign
 
+# TODO: add drop down window to select model w/ which to autoalign
 # NOTE: hardcoded for now:
 MODEL_STORE_PATH="local_models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
 

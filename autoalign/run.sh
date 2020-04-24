@@ -1,16 +1,14 @@
-
 #!/bin/bash
 # /*
-#  * Project: deep-sted-autoalign
-#  * Created on: Wednesday, 6th November 2019 9:47:12 am
-#  * --------
+#  * Created on Wednesday, 6th November 2019 9:47:12
 #  * @author: hmcgovern
 #  */
 
 # -e
 # -o
 
-# set this
+# you can change this if you like, make sure to redirect the path
+# in main.py
 OUTPUT_DIR='.'
 
 # creates dataset, model, and run dirs in your specified output dir
@@ -26,6 +24,7 @@ LOG_DIR=$OUTPUT_DIR/runs
 NUM_POINTS=2 # will do 90/10 train/validation split
 TEST_NUM=1 # number of additional test samples to create
 NAME="testing_offset_img" # make this as descriptive as possible
+# don't touch this
 DATASET="${DATA_DIR}/${NAME}.hdf5"
 
 # To see all options, run 'python create_train_data.py --help'. Output copied below.

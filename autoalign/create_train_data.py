@@ -4,29 +4,22 @@ Created on: Wednesday, 6th November 2019 9:47:12 am
 --------
 @author: hmcgovern
 '''
-
+# third party
 import random
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse as ap
 from tqdm import tqdm
 import json
-
 import h5py
-from skimage.transform import resize
 import skimage
+from skimage.transform import resize
 
+# local packages
 from utils.helpers import *
-
 
 ###############################################################################    
     
-# TODO: maybe reorganize into create_sted, create_fluor and then in main just call one or the other
-# based on the input args.
-# if offset: label_dim = 14, else: 12
-# if multi: channels = 3, else: 1
-# def create_sted(num_points, dir, res, offset, multi)
-# def create_fluor(num_points, dir, res, offset, multi)
 def main(args):
     """Using input arugments and some constants, this makes training, validation, and test sets for 
     training and evaluating a model. 90/10 train/validation split, and additional parameter for 

@@ -5,6 +5,8 @@ Created on: Wednesday, 6th November 2019 9:47:12 am
 @author: hmcgovern
 '''
 """Module docstring goes here."""
+
+# third party imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,12 +15,11 @@ import numpy as np
 import argparse as ap
 from sklearn.metrics import explained_variance_score, r2_score, mean_squared_error
 import matplotlib.pyplot as plt
-
-
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
+# local packages
 import utils.my_models as my_models
 import utils.my_classes as my_classes
 from utils.vector_diffraction import *
