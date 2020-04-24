@@ -45,7 +45,6 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         # TRAINING LOOP
         for i, (images, labels) in enumerate(data_loaders['train']):
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
-
             # if GPU is available, this allows the computation to happen there
             images = images.to(device)
             labels = labels.to(device)

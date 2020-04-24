@@ -46,17 +46,17 @@ class Half_Pattern(QtWidgets.QWidget):
             parameter list for either left or right side of the image, depending
             on the instance. """
         
-        self.offset = p_spec["off"]
+        self.offset = np.asarray(p_spec["off"])
         
         controls = QtWidgets.QGridLayout()
         self.off = spat.Off_Pattern(p_gen)
         self.off.call_daddy(self)
         size = np.asarray(p_gen.general["size_full"])
-        controls.addLayout(self.off.create_gui(p_spec["off"], 
-                                               [[0, 1, -size[0]/2, size[0]/2],
-                                                [0, 1, -size[1]/2, size[1]/2]]),
+        controls.addLayout(self.off.create_gui(
+                            p_spec["off"], 
+                            [[0, 1, -size[1]/4, size[1]/4],
+                            [0, 1, -size[0]/2, size[0]/2]]),
                             0,0,2,2)
-        
         self.gr = spat.Sub_Pattern_Grid(p_gen)
         self.gr.call_daddy(self)
         controls.addLayout(self.gr.create_gui(p_spec["sl"], 
@@ -115,8 +115,10 @@ class Half_Pattern(QtWidgets.QWidget):
         # else:
         #     self.daddy.flt_fld_state.setChecked(True)
    
-        self.daddy.obj_sel.setCurrentText(p_gen.general["objective"])
+        #self.daddy.obj_sel.setCurrentText(p_gen.general["objective"])
         
+        print("inside ", p_spec)
+        print("value", p_spec["sl"])
         self.off.xgui.setValue(p_spec["off"][0])
         self.off.ygui.setValue(p_spec["off"][1])
         self.gr.xgui.setValue(p_spec["sl"][0])
@@ -167,11 +169,9 @@ class Half_Pattern(QtWidgets.QWidget):
             self.vort.compute_pattern(update = False)
             self.defoc.compute_pattern(update = False)
             self.off.compute_pattern(update = False)
-                    
-        self.full = pcalc.add_images([self.vort.data, self.defoc.data, self.aberr.data])
+        
+        self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.aberr.data])
         self.data = self.crop(update = False)
-        self.data = pcalc.add_images([self.data, self.gr.data])
         
         if update:
-            self.daddy.combine_images()
-            self.daddy.update_display()
+            self.daddy.combine_and_update()
