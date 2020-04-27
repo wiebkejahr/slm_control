@@ -65,26 +65,27 @@ def test(model, test_loader, logdir, model_store_path):
             outputs = model(images)
             preds = outputs.numpy().squeeze()
 
-            remaining = labels.numpy().squeeze() - preds
-            print(mean_squared_error(remaining, np.asarray([0.0]*12)))
+            # remaining = labels.numpy().squeeze() - preds
+            # print(mean_squared_error(remaining, np.asarray([0.0]*14)))
             
-            corrected = get_fluor_psf(remaining) #, multi=True
+            # corrected = get_fluor_psf(remaining) #, multi=True
             # corrected = normalize_img(donut) + normalize_img(get_psf(-1*outputs.numpy().squeeze()))
 
-            fig = plt.figure()
-            ax1 = fig.add_subplot(1, 3, 1)
-            ax1.imshow(to_plot)
-            ax2 = fig.add_subplot(1,3,2)
-            ax2.imshow(get_fluor_psf(preds))
-            ax3 = fig.add_subplot(1,3,3)
-            ax3.imshow(corrected)
-            plt.show()
+            # fig = plt.figure()
+            # ax1 = fig.add_subplot(1, 3, 1)
+            # ax1.imshow(to_plot)
+            # ax2 = fig.add_subplot(1,3,2)
+            # ax2.imshow(get_fluor_psf(preds))
+            # ax3 = fig.add_subplot(1,3,3)
+            # ax3.imshow(corrected)
+            # plt.show()
             # fig = plt.figure()
             # ax1 = fig.add_subplot(2,3,1)
             # ax1.imshow(donut)
             # # ax1.title.set_text('input img')
             zern = preds[:-2]
             offsets = preds[-2:]
+            reconstructed = get_sted_psf(coeffs=zern, offset_label=offsets, multi=True)
             # print(preds)
             # print("zern is: {}".format(zern))
             # print("offsets are: {}".format(preds[-2:]))
@@ -93,20 +94,30 @@ def test(model, test_loader, logdir, model_store_path):
             remaining_offsets = remaining[-2:]
 
             #TODO: here's where you need to split them
-            corrected = get_sted_psf(remaining_zern, offset=remaining_offsets) 
+            #NOTE: the offset used to be a boolean
+            corrected = get_sted_psf(coeffs=remaining_zern, offset_label=remaining_offsets, multi=True) 
             # # corrected = normalize_img(donut) + normalize_img(get_psf(-1*outputs.numpy().squeeze()))
 
-            fig = plt.figure()
-            ax1 = fig.add_subplot(1,3,1)
-            ax1.imshow(donut)
-            ax1.title.set_text('input img')
-            ax2 = fig.add_subplot(1,3,2)
-            ax2.title.set_text('reconstructed')
-            ax2.imshow(get_sted_psf(zern, offset=offsets))
-            ax3 = fig.add_subplot(1,3,3)
-            ax3.imshow(corrected)
-            ax3.title.set_text('corrected')
+            fig = plot_xsection(donut)
+            # plt.show()
+            # print(reconstructed.shape)
+            # exit()
+            fig2 = plot_xsection(reconstructed[0])
             plt.show()
+            fig3 = plot_xsection(corrected[0])
+            plt.show()
+            # exit()
+            # fig = plt.figure()
+            # ax1 = fig.add_subplot(1,3,1)
+            # ax1.imshow(donut)
+            # ax1.title.set_text('input img')
+            # ax2 = fig.add_subplot(1,3,2)
+            # ax2.title.set_text('reconstructed')
+            # ax2.imshow(get_sted_psf(zern, offset_label=offsets))
+            # ax3 = fig.add_subplot(1,3,3)
+            # ax3.imshow(corrected)
+            # ax3.title.set_text('corrected')
+            # plt.show()
             
             # fig = plt.figure()
             # ax1 = fig.add_subplot(2,3,1)

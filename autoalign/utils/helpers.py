@@ -148,16 +148,16 @@ def create_phase(coeffs, res=64, offset=[0,0]):
     # zern represents the collective abberations that will be added to an ideal donut.
     return zern
 
-def get_sted_psf(res=64, offset=False, multi=False):
+# TODO: make these a bit more nuanced re: offsets
+def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], gen_coeffs=False, gen_offset=False,  multi=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    coeffs = gen_coeffs()
+    if gen_coeffs:
+        coeffs = gen_coeffs()
     
-    if offset:
+    if gen_offset:
         offset_label = gen_offset()
-    else:
-        offset_label = [0,0]
 
     aberr_phase_mask = create_phase(coeffs, res, offset_label)
     
@@ -168,14 +168,13 @@ def get_sted_psf(res=64, offset=False, multi=False):
     img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
     return img, coeffs, offset_label
 
-def get_fluor_psf(res=64, offset=False, multi=False):
+def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], gen_coeffs=False, gen_offset=False, multi=False):
     
-    coeffs = gen_coeffs()
+    if gen_coeffs:
+        coeffs = gen_coeffs()
 
-    if offset:
+    if gen_offset:
         offset_label = gen_offset()
-    else:
-        offset_label = [0,0]
 
     aberr_phase_mask = create_phase(coeffs, res, offset_label)
 
@@ -208,7 +207,15 @@ def get_stats(data_path, batch_size, mode='train'):
     print('mean is: {}  |   std is: {}'.format(mean, std))
     return mean, std
 
-
+def plot_xsection(img3d):
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1,3,1)
+    ax1.imshow(img3d[0])
+    ax2 = fig.add_subplot(1,3,2)
+    ax2.imshow(img3d[1])
+    ax3 = fig.add_subplot(1,3,3)
+    ax3.imshow(img3d[2])
+    return fig
 # TODO: redirect to the original now that it's in the same repo
 #########################################################################################
 #
