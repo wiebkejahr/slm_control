@@ -148,16 +148,16 @@ def create_phase(coeffs, res=64, offset=[0,0]):
     # zern represents the collective abberations that will be added to an ideal donut.
     return zern
 
-# TODO: make these a bit more nuanced re: offsets
-def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], gen_coeffs=False, gen_offset=False,  multi=False):
+def gen_sted_psf(res=64, offset=False,  multi=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    if gen_coeffs:
-        coeffs = gen_coeffs()
+    coeffs = gen_coeffs()
     
-    if gen_offset:
+    if offset:
         offset_label = gen_offset()
+    else:
+        offset_label = np.asarray([0,0])
 
     aberr_phase_mask = create_phase(coeffs, res, offset_label)
     
@@ -168,14 +168,41 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], gen_co
     img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
     return img, coeffs, offset_label
 
-def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], gen_coeffs=False, gen_offset=False, multi=False):
+def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False):
+    """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
+    If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
+
+    aberr_phase_mask = create_phase(coeffs, res, offset_label)
     
-    if gen_coeffs:
-        coeffs = gen_coeffs()
+    if multi:
+        plane = 'all'
+    else:
+        plane = 'xy'
+    img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
+    return img, coeffs, offset_label
 
-    if gen_offset:
+def gen_fluor_psf(res=64, offset=False, multi=False):
+    """generates a fluor psf at random"""
+    coeffs = gen_coeffs()
+
+    if offset:
         offset_label = gen_offset()
+    else:
+        offset_label = np.asarray([0,0])
 
+    aberr_phase_mask = create_phase(coeffs, res, offset_label)
+
+    if multi:
+        plane = 'all'
+    else:
+        plane = 'xy'
+    
+    img = fluor_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
+    return img, coeffs, offset_label
+
+def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], multi=False):
+    """create the psf given a set of coefficients and offsets"""
+ 
     aberr_phase_mask = create_phase(coeffs, res, offset_label)
 
     if multi:

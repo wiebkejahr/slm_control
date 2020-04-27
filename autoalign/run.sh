@@ -21,9 +21,9 @@ MODEL_DIR=$OUTPUT_DIR/models
 LOG_DIR=$OUTPUT_DIR/runs
 
 ####################### 1. MAKE DATASET #############################
-NUM_POINTS=20 # will do 90/10 train/validation split
-TEST_NUM=20 # number of additional test samples to create
-NAME="4.27.20_3d_offset_sted_TEST" # make this as descriptive as possible
+NUM_POINTS=2 # will do 90/10 train/validation split
+TEST_NUM=2 # number of additional test samples to create
+NAME="4.27.20_3d_offset_sted_TEST2" # make this as descriptive as possible
 # don't touch this
 DATASET="${DATA_DIR}/${NAME}.hdf5"
 

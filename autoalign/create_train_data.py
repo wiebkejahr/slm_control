@@ -79,9 +79,9 @@ def main(args):
     for i in tqdm(range(train_num)):
         if mode == 'sted':
             # TODO: fix the add_noise to work for multi images (used to wrap get_sted_psf())
-            img, zern_label, offset_label = get_sted_psf(res, gen_coeffs=True, gen_offset=True, multi=multi)
+            img, zern_label, offset_label = gen_sted_psf(res, offset=True, multi=multi)
         elif mode == 'fluor':
-            img, zern_label, offset_label = get_fluor_psf(res, gen_coeffs=True, gen_offset=True, multi=multi)
+            img, zern_label, offset_label = gen_fluor_psf(res, offset=True, multi=multi)
         
         # save the label and image
         if offset:
@@ -99,9 +99,9 @@ def main(args):
     for i in tqdm(range(val_num)):
         if mode == 'sted':
             # TODO: fix the add_noise to work for multi images (used to wrap get_sted_psf())
-            img, zern_label, offset_label = get_sted_psf(res, gen_coeffs=True, gen_offset=True, multi=multi)
+            img, zern_label, offset_label = gen_sted_psf(res, offset=True, multi=multi)
         elif mode == 'fluor':
-            img, zern_label, offset_label = get_fluor_psf(res, gen_coeffs=True, gen_offset=True, multi=multi)
+            img, zern_label, offset_label = gen_fluor_psf(res, offset=True, multi=multi)
         
         # save the label and image
         if offset:
@@ -119,9 +119,9 @@ def main(args):
         
         if mode == 'sted':
             # TODO: fix the add_noise to work for multi images (used to wrap get_sted_psf())
-            img, zern_label, offset_label = get_sted_psf(res, gen_coeffs=True, gen_offset=True, multi=multi)
+            img, zern_label, offset_label = gen_sted_psf(res, offset=True, multi=multi)
         elif mode == 'fluor':
-            img, zern_label, offset_label = get_fluor_psf(res, gen_coeffs=True, gen_offset=True, multi=multi)
+            img, zern_label, offset_label = gen_fluor_psf(res, offset=True, multi=multi)
         
         # save the label and image
         if offset:
