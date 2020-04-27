@@ -97,7 +97,7 @@ class Main_Window(QtWidgets.QMainWindow):
                          screen0.width()/4, .9*screen0.height())
         
         # edited this to reflect new file organization
-        self.param_path = ['slm_control/parameters/', 'params']
+        self.param_path = ['parameters/', 'params']
         self.p = param()
         self.p.load_file_general(self.param_path[0], self.param_path[1])
         #self.load_params(self.param_path[0] + self.param_path[1])
