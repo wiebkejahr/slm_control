@@ -18,10 +18,10 @@ from torch.utils.data import Dataset, DataLoader
 import skimage
 
 # local modules
-from autoalign.utils import my_classes as my_classes
-from autoalign.utils import xysted 
-from autoalign.utils.xysted import fluor_psf, sted_psf
-from autoalign.utils.vector_diffraction import vector_diffraction as vd
+from utils import my_classes as my_classes
+from utils import xysted 
+from utils.xysted import fluor_psf, sted_psf
+from utils.vector_diffraction import vector_diffraction as vd
 
 def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
