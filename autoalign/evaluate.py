@@ -137,6 +137,20 @@ def main(args):
     data_path = args.test_dataset_dir
     logdir = args.logdir
     model_store_path = args.model_store_path
+    print(model_store_path) 
+    # exit()
+    if args.multi:
+        if args.offset:
+            model = my_models.MultiOffsetNet()
+        else:
+            model = my_models.MultiNet()
+    else:
+        if args.offset:
+            model = my_models.OffsetNet()
+        else:
+            model = my_models.Net()
+    print(model)
+    
     # NOTE: this part needs work. determine which model to use from loading the data and checking the shape
     # multi = args.multi   
     # if multi:
@@ -145,19 +159,18 @@ def main(args):
     #     model = my_models.OffsetNet()
 
 
-    # model.load_state_dict(torch.load(model_store_path))
-    # checkpoint = torch.load(model_store_path)
-    # model.load_state_dict(checkpoint['model_state_dict'])
+    checkpoint = torch.load(model_store_path)
+    model.load_state_dict(checkpoint['model_state_dict'])
     
-    # mean, std = get_stats(data_path, batch_size=10, mode='val')
-    # test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
-    #     my_classes.ToTensor(), 
-    #     my_classes.Normalize(mean=mean, std=std)]))
-    # test_loader = DataLoader(dataset=test_dataset, batch_size=1, \
-    #     shuffle=False, num_workers=0)
+    mean, std = get_stats(data_path, batch_size=10, mode='val')
+    test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
+        my_classes.ToTensor(), 
+        my_classes.Normalize(mean=mean, std=std)]))
+    test_loader = DataLoader(dataset=test_dataset, batch_size=1, \
+        shuffle=False, num_workers=0)
 
 
-    # test(model, test_loader, logdir, model_store_path)
+    test(model, test_loader, logdir, model_store_path)
 
 
 
@@ -165,7 +178,10 @@ if __name__ == "__main__":
     parser = ap.ArgumentParser(description=' ')
     parser.add_argument('test_dataset_dir', type=str, help='path to dataset')
     parser.add_argument('model_store_path', type=str, help='path to model checkpoint dir')
-    
+    parser.add_argument('--multi', action='store_true', \
+        help='whether or not to use cross-sections')  
+    parser.add_argument('--offset', action='store_true', \
+        help='whether or not to incorporate offset')
     parser.add_argument('--logdir', type=str, help='path to logging dir for optional tensorboard visualization')
 
     
