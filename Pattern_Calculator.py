@@ -186,7 +186,7 @@ def create_ring(size, r_inner, r_outer, amp = 1, radscale = 1):
 
 
 def create_gauss(size, amp = 1):
-    return np.zeros(size) * amp
+    return np.ones(size) * amp
 
 
 def create_donut(size, rot, amp = 1):
