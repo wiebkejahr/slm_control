@@ -5,10 +5,12 @@
         10
     ],
     "slm_px": 0.0125,
+    "slm_range": 255,
     "size_full": [
         600,
         792
     ],
+    "phasewrap": 1,
     "size_slm": [
         600,
         396
@@ -18,6 +20,7 @@
     "laser_radius": 1.2,
     "objective": "100xOil_NA_140",
     "path": "patterns/",
+    "cal1": "patterns/CAL_LSH0801768_780nm.bmp",
     "cal0": "patterns/Black_Full.bmp",
     "last_img_nm": "latest.bmp",
     "modes": [

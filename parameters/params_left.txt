@@ -7,7 +7,11 @@
         0.0,
         0.0
     ],
+<<<<<<< HEAD
     "rot": 0.0,
+=======
+    "rot": 180.0,
+>>>>>>> parent of 382a371... slight param changes
     "radius": 1.0,
     "phase": 1.0,
     "steps": 1.0,
@@ -29,7 +33,7 @@
         0.0,
         0.0
     ],
-    "slm_range": 255,
+    "slm_range": 205,
     "phasewrap": 1,
-    "cal1": "patterns/CAL_LSH0801768_780nm.bmp"
+    "cal1": "patterns/CAL_LSH0801608_780nm.bmp"
 }
