@@ -4,15 +4,15 @@
         0.0
     ],
     "off": [
-        0.0,
-        0.0
+        50.0,
+        100.0
     ],
-    "rot": 0.0,
+    "rot": 180.0,
     "radius": 1.0,
     "phase": 1.0,
-    "steps": 1.0,
+    "steps": 5.0,
     "defoc": 0.0,
-    "mode": "2D STED",
+    "mode": "Segments",
     "astig": [
         0.0,
         0.0
@@ -29,7 +29,7 @@
         0.0,
         0.0
     ],
-    "slm_range": 255,
+    "slm_range": 205,
     "phasewrap": 1,
-    "cal1": "patterns/CAL_LSH0801768_780nm.bmp"
+    "cal1": "patterns/Black_Full.bmp"
 }

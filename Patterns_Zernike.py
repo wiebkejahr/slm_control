@@ -36,43 +36,35 @@ class Sub_Pattern_Zernike(Sub_Pattern):
         # somewhat ugly solution for using identical correction on both sides of the SLM
         # whenever one side is changed, just writes the values into the gui controls
         # of the other side, then updates the images accordingly
-        # seems to be rather slow to go through the if statements?
+
         if self.daddy.daddy.blockupdating == False:
             if self.daddy.daddy.daddy.sngl_corr_state.checkState():
+                # if in single correction, check on which side a value was
+                # changed and update it on the other side
                 if self.daddy.daddy.get_name() == "img_l":
                     thisside = self.daddy.daddy.daddy.img_l.aberr
                     otherside = self.daddy.daddy.daddy.img_r.aberr
-                    
-                    if self.get_name() == "astig":
-                        otherside.astig.xgui.setValue(thisside.astig.xgui.value())
-                        otherside.astig.ygui.setValue(thisside.astig.ygui.value())
-                    elif self.get_name() == "coma":
-                        otherside.coma.xgui.setValue(thisside.coma.xgui.value())
-                        otherside.coma.ygui.setValue(thisside.coma.ygui.value())
-                    elif self.get_name() == "sphere":
-                        otherside.sphere.xgui.setValue(thisside.sphere.xgui.value())
-                        otherside.sphere.ygui.setValue(thisside.sphere.ygui.value())
-                    elif self.get_name() == "trefoil":
-                        otherside.trefoil.xgui.setValue(thisside.trefoil.xgui.value())
-                        otherside.trefoil.ygui.setValue(thisside.trefoil.ygui.value())
-    
                 elif self.daddy.daddy.get_name() == "img_r":
                     thisside = self.daddy.daddy.daddy.img_r.aberr
                     otherside = self.daddy.daddy.daddy.img_l.aberr
-                    
-                    if self.get_name() == "astig":
-                        otherside.astig.xgui.setValue(thisside.astig.xgui.value())
-                        otherside.astig.ygui.setValue(thisside.astig.ygui.value())
-                    elif self.get_name() == "coma":
-                        otherside.coma.xgui.setValue(thisside.coma.xgui.value())
-                        otherside.coma.ygui.setValue(thisside.coma.ygui.value())
-                    elif self.get_name() == "sphere":
-                        otherside.sphere.xgui.setValue(thisside.sphere.xgui.value())
-                        otherside.sphere.ygui.setValue(thisside.sphere.ygui.value())
-                    elif self.get_name() == "trefoil":
-                        otherside.trefoil.xgui.setValue(thisside.trefoil.xgui.value())
-                        otherside.trefoil.ygui.setValue(thisside.trefoil.ygui.value())
+                
+                # all gui values are updated once. This is ugly, but I'd need
+                # to know the name of the aberration that was changed.
+                # Is there a way to easily know which one was changed?
+                # self.xgui.value() and self.ygui.value() doesn't work, bc
+                # I also need the information which side I'm on, and _which_
+                # one on the other side I'd have to change
+                otherside.astig.xgui.setValue(thisside.astig.xgui.value())
+                otherside.astig.ygui.setValue(thisside.astig.ygui.value())
+                otherside.coma.xgui.setValue(thisside.coma.xgui.value())
+                otherside.coma.ygui.setValue(thisside.coma.ygui.value())
+                otherside.sphere.xgui.setValue(thisside.sphere.xgui.value())
+                otherside.sphere.ygui.setValue(thisside.sphere.ygui.value())
+                otherside.trefoil.xgui.setValue(thisside.trefoil.xgui.value())
+                otherside.trefoil.ygui.setValue(thisside.trefoil.ygui.value())
             
+            # after changing all values in the gui for single correction, (or 
+            # not, for normal execution), update the coefficients of the zernike
             self.coeff = [self.xgui.value(), self.ygui.value()]
             
             if update:

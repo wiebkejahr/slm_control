@@ -29,10 +29,11 @@
         "3D STED",
         "Segments",
         "Bivortex",
+        "Code Input",
         "From File"
     ],
     "split_image": 1,
-    "flat_field": 0,
+    "flat_field": 1,
     "single_aberr": 0,
     "double_pass": 0
 }

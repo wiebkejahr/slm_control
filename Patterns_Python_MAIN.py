@@ -424,11 +424,25 @@ class Main_Window(QtWidgets.QMainWindow):
     def load_flat_field(self, path_l, path_r):
         """ Opens the images in the parameter paths, combines two halves to 
             one image and sets as new flatfield correction. """
-            
-        l = np.asarray(pcalc.load_image(path_l))/255
-        r = np.asarray(pcalc.load_image(path_r))/255
-        split = self.p.general["size_slm"][1]
-        self.flatfieldcor = [l[:, 0 : split], r[:, split - 1 : -1]]
+     
+        s = np.asarray(self.p.general["size_slm"])    
+        lhalf = pcalc.crop(np.asarray(pcalc.load_image(path_l))/255, 
+                           s, [ s[1] / 2, s[0] / 2])
+        rhalf = pcalc.crop(np.asarray(pcalc.load_image(path_r))/255, 
+                           s, [-s[1] / 2, s[0] / 2])
+        
+        # check whethere double pass is activated and cross correction as on 
+        # Abberior should be applied: det offsets to [0,0] for not activated        
+        if self.dbl_pass_state.checkState():            
+            ff_l_patched = np.zeros([2 * s[0], 2 * s[1]])
+            ff_l_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = lhalf
+            ff_r_patched = np.zeros([2 * s[0], 2 * s[1]])
+            ff_r_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = rhalf
+            off = self.img_r.offset - self.img_l.offset
+            lhalf = lhalf + pcalc.crop(ff_r_patched, s, -off)
+            rhalf = rhalf + pcalc.crop(ff_l_patched, s,  off)
+
+        self.flatfieldcor = [lhalf, rhalf]
         self.flat_field(self.flt_fld_state.checkState())
 
 
@@ -438,9 +452,10 @@ class Main_Window(QtWidgets.QMainWindow):
         if state:
             self.flatfield = self.flatfieldcor
         else:
-            self.flatfield = [np.zeros_like(self.flatfieldcor[0]), np.zeros_like(self.flatfieldcor[1])]
+            self.flatfield = [np.zeros_like(self.flatfieldcor[0]), 
+                              np.zeros_like(self.flatfieldcor[1])]
         if recalc:
-            self.recalc_images()
+            self.combine_and_update()
 
             
     def crea_but(self, box, action, name, param = None):
@@ -519,7 +534,10 @@ class Main_Window(QtWidgets.QMainWindow):
             curvature during the unmodulated reflection, the flatfield pattern
             from the first impact needs to be shifted by the offset and added 
             to the flatfield correction of the second impact. """
-        print("needs to be implemented")
+        if self.flt_fld_state.checkState():
+            print("calling flatfield")
+            self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
+        
     
     def calc_slmradius(self, backaperture, mag):
         """ Calculates correct scaling factor for SLM based on objective
@@ -569,8 +587,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_l.update(update = False, completely = True)
         self.img_r.update(update = False, completely = True)
         self.combine_and_update()
-        
-        
+
         
     def combine_and_update(self):
         """ Stitches the images for left and right side of the SLM, adds the 
@@ -587,30 +604,32 @@ class Main_Window(QtWidgets.QMainWindow):
         r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
                         self.flatfield[1]]), self.p.right["phasewrap"])
         
-        self.img_data = pcalc.stitch_images(l, r)
-        img_data_scaled = pcalc.stitch_images(l * self.p.left["slm_range"],
-                                              r * self.p.right["slm_range"])
+        #self.img_data = pcalc.stitch_images(l, r)
+        self.img_data = pcalc.stitch_images(l * self.p.left["slm_range"],
+                                            r * self.p.right["slm_range"])
         
-        pcalc.save_image(img_data_scaled, self.p.general["path"], 
-                         self.p.general["last_img_nm"])
-        self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
+        #pcalc.save_image(self.img_data, self.p.general["path"], 
+        #                 self.p.general["last_img_nm"])
+        #self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
         
         if self.p.general["abberior"] == 1:
-                try:
-                    self.stk.data()[:]=img_data_scaled / 255
-                    self.meas.update()
-                except:
-                    print("Still cannot communicate with the Abberior.")            
+            try:
+                self.stk.data()[:]=self.img_data / 255
+                self.meas.update()
+            except:
+                print("Still cannot communicate with the Abberior.")            
         elif self.slm != None:
-            self.slm.update_image(self.p.general["path"] + 
-                                  self.p.general["last_img_nm"])
-        self.plt_frame.plot(self.img_data)
+            self.slm.update_image(np.uint8(self.img_data))
+            #self.slm.update_image(self.p.general["path"] + 
+            #                      self.p.general["last_img_nm"])
+        self.plt_frame.plot(pcalc.stitch_images(l, r))
  
     
     def open_SLMDisplay(self):
         """ Opens a widget fullscreen on the secondary screen that displays
             the latest image. """
-        self.slm = SLM.SLM_Display(self.p.general["path"] + self.p.general["last_img_nm"])
+        #self.slm = SLM.SLM_Display(self.p.general["path"] + self.p.general["last_img_nm"])
+        self.slm = SLM.SLM_Display(np.uint8(self.img_data))
         self.slm.show()
         self.slm.raise_()
 
@@ -626,6 +645,8 @@ class Main_Window(QtWidgets.QMainWindow):
     def _quit(self):
         """ Action called when the Quit button is pressed. Closes the SLM 
             control window and exits the main window. """
+        pcalc.save_image(self.img_data, self.p.general["path"], 
+                         self.p.general["last_img_nm"])
         self.close_SLMDisplay()           
         self.close()
 

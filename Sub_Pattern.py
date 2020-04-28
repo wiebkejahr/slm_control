@@ -9,9 +9,8 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 
 import numpy as np
-
 import Pattern_Calculator as pcalc
-
+import syntax
 
 class Sub_Pattern(QtWidgets.QWidget):
     """ Parent Widget for all the subpattern widgets. Contains GUI, the image 
@@ -80,9 +79,13 @@ class Off_Pattern(Sub_Pattern):
 
     def compute_pattern(self, update = True):
         if self.daddy.blockupdating == False:
-            self.value = [self.xgui.value(), self.ygui.value()]
+            self.value = np.asarray([self.xgui.value(), self.ygui.value()])
             self.daddy.offset = self.value
-            self.daddy.crop(self.value)
+            #TODO: put a check for double pass status here & call flatfield if
+            # needed to restitch the two images
+            if self.daddy.daddy.dbl_pass_state.checkState() and self.daddy.daddy.flt_fld_state.checkState():
+                self.daddy.daddy.load_flat_field(self.daddy.daddy.p.left["cal1"], self.daddy.daddy.p.right["cal1"])
+            self.daddy.crop()
         return self.value
     
     
@@ -156,12 +159,79 @@ class Sub_Pattern_Vortex(Sub_Pattern):
             steps = self.stepgui.value()
             slm_scale = self.daddy.daddy.slm_radius
             
-            self.data = pcalc.compute_vortex(mode, self.size, rot, rad, steps, 
-                                             phase, slm_scale)
+            # execute all 'standard' cases via Pattern Calculator
+            if mode != "Code Input" and mode != "From File":
+                self.data = pcalc.compute_vortex(mode, self.size, rot, rad, 
+                                                 steps, phase, slm_scale)
+            
+            # handle the two cases that need additional GUI separately
+            elif mode == "Code Input":
+                self.create_text_box(self.size, rot, rad, steps, phase, slm_scale)
+
+            elif mode == "From File":
+                self.data = pcalc.compute_vortex('Gauss', self.size, rot, rad, 
+                                                 steps, phase, slm_scale)
+                print("From File")
             
             if update:
                 self.daddy.update()
         return self.data
+
+
+    def create_text_box(self, size, rot, rad, steps, phase, slm_scale):
+        """" Creates dialog window with text box; reads example text from file.
+            Executes the code. Code should be written to calculate self.data
+            (currently no measures to validate self.data is created, and of the
+            correct format). """
+        self.tdialog = QtWidgets.QDialog()
+        screen = QtWidgets.QDesktopWidget().screenGeometry(0)
+        self.tdialog.setGeometry(screen.left() + screen.width() / 4, 
+                                 screen.top() + screen.height() / 4, 
+                                 screen.width() / 2, screen.height() / 2)
+        vbox = QtWidgets.QVBoxLayout()
+        self.text_box = QtWidgets.QPlainTextEdit()
+        highlight = syntax.PythonHighlighter(self.text_box.document())
+        textfile = open('CodeInput.py', 'r')
+        self.text_box.setPlainText(textfile.read())
+
+        vbox.addWidget(self.text_box)
+        hbox = QtWidgets.QHBoxLayout()
+        self.crea_but(hbox, self._quit, "Cancel")
+        self.crea_but(hbox, self.update_text, "Go")
+        vbox.addLayout(hbox)
+        self.tdialog.setLayout(vbox)
+        self.tdialog.exec()
+
+
+    def crea_but(self, box, action, name, param = None):
+        button = QtWidgets.QPushButton(name, self)
+        if param == None:
+            button.clicked.connect(action)
+        else:
+            button.clicked.connect(lambda: action(param))
+        button.setMaximumSize(120,50)
+        box.addWidget(button)
+        box.setAlignment(button, QtCore.Qt.AlignVCenter)
+        box.setContentsMargins(0,0,0,0)
+        return button
+        
+    
+    def update_text(self):
+        """ updates the  displayed image with the pattern created by the code
+            from the text box"""
+        text = self.text_box.toPlainText()
+        try:
+            exec(text)
+        except:
+            print("Invalid code:")
+            import sys
+            print(sys.exc_info())
+        self.tdialog.accept()
+        
+    
+    def _quit(self):
+        print("Closing text input ...")
+        self.tdialog.reject()
 
 
 class Sub_Pattern_Defoc(Sub_Pattern):
@@ -187,4 +257,4 @@ class Sub_Pattern_Defoc(Sub_Pattern):
             
             if update:
                 self.daddy.update()
-        return self.data
+        return self.data        
