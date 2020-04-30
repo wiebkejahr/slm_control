@@ -21,9 +21,9 @@ MODEL_DIR=$OUTPUT_DIR/models
 LOG_DIR=$OUTPUT_DIR/runs
 
 ####################### 1. MAKE DATASET #############################
-NUM_POINTS=2 # will do 90/10 train/validation split
-TEST_NUM=2 # number of additional test samples to create
-NAME="4.27.20_3d_offset_sted_TEST2" # make this as descriptive as possible
+NUM_POINTS=20000 # will do 90/10 train/validation split
+TEST_NUM=20 # number of additional test samples to create
+NAME="4.27.20_3d_offset_sted_20k" # make this as descriptive as possible
 # don't touch this
 DATASET="${DATA_DIR}/${NAME}.hdf5"
 
@@ -43,7 +43,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 #   --mode {fluor,sted,z-sted} which mode of data to create
 
 if [ ! -f ${DATASET} ]; then
-python3 create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --multi --offset --mode 'sted'
+python create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --multi --offset --mode 'sted'
 else
 echo "Dataset already exists"
 fi
@@ -75,7 +75,7 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
 if [ ! -f ${MODEL_STORE_PATH} ]; then
-python3 train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --multi --offset --logdir ${LOGDIR}
+python train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --multi --offset --logdir ${LOGDIR}
 else
 echo "Model already exists"
 fi
@@ -91,6 +91,6 @@ fi
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-python3 evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --offset --logdir ${LOGDIR}
+# python evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --offset --logdir ${LOGDIR}
 
 # ./utils/tensorboard.sh

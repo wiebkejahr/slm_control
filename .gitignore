@@ -134,3 +134,4 @@ dmypy.json
 
 # ignore pyc files
 *.pyc
+*.hdf5
