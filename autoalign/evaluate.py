@@ -20,10 +20,10 @@ import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
 # local packages
-import utils.my_models as my_models
-import utils.my_classes as my_classes
-from utils.vector_diffraction import *
-from utils.helpers import *
+import autoalign.utils.my_models as my_models
+import autoalign.utils.my_classes as my_classes
+from autoalign.utils.vector_diffraction import *
+from autoalgin.utils.helpers import *
 
 def log_images(logdir, images, coeffs):
     logdir_test = logdir + '/test'
@@ -142,6 +142,7 @@ def test(model, test_loader, logdir, model_store_path):
             # ax5.title.set_text('corrected')
         
             # plt.show()
+
 
 
 def main(args):
