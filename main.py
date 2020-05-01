@@ -42,6 +42,7 @@ import slm_control.SLM as SLM
 
 from slm_control.Parameters import param
 
+sys.path.insert(1, 'autoalign/')
 import autoalign.abberior as abberior
 
 mpl.rc('text', usetex=False)
