@@ -16,7 +16,7 @@ import skimage
 from skimage.transform import resize
 
 # local packages
-from utils.helpers import *
+from autoalign.utils.helpers import *
 
 ###############################################################################    
     

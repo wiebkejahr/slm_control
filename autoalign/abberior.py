@@ -132,32 +132,37 @@ def abberior_multi(model_store_path):
     msr = im.active_measurement()
     image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
     image_xy = helpers.preprocess(image_xy)
-    plt.figure()
-    plt.imshow(image_xy)
-    plt.show()
+    # plt.figure()
+    # plt.imshow(image_xy)
+    # plt.show()
 
     ##### NOTE: fill this is in lab #######
     image_xz = msr.stack('ExpControl Ch1 {13}').data()
     image_xz = helpers.preprocess(image_xz)
-    plt.figure()
-    plt.imshow(image_xz, aspect="equal")
-    plt.show()
+    # plt.figure()
+    # plt.imshow(image_xz, aspect="equal")
+    # plt.show()
     
     image_yz = msr.stack('ExpControl Ch1 {15}').data()
     image_yz = helpers.preprocess(image_yz)
-    plt.figure()
-    plt.imshow(image_yz, aspect="equal")
-    plt.show()
+    # plt.figure()
+    # plt.imshow(image_yz, aspect="equal")
+    # plt.show()
     # ##################
     
     # exit()
     
 
     image = np.stack((image_xy, image_xz, image_yz), axis=0)
+    fig = helpers.plot_xsection(image)
+    plt.show()
 
     
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
+    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
+    fig = helpers.plot_xsection(reconstructed)
+    plt.show()
 
     print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
