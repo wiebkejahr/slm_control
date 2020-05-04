@@ -115,39 +115,6 @@ class Main_Window(QtWidgets.QMainWindow):
         self.init_images()
         self.create_main_frame()
 
-        # Handling of all the different things that could potentially go wrong
-        # when communicating with the Abberior
-        if self.p.general["display_mode"] == "imspector":
-            try:
-                try:
-                    import specpy
-                except:
-                    print("specpy not installed")         
-                try:
-                    imspec = specpy.Imspector()
-                except:
-                    print("cannot connect to Imspector")
-                try:
-                    self.meas = imspec.active_measurement()
-                except:
-                    print("no active measurement")
-                    try:
-                        self.meas = imspec.create_measurement()
-                    except:
-                        print("no active measurement. cannot create measurement")             
-                self.stk = self.meas.create_stack(np.float, 
-                                                [self.p.general["size_full"][1], #792
-                                                 self.p.general["size_full"][0], #600
-                                                 1, 1])
-                self.stk.set_length(0, self.p.general["size_full"][1]/1000)
-                self.stk.set_length(1, self.p.general["size_full"][0]/1000)
-            except:
-                print("""Something went wrong with Abberior. Cannot communicate.
-                          Are you working at the Abberior? If not, set 
-                          'abberior = 0' in the parameters_general file.
-                          If you're at the Abberior, check that Imspector is 
-                          running and a measurement is active. """)
-
         # NOTE: I could not find where self.p.left is set so I hacked it
         self.load_flat_field('slm_control/{}'.format(self.p.left["cal1"]), 'slm_control/{}'.format(self.p.right["cal1"]))
         self.combine_and_update()
@@ -611,34 +578,18 @@ class Main_Window(QtWidgets.QMainWindow):
         r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
                         self.flatfield[1]]), self.p.right["phasewrap"])
         
-        #self.img_data = pcalc.stitch_images(l, r)
         self.img_data = pcalc.stitch_images(l * self.p.left["slm_range"],
                                             r * self.p.right["slm_range"])
         
-        #pcalc.save_image(self.img_data, self.p.general["path"], 
-        #                 self.p.general["last_img_nm"])
-        #self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
-        
-        if self.p.general["display_mode"] == "imspector":
-            try:
-                self.stk.data()[:]=self.img_data / 255
-                self.meas.update()
-            except:
-                print("Still cannot communicate with the Abberior.")            
-        elif self.slm != None:
+        if self.slm != None:
             self.slm.update_image(np.uint8(self.img_data))
-            #self.slm.update_image(self.p.general["path"] + 
-            #                      self.p.general["last_img_nm"])
         self.plt_frame.plot(pcalc.stitch_images(l, r))
  
     
     def open_SLMDisplay(self):
         """ Opens a widget fullscreen on the secondary screen that displays
             the latest image. """
-        #self.slm = SLM.SLM_Display(self.p.general["path"] + self.p.general["last_img_nm"])
         self.slm = SLM.SLM_Display(np.uint8(self.img_data), self.p.general["display_mode"])
-        self.slm.show()
-        self.slm.raise_()
 
         
     def close_SLMDisplay(self):
