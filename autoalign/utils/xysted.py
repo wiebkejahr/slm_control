@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import json
 
 # local modules
-from autoalign.utils import vector_diffraction as vd
+from utils import vector_diffraction as vd
 # import vector_diffraction as vd
 
 
