@@ -35,12 +35,12 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 # local packages
-import slm_control.Pattern_Calculator as pcalc
-import slm_control.Pattern_Interface as PI
-import slm_control.Patterns_Zernike as PZ
-import slm_control.SLM as SLM
+import SLM_control.Pattern_Calculator as pcalc
+import SLM_control.Pattern_Interface as PI
+import SLM_control.Patterns_Zernike as PZ
+import SLM_control.SLM as SLM
 
-from slm_control.Parameters import param
+from SLM_control.Parameters import param
 
 sys.path.insert(1, 'autoalign/')
 import autoalign.abberior as abberior
@@ -117,7 +117,7 @@ class Main_Window(QtWidgets.QMainWindow):
 
         # Handling of all the different things that could potentially go wrong
         # when communicating with the Abberior
-        if self.p.general["abberior"] == 1:
+        if self.p.general["display_mode"] == "imspector":
             try:
                 try:
                     import specpy
@@ -619,7 +619,7 @@ class Main_Window(QtWidgets.QMainWindow):
         #                 self.p.general["last_img_nm"])
         #self.image = QPixmap(self.p.general["path"]+self.p.general["last_img_nm"])
         
-        if self.p.general["abberior"] == 1:
+        if self.p.general["display_mode"] == "imspector":
             try:
                 self.stk.data()[:]=self.img_data / 255
                 self.meas.update()
@@ -636,7 +636,7 @@ class Main_Window(QtWidgets.QMainWindow):
         """ Opens a widget fullscreen on the secondary screen that displays
             the latest image. """
         #self.slm = SLM.SLM_Display(self.p.general["path"] + self.p.general["last_img_nm"])
-        self.slm = SLM.SLM_Display(np.uint8(self.img_data))
+        self.slm = SLM.SLM_Display(np.uint8(self.img_data), self.p.general["display_mode"])
         self.slm.show()
         self.slm.raise_()
 

@@ -21,7 +21,8 @@ class param():
     
     def init_defaults(self):
         self.general = {
-                    "abberior"     : 0,
+                    "display_mode" : "external", # "imspector", "othersuite"
+                    "data_source"  : "imspector", # "path", "othersuite"
                     "size_slm_mm"  : [7.5, 10],
                     "slm_px"       : 0.0125,
                     "size_full"    : [600, 792],
@@ -30,9 +31,9 @@ class param():
                     "slm_mag"      :  3,
                     "laser_radius" : 1.2,
                     "objective"    : "100xOil_NA_140",
-                    "path"         : 'patterns/',                    
+                    "path"         : "patterns/",
                     "cal0"         : "patterns/Black_Full.bmp",
-                    "last_img_nm"  : 'latest.bmp',
+                    "last_img_nm"  : "latest.bmp",
                     "modes"        : ["Gauss", "2D STED", "3D STED", 
                                       "Segments", "Bivortex", "Code Input",
                                       "From File"],
@@ -124,6 +125,9 @@ class param():
         """ Parameter p: self of the calling function. Needed to have access to
             parameters provided via the GUI. Updates the values in the 
             dictionary with the values from the GUI. """
+        # values that cannot be changed via GUI are written read from the 
+        # parameter files and written back in unchanged. Checkboxes from GUI 
+        # are read out and updated in parameter files
         splt_img = 0
         if daddy.splt_img_state.checkState():
             splt_img = 1
@@ -136,12 +140,10 @@ class param():
         dbl_ps = 0
         if daddy.dbl_pass_state.checkState():
             dbl_ps = 1
-        abberior = 0
-        if daddy.p.general["abberior"] == 1:
-            abberior = 1
         
         self.general = {
-                    "abberior"     : abberior,
+                    "display_mode" : daddy.p.general["displaye_mode"],
+                    "data_source"  : daddy.p.general["data_source"],
                     "size_slm_mm"  : daddy.p.general["size_slm_mm"],
                     "slm_px"       : daddy.p.general["slm_px"],
                     "size_full"    : daddy.p.general["size_full"],
