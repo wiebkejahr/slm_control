@@ -18,7 +18,10 @@ class SLM_Display(QtWidgets.QWidget):
         full screen. Set screen resolution of secondary to 800 x 600 px for the
         SLM to work properly. """
     
-    def __init__(self, data, parent = None):
+    def __init__(self, data, mode, parent = None):
+        self.display = mode
+        
+        #if self.display == "external"
         super(SLM_Display, self).__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         print("Opening SLM ...")
