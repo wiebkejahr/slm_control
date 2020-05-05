@@ -53,6 +53,7 @@ class SLM_Display(QtWidgets.QWidget):
         try:
             try:
                 import specpy
+                print("imported")
             except:
                 print("specpy not installed")         
             try:
@@ -66,19 +67,21 @@ class SLM_Display(QtWidgets.QWidget):
                 try:
                     self.meas = imspec.create_measurement()
                 except:
-                    print("no active measurement. cannot create measurement")             
+                    print("no active measurement. cannot create measurement")
             self.stk = self.meas.create_stack(np.float, 
-                                            [self.p.general["size_full"][1], #792
-                                             self.p.general["size_full"][0], #600
+                                            [np.shape(data)[1], #792
+                                             np.shape(data)[0], #600
                                              1, 1])
-            self.stk.set_length(0, self.p.general["size_full"][1]/1000)
-            self.stk.set_length(1, self.p.general["size_full"][0]/1000)
+            self.stk.set_length(0, np.shape(data)[1]/1000)
+            self.stk.set_length(1, np.shape(data)[0]/1000)
+
         except:
             print("""Something went wrong with Abberior. Cannot communicate.
                       Are you working using Imspector? If not, set 
                       'display_mode = "external"' in the parameters_general 
                       file. If you're using Imspector, check that it is 
                       running and a measurement is active. """)
+        self.update_image(data)
     
     def update_image(self, data):
         """ updates the  displayed image with the one provided in img_path. """
@@ -89,8 +92,9 @@ class SLM_Display(QtWidgets.QWidget):
         
         
         elif self.display == "imspector":
+            print("display imspector")
             try:
-                self.stk.data()[:]=self.img_data / 255
+                self.stk.data()[:] = data / 255
                 self.meas.update()
             except:
                 print("Still cannot communicate with the Imspector software.")   
