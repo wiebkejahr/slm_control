@@ -16,12 +16,12 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 from torch.utils.data import Dataset, DataLoader
 import skimage
-
+from skimage.transform import resize
 # local modules
-from utils import my_classes as my_classes
-from utils import xysted 
-from utils.xysted import fluor_psf, sted_psf
-from utils.vector_diffraction import vector_diffraction as vd
+import autoalign.utils.my_classes
+# import autoalign.utils.xysted 
+from autoalign.utils.xysted import fluor_psf, sted_psf
+from autoalign.utils.vector_diffraction import vector_diffraction as vd
 
 def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
@@ -31,7 +31,7 @@ def add_noise(img):
     """Adds Poisson noise to the image using skimage's built-in method. Function normalizes image before adding noise"""
     return skimage.util.random_noise(normalize_img(img), mode='poisson', seed=None, clip=True)
 
-def crop_image(img,tol=0.1):
+def crop_image(img,tol=0.2):
     """Function to crop the dark line on the edge of the acquired image data.
     img is 2D image data (NOTE: it only works with 2D!)
     tol  is tolerance."""
@@ -42,7 +42,7 @@ def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
     # a little preprocessing
     image = normalize_img(np.squeeze(image)) # normalized (200,200) array
-    image = crop_image(image, tol=0.1) # get rid of dark line on edge
+    image = crop_image(image, tol=0.2) # get rid of dark line on edge
     image = normalize_img(image) # renormalize
     image = resize(image, (64,64)) # resize
     return image
