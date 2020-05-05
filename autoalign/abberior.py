@@ -21,7 +21,7 @@ except:
     print("Specpy not installed!")
     pass
 
-import autoalign.utils.helpers as helpers
+from autoalign.utils.helpers import *
 import autoalign.utils.my_models as my_models
 
 
@@ -33,7 +33,7 @@ def test(model, input_image, model_store_path):
 
     ideal_coeffs = np.asarray([0.0]*12)
 
-    donut = helpers.get_psf(ideal_coeffs)
+    # donut = helpers.get_psf(ideal_coeffs)
     
     # Test the model
     model.eval()
@@ -83,7 +83,7 @@ def correct(model_store_path):
     msr = im.active_measurement()
     image = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
     
-    image = helpers.preprocess(image)
+    image = preprocess(image)
     # # a little preprocessing
     # image = normalize_img(np.squeeze(image)) # normalized (200,200) array
     # image = crop_image(image, tol=0.1) # get rid of dark line on edge
@@ -119,7 +119,7 @@ def correct(model_store_path):
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.MultiNet()
+    model = my_models.MultiOffsetNet()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -131,35 +131,38 @@ def abberior_multi(model_store_path):
     # get active measurement 
     msr = im.active_measurement()
     image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    image_xy = helpers.preprocess(image_xy)
+    image_xy = preprocess(image_xy)
+    # image_xy = normalize_img(crop_image(normalize_img(np.squeeze(image_xy)), tol=0.2))
+    # image_xy = resize(image_xy, (64,64))
     plt.figure()
     plt.imshow(image_xy)
     plt.show()
+    # exit()
 
     ##### NOTE: fill this is in lab #######
     image_xz = msr.stack('ExpControl Ch1 {13}').data()
-    image_xz = helpers.preprocess(image_xz)
+    image_xz = preprocess(image_xz)
     plt.figure()
-    plt.imshow(image_xz, aspect="equal")
+    plt.imshow(image_xz.squeeze(), aspect="equal")
     plt.show()
     
     image_yz = msr.stack('ExpControl Ch1 {15}').data()
-    image_yz = helpers.preprocess(image_yz)
+    image_yz = preprocess(image_yz)
     plt.figure()
-    plt.imshow(image_yz, aspect="equal")
+    plt.imshow(image_yz.squeeze(), aspect="equal")
     plt.show()
     # ##################
-    
+    # image_xy
     # exit()
     
-
+    # exit()
     image = np.stack((image_xy, image_xz, image_yz), axis=0)
 
     
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
 
-    print(coeffs)
+    # print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
     corrections = {
             "sphere": [
@@ -181,11 +184,3 @@ def abberior_multi(model_store_path):
         }
 
     return corrections
-
-# if __name__ == "__main__":
-#     parser = ap.ArgumentParser(description='Model Hyperparameters and File I/O')
-#     parser.add_argument('model_store_path', type=str, help='path to model checkpoint dir')
-    
-#     ARGS=parser.parse_args()
-
-#     main(ARGS)
