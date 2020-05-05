@@ -119,7 +119,7 @@ def correct(model_store_path):
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.MultiOffsetNet()
+    model = my_models.MultiNet()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
