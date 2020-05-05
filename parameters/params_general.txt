@@ -1,5 +1,6 @@
 {
-    "abberior": 1,
+    "display_mode" : "external",
+    "data_source" : "imspector",
     "size_slm_mm": [
         7.5,
         10

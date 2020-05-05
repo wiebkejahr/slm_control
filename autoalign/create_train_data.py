@@ -80,9 +80,10 @@ def main(args):
         if mode == 'sted':
             # TODO: fix the add_noise to work for multi images (used to wrap get_sted_psf())
             img, zern_label, offset_label = gen_sted_psf(res, offset=True, multi=multi)
+            # plot_xsection(img)
+            # plt.show()
         elif mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=True, multi=multi)
-        
         # save the label and image
         if offset:
             train_labels.append(zern_label+offset_label)

@@ -70,7 +70,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         
 
             total_step= len(data_loaders['train']) 
-            update_num = 10
+            update_num = 2
             if (i + 1) % update_num == 0: # will log to tensorboard after `update_num` batches, roughly
                 # ...log the running loss
                 train_writer.add_scalar('training loss',

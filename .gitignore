@@ -134,3 +134,7 @@ dmypy.json
 
 # ignore pyc files
 *.pyc
+*.hdf5
+autoalign/runs/4.27.20_noiseTEST_eps_15_lr_0.001_bs_64/events.out.tfevents.1588617341.Hopes-MacBook-Pro.local.20939.0
+autoalign/models/4.27.20_noiseTEST_eps_15_lr_0.001_bs_64.pth
+autoalign/runs/4.27.20_noiseTEST_eps_15_lr_0.001_bs_64/events.out.tfevents.1588617546.Hopes-MacBook-Pro.local.21125.0

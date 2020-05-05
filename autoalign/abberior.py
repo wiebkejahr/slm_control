@@ -21,8 +21,8 @@ except:
     print("Specpy not installed!")
     pass
 
-from autoalign.utils.helpers import *
-import autoalign.utils.my_models as my_models
+import utils.helpers as helpers
+import utils.my_models as my_models
 
 
 def test(model, input_image, model_store_path):
@@ -131,36 +131,38 @@ def abberior_multi(model_store_path):
     # get active measurement 
     msr = im.active_measurement()
     image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    image_xy = preprocess(image_xy)
-    # image_xy = normalize_img(crop_image(normalize_img(np.squeeze(image_xy)), tol=0.2))
-    # image_xy = resize(image_xy, (64,64))
-    plt.figure()
-    plt.imshow(image_xy)
-    plt.show()
-    # exit()
+    image_xy = helpers.preprocess(image_xy)
+    # plt.figure()
+    # plt.imshow(image_xy)
+    # plt.show()
 
     ##### NOTE: fill this is in lab #######
     image_xz = msr.stack('ExpControl Ch1 {13}').data()
-    image_xz = preprocess(image_xz)
-    plt.figure()
-    plt.imshow(image_xz.squeeze(), aspect="equal")
-    plt.show()
+    image_xz = helpers.preprocess(image_xz)
+    # plt.figure()
+    # plt.imshow(image_xz, aspect="equal")
+    # plt.show()
     
     image_yz = msr.stack('ExpControl Ch1 {15}').data()
-    image_yz = preprocess(image_yz)
-    plt.figure()
-    plt.imshow(image_yz.squeeze(), aspect="equal")
-    plt.show()
+    image_yz = helpers.preprocess(image_yz)
+    # plt.figure()
+    # plt.imshow(image_yz, aspect="equal")
+    # plt.show()
     # ##################
     # image_xy
     # exit()
     
     # exit()
     image = np.stack((image_xy, image_xz, image_yz), axis=0)
+    fig = helpers.plot_xsection(image)
+    plt.show()
 
     
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
+    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
+    fig = helpers.plot_xsection(reconstructed)
+    plt.show()
 
     # print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
