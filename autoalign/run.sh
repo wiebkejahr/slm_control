@@ -43,7 +43,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 #   --mode {fluor,sted,z-sted} which mode of data to create
 
 if [ ! -f ${DATASET} ]; then
-python3 create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --multi --mode 'sted'
+python create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --multi --mode 'sted'
 else
 echo "Dataset already exists"
 fi
@@ -75,7 +75,7 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
 if [ ! -f ${MODEL_STORE_PATH} ]; then
-python3 train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
+python train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
 else
 echo "Model already exists"
 fi

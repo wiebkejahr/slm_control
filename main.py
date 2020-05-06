@@ -42,7 +42,7 @@ import SLM_control.SLM as SLM
 
 from SLM_control.Parameters import param
 
-sys.path.insert(1, 'SLM_control/')
+sys.path.insert(1, os.getcwd())
 import autoalign.abberior as abberior
 
 mpl.rc('text', usetex=False)
@@ -52,8 +52,8 @@ mpl.rc('pdf', fonttype=42)
 
 # TODO: add drop down window to select model w/ which to autoalign
 # NOTE: hardcoded for now:
-MODEL_STORE_PATH="autoalign/models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
-
+MODEL_STORE_PATH="autoalign/models/20.02.12_xsection_20k_15_epochs_Adam_lr_0.001_batchsize_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.04.27_3d_offset_sted_20k_eps_15_lr_0.001_bs_64.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -137,8 +137,8 @@ class Main_Window(QtWidgets.QMainWindow):
         #self.load_params(fname)
         #self.p = param()
         self.p.load_file_obj(fname[0], self.current_objective, fname[1])
-        print("left", self.p.left)
-        print("right", self.p.right)
+        # print("left", self.p.left)
+        # print("right", self.p.right)
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
         

@@ -29,7 +29,7 @@
         0,
         0
     ],
-    "slm_range": 255,
+    "slm_range": 205,
     "phasewrap": 1,
     "cal1": "patterns/CAL_LSH0801768_780nm.bmp"
 }

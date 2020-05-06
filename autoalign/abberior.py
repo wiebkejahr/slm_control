@@ -33,7 +33,7 @@ def test(model, input_image, model_store_path):
 
     ideal_coeffs = np.asarray([0.0]*12)
 
-    donut = helpers.get_psf(ideal_coeffs)
+    # donut = helpers.get_psf(ideal_coeffs)
     
     # Test the model
     model.eval()
@@ -83,7 +83,7 @@ def correct(model_store_path):
     msr = im.active_measurement()
     image = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
     
-    image = helpers.preprocess(image)
+    image = preprocess(image)
     # # a little preprocessing
     # image = normalize_img(np.squeeze(image)) # normalized (200,200) array
     # image = crop_image(image, tol=0.1) # get rid of dark line on edge
@@ -139,7 +139,7 @@ def abberior_multi(model_store_path):
     ##### NOTE: fill this is in lab #######
     image_xz = msr.stack('ExpControl Ch1 {13}').data()
     image_xz = helpers.preprocess(image_xz)
-    image_xz = rotate(image_xz, 90)
+    image_xz = np.fliplr(rotate(image_xz, -90))
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
@@ -153,18 +153,21 @@ def abberior_multi(model_store_path):
     
 
     
-
+    # exit()
     image = np.stack((image_xy, image_xz, image_yz), axis=0)
     fig = helpers.plot_xsection(image)
     plt.show()
 
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
-    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
-    fig = helpers.plot_xsection(reconstructed)
-    plt.show()
+    # print(coeffs)
+    # # print(coeffs[:-2], coeffs[-2:])
+    # reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
+    # fig1 = helpers.plot_xsection(reconstructed)
+    # plt.show()
+    
 
-    print(coeffs)
+    # print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
     corrections = {
             "sphere": [
@@ -186,11 +189,3 @@ def abberior_multi(model_store_path):
         }
 
     return corrections
-
-# if __name__ == "__main__":
-#     parser = ap.ArgumentParser(description='Model Hyperparameters and File I/O')
-#     parser.add_argument('model_store_path', type=str, help='path to model checkpoint dir')
-    
-#     ARGS=parser.parse_args()
-
-#     main(ARGS)

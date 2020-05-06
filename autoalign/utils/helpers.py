@@ -15,14 +15,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 from torch.utils.data import Dataset, DataLoader
-from skimage.transform import resize
+from skimage.transform import resize, rotate
 import skimage
-
+from skimage.transform import resize
 # local modules
-import utils.my_classes as my_classes
-from utils import xysted 
-from utils.xysted import fluor_psf, sted_psf
-from utils.vector_diffraction import vector_diffraction as vd
+import autoalign.utils.my_classes as my_classes
+import autoalign.utils.xysted
+from autoalign.utils.xysted import fluor_psf, sted_psf
+from autoalign.utils.vector_diffraction import vector_diffraction as vd
 
 def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
@@ -33,7 +33,7 @@ def add_noise(img):
     # return img + np.random.poisson(img)
     return skimage.util.random_noise(normalize_img(img), mode='gaussian', seed=None, clip=True, var=0.0001)
 
-def crop_image(img,tol=0.1):
+def crop_image(img,tol=0.2):
     """Function to crop the dark line on the edge of the acquired image data.
     img is 2D image data (NOTE: it only works with 2D!)
     tol  is tolerance."""
@@ -44,7 +44,7 @@ def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
     # a little preprocessing
     image = normalize_img(np.squeeze(image)) # normalized (200,200) array
-    image = crop_image(image, tol=0.1) # get rid of dark line on edge
+    image = crop_image(image, tol=0.2) # get rid of dark line on edge
     image = normalize_img(image) # renormalize
     image = resize(image, (64,64)) # resize
     return image
@@ -105,7 +105,7 @@ def gen_coeffs():
     # c[3:6] = [random.uniform(-1.4, 1.4) for i in c[3:6]]
     # c[6:10] = [random.uniform(-0.8, 0.8) for i in c[6:10]]
     # c[10:] = [random.uniform(-0.6, 0.6) for i in c[10:]]
-    c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
+    c = [round(random.uniform(-0.4, 0.4), 3) for i in c]
     
     return c[3:]
 
@@ -189,6 +189,8 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
     else:
         plane = 'xy'
     img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
+    
+
     return img
 
 def gen_fluor_psf(res=64, offset=False, multi=False):
@@ -247,11 +249,14 @@ def get_stats(data_path, batch_size, mode='train'):
 def plot_xsection(img3d):
     fig = plt.figure()
     ax1 = fig.add_subplot(1,3,1)
-    ax1.imshow(img3d[0])
+    ax1.set_title('xy')
+    ax1.imshow(img3d[0], cmap='hot')
     ax2 = fig.add_subplot(1,3,2)
-    ax2.imshow(img3d[1])
+    ax2.set_title('xz')
+    ax2.imshow(img3d[1], cmap='hot')
     ax3 = fig.add_subplot(1,3,3)
-    ax3.imshow(img3d[2])
+    ax3.set_title('yz')
+    ax3.imshow(img3d[2], cmap='hot')
     return fig
 # TODO: redirect to the original now that it's in the same repo
 #########################################################################################
