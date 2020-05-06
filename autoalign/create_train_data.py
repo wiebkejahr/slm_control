@@ -80,8 +80,7 @@ def main(args):
         if mode == 'sted':
             # TODO: fix the add_noise to work for multi images (used to wrap get_sted_psf())
             img, zern_label, offset_label = gen_sted_psf(res, offset=True, multi=multi)
-            # plot_xsection(img)
-            # plt.show()
+            
         elif mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=True, multi=multi)
         # save the label and image
@@ -138,24 +137,30 @@ def main(args):
     print('Test images completed.')
 
 if __name__ == '__main__':
-    parser = ap.ArgumentParser(description="Dataset Parameters")
-    parser.add_argument('num_points', type=int,\
-        help='number of data points for the dataset, will be split 90/10 training/validation')
-    parser.add_argument('test_num', type=int, default=20, \
-        help='number of points for the test set')
-    parser.add_argument('data_dir', \
-        help='path to where you want the dataset stored.')
-    parser.add_argument('-r','--resolution', type=int, default=64, \
-        help='resolution of training example image. Default is 64 x 64')
-    parser.add_argument('--multi', action='store_true', \
-        help='whether or not to use cross-sections')  
-    parser.add_argument('--offset', action='store_true', \
-        help='whether or not to incorporate offset')  
-    parser.add_argument('--mode', type=str, choices=['fluor', 'sted', 'z-sted'],\
-        help='which mode of data to create') 
-    ARGS = parser.parse_args()
+    # parser = ap.ArgumentParser(description="Dataset Parameters")
+    # parser.add_argument('num_points', type=int,\
+    #     help='number of data points for the dataset, will be split 90/10 training/validation')
+    # parser.add_argument('test_num', type=int, default=20, \
+    #     help='number of points for the test set')
+    # parser.add_argument('data_dir', \
+    #     help='path to where you want the dataset stored.')
+    # parser.add_argument('-r','--resolution', type=int, default=64, \
+    #     help='resolution of training example image. Default is 64 x 64')
+    # parser.add_argument('--multi', action='store_true', \
+    #     help='whether or not to use cross-sections')  
+    # parser.add_argument('--offset', action='store_true', \
+    #     help='whether or not to incorporate offset')  
+    # parser.add_argument('--mode', type=str, choices=['fluor', 'sted', 'z-sted'],\
+    #     help='which mode of data to create') 
+    # ARGS = parser.parse_args()
     
-    main(ARGS)
+    # if __name__ == "__main__":
+    img = get_sted_psf(coeffs=[0,0,0,0,0.1,0,0,0,0,0,0,0])
+    plt.figure()
+    plt.imshow(img)
+    plt.show()
+
+    # main(ARGS)
 
 
     

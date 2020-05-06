@@ -189,7 +189,7 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
     else:
         plane = 'xy'
     img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
-    return img, coeffs, offset_label
+    return img
 
 def gen_fluor_psf(res=64, offset=False, multi=False):
     """generates a fluor psf at random"""
@@ -221,7 +221,7 @@ def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], multi
         plane = 'xy'
     
     img = fluor_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
-    return img, coeffs, offset_label
+    return img
 
 
 def get_stats(data_path, batch_size, mode='train'):
@@ -343,6 +343,8 @@ def crop(full, size, offset = [0,0]):
     maxy = int(size[1]*3/2 + offset[1])    
     cropped = full[minx:maxx, miny:maxy]
     return cropped
+
+
 
 
 
