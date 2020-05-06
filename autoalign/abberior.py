@@ -157,16 +157,16 @@ def abberior_multi(model_store_path):
 
     fig2 = helpers.plot_xsection(image)
     plt.show()
-    img = helpers.add_noise(helpers.get_sted_psf(coeffs=np.asarray([0,0,0,0,0.1,0,0,0,0,0,0,0]), multi=True))
+    img = helpers.add_noise(helpers.get_sted_psf(coeffs=np.asarray([0,0,0,0,0.9,0,0,0,0,0,0,0]), multi=True))
     helpers.plot_xsection(img)
     plt.show()
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
-    print(coeffs)
-    # print(coeffs[:-2], coeffs[-2:])
-    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
-    fig1 = helpers.plot_xsection(reconstructed)
-    plt.show()
+    # print(coeffs)
+    # # print(coeffs[:-2], coeffs[-2:])
+    # reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
+    # fig1 = helpers.plot_xsection(reconstructed)
+    # plt.show()
     
 
     
