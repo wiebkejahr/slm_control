@@ -35,12 +35,12 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 # local packages
-import SLM_control.Pattern_Calculator as pcalc
-import SLM_control.Pattern_Interface as PI
-import SLM_control.Patterns_Zernike as PZ
-import SLM_control.SLM as SLM
+import slm_control.Pattern_Calculator as pcalc
+import slm_control.Pattern_Interface as PI
+import slm_control.Patterns_Zernike as PZ
+import slm_control.SLM as SLM
 
-from SLM_control.Parameters import param
+from slm_control.Parameters import param
 
 sys.path.insert(1, os.getcwd())
 import autoalign.abberior as abberior
