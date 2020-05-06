@@ -13,7 +13,7 @@ saves the important ones in a dictionary, which is passed to the GUI"""
 import torch
 import numpy as np
 import argparse as ap
-from skimage.transform import resize
+from skimage.transform import resize, rotate
 import matplotlib.pyplot as plt
 try:
     import specpy as sp
@@ -33,7 +33,7 @@ def test(model, input_image, model_store_path):
 
     ideal_coeffs = np.asarray([0.0]*12)
 
-    donut = helpers.get_psf(ideal_coeffs)
+    # donut = helpers.get_psf(ideal_coeffs)
     
     # Test the model
     model.eval()
@@ -139,6 +139,7 @@ def abberior_multi(model_store_path):
     ##### NOTE: fill this is in lab #######
     image_xz = msr.stack('ExpControl Ch1 {13}').data()
     image_xz = helpers.preprocess(image_xz)
+    image_xz = np.fliplr(rotate(image_xz, -90))
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
@@ -150,21 +151,25 @@ def abberior_multi(model_store_path):
     # plt.show()
     # ##################
     
-    # exit()
-    
 
     image = np.stack((image_xy, image_xz, image_yz), axis=0)
-    fig = helpers.plot_xsection(image)
-    plt.show()
-
     
+
+    fig2 = helpers.plot_xsection(image)
+    plt.show()
+    img = helpers.add_noise(helpers.get_sted_psf(coeffs=np.asarray([0,0,0,0,0.1,0,0,0,0,0,0,0]), multi=True))
+    helpers.plot_xsection(img)
+    plt.show()
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
-    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
-    fig = helpers.plot_xsection(reconstructed)
-    plt.show()
-
     print(coeffs)
+    # print(coeffs[:-2], coeffs[-2:])
+    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
+    fig1 = helpers.plot_xsection(reconstructed)
+    plt.show()
+    
+
+    
     # a dictionary of correction terms to be passed to SLM control
     corrections = {
             "sphere": [

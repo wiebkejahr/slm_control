@@ -15,12 +15,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 from torch.utils.data import Dataset, DataLoader
-from skimage.transform import resize
+from skimage.transform import resize, rotate
 import skimage
 
 # local modules
 import autoalign.utils.my_classes as my_classes
-from autoalign.utils import xysted 
+import autoalign.utils.xysted
 from autoalign.utils.xysted import fluor_psf, sted_psf
 from autoalign.utils.vector_diffraction import vector_diffraction as vd
 
@@ -104,7 +104,7 @@ def gen_coeffs():
     # c[3:6] = [random.uniform(-1.4, 1.4) for i in c[3:6]]
     # c[6:10] = [random.uniform(-0.8, 0.8) for i in c[6:10]]
     # c[10:] = [random.uniform(-0.6, 0.6) for i in c[10:]]
-    c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
+    c = [round(random.uniform(-0.4, 0.4), 3) for i in c]
     
     return c[3:]
 
@@ -167,6 +167,14 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
     else:
         plane = 'xy'
     img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
+    # plt.figure()
+    # plt.imshow(img[0])
+    # plt.show()
+    # # adding noise to each of the images
+    # img = np.stack([add_noise(i) for i in img], axis=0)
+    # plt.figure()
+    # plt.imshow(img[0])
+    # plt.show()
     return img, coeffs, offset_label
 
 def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False):
@@ -180,7 +188,9 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
     else:
         plane = 'xy'
     img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
-    return img, coeffs, offset_label
+    
+
+    return img
 
 def gen_fluor_psf(res=64, offset=False, multi=False):
     """generates a fluor psf at random"""
@@ -212,7 +222,7 @@ def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], multi
         plane = 'xy'
     
     img = fluor_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
-    return img, coeffs, offset_label
+    return img
 
 
 def get_stats(data_path, batch_size, mode='train'):
@@ -238,11 +248,14 @@ def get_stats(data_path, batch_size, mode='train'):
 def plot_xsection(img3d):
     fig = plt.figure()
     ax1 = fig.add_subplot(1,3,1)
-    ax1.imshow(img3d[0])
+    ax1.set_title('xy')
+    ax1.imshow(img3d[0], cmap='hot')
     ax2 = fig.add_subplot(1,3,2)
-    ax2.imshow(img3d[1])
+    ax2.set_title('xz')
+    ax2.imshow(img3d[1], cmap='hot')
     ax3 = fig.add_subplot(1,3,3)
-    ax3.imshow(img3d[2])
+    ax3.set_title('yz')
+    ax3.imshow(img3d[2], cmap='hot')
     return fig
 # TODO: redirect to the original now that it's in the same repo
 #########################################################################################
