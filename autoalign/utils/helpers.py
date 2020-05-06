@@ -17,7 +17,7 @@ from sklearn.metrics import mean_squared_error
 from torch.utils.data import Dataset, DataLoader
 from skimage.transform import resize, rotate
 import skimage
-
+from skimage.transform import resize
 # local modules
 import autoalign.utils.my_classes as my_classes
 import autoalign.utils.xysted
@@ -30,9 +30,10 @@ def normalize_img(img):
 
 def add_noise(img):
     """Adds Poisson noise to the image using skimage's built-in method. Function normalizes image before adding noise"""
-    return skimage.util.random_noise(normalize_img(img), mode='poisson', seed=None, clip=True)
+    # return img + np.random.poisson(img)
+    return skimage.util.random_noise(normalize_img(img), mode='gaussian', seed=None, clip=True, var=0.0001)
 
-def crop_image(img,tol=0.1):
+def crop_image(img,tol=0.2):
     """Function to crop the dark line on the edge of the acquired image data.
     img is 2D image data (NOTE: it only works with 2D!)
     tol  is tolerance."""
@@ -43,7 +44,7 @@ def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
     # a little preprocessing
     image = normalize_img(np.squeeze(image)) # normalized (200,200) array
-    image = crop_image(image, tol=0.1) # get rid of dark line on edge
+    image = crop_image(image, tol=0.2) # get rid of dark line on edge
     image = normalize_img(image) # renormalize
     image = resize(image, (64,64)) # resize
     return image
@@ -167,15 +168,15 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
     else:
         plane = 'xy'
     img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
-    # plt.figure()
-    # plt.imshow(img[0])
-    # plt.show()
+    img2 = np.stack([add_noise(i) for i in img], axis=0)
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(1,2,1)
+    # ax1.imshow(img[0])
+    # ax2 = fig.add_subplot(1,2,2)
     # # adding noise to each of the images
-    # img = np.stack([add_noise(i) for i in img], axis=0)
-    # plt.figure()
-    # plt.imshow(img[0])
+    # ax2.imshow(img2[0])
     # plt.show()
-    return img, coeffs, offset_label
+    return img2, coeffs, offset_label
 
 def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.

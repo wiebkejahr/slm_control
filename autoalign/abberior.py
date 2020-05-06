@@ -21,8 +21,8 @@ except:
     print("Specpy not installed!")
     pass
 
-import autoalign.utils.helpers as helpers
-import autoalign.utils.my_models as my_models
+import utils.helpers as helpers
+import utils.my_models as my_models
 
 
 def test(model, input_image, model_store_path):
@@ -83,7 +83,7 @@ def correct(model_store_path):
     msr = im.active_measurement()
     image = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
     
-    image = helpers.preprocess(image)
+    image = preprocess(image)
     # # a little preprocessing
     # image = normalize_img(np.squeeze(image)) # normalized (200,200) array
     # image = crop_image(image, tol=0.1) # get rid of dark line on edge
@@ -152,14 +152,12 @@ def abberior_multi(model_store_path):
     # ##################
     
 
-    image = np.stack((image_xy, image_xz, image_yz), axis=0)
     
+    # exit()
+    image = np.stack((image_xy, image_xz, image_yz), axis=0)
+    fig = helpers.plot_xsection(image)
+    plt.show()
 
-    fig2 = helpers.plot_xsection(image)
-    plt.show()
-    img = helpers.add_noise(helpers.get_sted_psf(coeffs=np.asarray([0,0,0,0,0.9,0,0,0,0,0,0,0]), multi=True))
-    helpers.plot_xsection(img)
-    plt.show()
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
     # print(coeffs)
@@ -169,7 +167,7 @@ def abberior_multi(model_store_path):
     # plt.show()
     
 
-    
+    # print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
     corrections = {
             "sphere": [
@@ -191,11 +189,3 @@ def abberior_multi(model_store_path):
         }
 
     return corrections
-
-# if __name__ == "__main__":
-#     parser = ap.ArgumentParser(description='Model Hyperparameters and File I/O')
-#     parser.add_argument('model_store_path', type=str, help='path to model checkpoint dir')
-    
-#     ARGS=parser.parse_args()
-
-#     main(ARGS)
