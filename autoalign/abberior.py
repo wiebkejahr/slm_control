@@ -139,7 +139,7 @@ def abberior_multi(model_store_path):
     ##### NOTE: fill this is in lab #######
     image_xz = msr.stack('ExpControl Ch1 {13}').data()
     image_xz = helpers.preprocess(image_xz)
-    image_xz = np.fliplr(rotate(image_xz, -90))
+    image_xz = np.fliplr(rotate(image_xz, 90))
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
@@ -161,10 +161,11 @@ def abberior_multi(model_store_path):
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
     # print(coeffs)
-    # # print(coeffs[:-2], coeffs[-2:])
-    # reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
-    # fig1 = helpers.plot_xsection(reconstructed)
-    # plt.show()
+    coeffs = coeffs[:-2]
+    offset = coeffs[-2:])
+    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
+    fig1 = helpers.plot_xsection(reconstructed)
+    plt.show()
     
 
     # print(coeffs)
