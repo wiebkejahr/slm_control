@@ -146,6 +146,9 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         self.stepgui = self.double_spin(defval[4], [0, 1, 0, 360], gui)
         self.modegui.activated.connect(lambda: self.compute_pattern())
         
+        #TODO: added temporarily, needs to be removed later again
+        self.tempscalegui = self.double_spin(1, [2, 0.1, -10, 10], gui)
+        
         gui.setContentsMargins(0,0,0,0)
         
         return gui

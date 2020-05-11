@@ -343,7 +343,7 @@ class Main_Window(QtWidgets.QMainWindow):
         lbox_img.addWidget(QtWidgets.QLabel('Phase'))
         lbox_img.addWidget(QtWidgets.QLabel('Rotation'))
         lbox_img.addWidget(QtWidgets.QLabel('Steps'))
-        # NOTE: added as a temp measure to correct for scaling diff 
+        # TODO: added as a temp measure to correct for scaling diff 
         # btw vector diffraction and GUI 
         lbox_img.addWidget(QtWidgets.QLabel('Scale'))
         lbox_img.addWidget(QtWidgets.QLabel('Astigmatism X/Y'))
