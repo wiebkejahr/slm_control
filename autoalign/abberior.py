@@ -162,7 +162,7 @@ def abberior_multi(model_store_path):
     coeffs = test(model, image, model_store_path)
     # print(coeffs)
     coeffs = coeffs[:-2]
-    offset = coeffs[-2:])
+    offset = coeffs[-2:]
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
     fig1 = helpers.plot_xsection(reconstructed)
     plt.show()
