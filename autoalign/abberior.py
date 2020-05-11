@@ -21,8 +21,8 @@ except:
     print("Specpy not installed!")
     pass
 
-import utils.helpers as helpers
-import utils.my_models as my_models
+import autoalign.utils.helpers as helpers
+import autoalign.utils.my_models as my_models
 
 
 def test(model, input_image, model_store_path):

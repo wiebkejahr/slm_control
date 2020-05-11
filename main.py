@@ -166,14 +166,14 @@ class Main_Window(QtWidgets.QMainWindow):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
         
-        #try:
+        # NOTE: need to know from the model itself which model to use, maybe some kind of json like for
+        # the obejctives, but for now, can change manually 
         self.zernike = abberior.abberior_multi(MODEL_STORE_PATH)
-        # self.zernike = abberior.correct(MODEL_STORE_PATH) # returns a dictionary
-        # print(self.zernike)
+        # this needs to be scaled by some factor that's input from the GUI
         
+
         # NOTE: self.p exists bc load_params() is called during creation of mainframe
         # this is setting each value to its current value plus the correction
-
         self.p.left["astig"] = [x+y for x,y in zip(self.p.left["astig"], self.zernike["astig"])]
         self.p.left["coma"] = [x+y for x,y in zip(self.p.left["coma"], self.zernike["coma"])]
         self.p.left["sphere"] = [x+y for x,y in zip(self.p.left["sphere"], self.zernike["sphere"])]
@@ -194,7 +194,11 @@ class Main_Window(QtWidgets.QMainWindow):
         #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
 
         self.recalc_images()
-        
+
+    def scale_weights(zernike):
+
+
+        pass  
         
     def init_images(self):
         """ Called upon startup of the program. Initizialises the variables
@@ -324,6 +328,8 @@ class Main_Window(QtWidgets.QMainWindow):
         self.plt_frame = PlotCanvas(self)      
         imgbox.addWidget(self.plt_frame)
 
+        # scale_img = QtWidgets.QVBoxLayout()
+        
         # create the labels beneath image. Numeric controls are added in the
         # respective subfunctions.
         lbox_img = QtWidgets.QVBoxLayout()
@@ -337,7 +343,9 @@ class Main_Window(QtWidgets.QMainWindow):
         lbox_img.addWidget(QtWidgets.QLabel('Phase'))
         lbox_img.addWidget(QtWidgets.QLabel('Rotation'))
         lbox_img.addWidget(QtWidgets.QLabel('Steps'))
-        
+        # NOTE: added as a temp measure to correct for scaling diff 
+        # btw vector diffraction and GUI 
+        lbox_img.addWidget(QtWidgets.QLabel('Scale'))
         lbox_img.addWidget(QtWidgets.QLabel('Astigmatism X/Y'))
         lbox_img.addWidget(QtWidgets.QLabel('Coma X/Y'))
         lbox_img.addWidget(QtWidgets.QLabel('Spherical 1/2'))
