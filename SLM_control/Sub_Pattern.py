@@ -9,8 +9,8 @@ import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 
 import numpy as np
-import SLM_control.Pattern_Calculator as pcalc
-import SLM_control.syntax
+import slm_control.Pattern_Calculator as pcalc
+import slm_control.syntax
 
 class Sub_Pattern(QtWidgets.QWidget):
     """ Parent Widget for all the subpattern widgets. Contains GUI, the image 
@@ -145,6 +145,10 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         self.rotgui = self.double_spin(defval[3], [2, 10, 0, 360], gui)
         self.stepgui = self.double_spin(defval[4], [0, 1, 0, 360], gui)
         self.modegui.activated.connect(lambda: self.compute_pattern())
+        
+        #TODO: added temporarily, needs to be removed later again
+        self.tempscalegui = self.double_spin(1, [2, 0.1, -10, 10], gui)
+        
         gui.setContentsMargins(0,0,0,0)
         
         return gui
@@ -158,6 +162,7 @@ class Sub_Pattern_Vortex(Sub_Pattern):
             rot = self.rotgui.value()
             steps = self.stepgui.value()
             slm_scale = self.daddy.daddy.slm_radius
+            
             
             # execute all 'standard' cases via Pattern Calculator
             if mode != "Code Input" and mode != "From File":
@@ -190,8 +195,8 @@ class Sub_Pattern_Vortex(Sub_Pattern):
                                  screen.width() / 2, screen.height() / 2)
         vbox = QtWidgets.QVBoxLayout()
         self.text_box = QtWidgets.QPlainTextEdit()
-        highlight = syntax.PythonHighlighter(self.text_box.document())
-        textfile = open('CodeInput.py', 'r')
+        highlight = slm_control.syntax.PythonHighlighter(self.text_box.document())
+        textfile = open('slm_control/CodeInput.py', 'r')
         self.text_box.setPlainText(textfile.read())
 
         vbox.addWidget(self.text_box)

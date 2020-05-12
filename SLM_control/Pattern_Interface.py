@@ -11,9 +11,9 @@ import PyQt5.QtWidgets as QtWidgets
 
 import numpy as np
 
-import SLM_control.Pattern_Calculator as pcalc
-import SLM_control.Sub_Pattern as spat
-import SLM_control.Patterns_Zernike as patzern
+import slm_control.Pattern_Calculator as pcalc
+import slm_control.Sub_Pattern as spat
+import slm_control.Patterns_Zernike as patzern
 
 class Half_Pattern(QtWidgets.QWidget):
     """ Contains the image data to create one half of the pattern on the SLM:
@@ -158,7 +158,7 @@ class Half_Pattern(QtWidgets.QWidget):
             Calls the update function of the function owning this instance (in 
             this case the main). """
             
-        if completely:    
+        if completely:
             self.aberr.astig.compute_pattern(update = False)
             self.aberr.coma.compute_pattern(update = False)
             self.aberr.sphere.compute_pattern(update = False)
@@ -170,7 +170,8 @@ class Half_Pattern(QtWidgets.QWidget):
             self.defoc.compute_pattern(update = False)
             self.off.compute_pattern(update = False)
         
-        self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.aberr.data])
+        #TODO: tempscalegui.value needs to be removed
+        self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.vort.tempscalegui.value() * self.aberr.data])
         self.data = self.crop(update = False)
         
         if update:

@@ -21,8 +21,8 @@ except:
     print("Specpy not installed!")
     pass
 
-import utils.helpers as helpers
-import utils.my_models as my_models
+import autoalign.utils.helpers as helpers
+import autoalign.utils.my_models as my_models
 
 
 def test(model, input_image, model_store_path):
@@ -139,7 +139,7 @@ def abberior_multi(model_store_path):
     image_xz = msr.stack('ExpControl Ch1 {13}').data()
     
     image_xz = helpers.preprocess(image_xz)
-    image_xz = rotate(image_xz, -90)
+    image_xz = np.fliplr(rotate(image_xz, 90))
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
@@ -164,8 +164,9 @@ def abberior_multi(model_store_path):
     # coeffs = results[:-2]
     # offset = results[-2:]
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
-    fig = helpers.plot_xsection(reconstructed)
+    fig1 = helpers.plot_xsection(reconstructed)
     plt.show()
+    
 
     # print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
