@@ -136,10 +136,10 @@ def abberior_multi(model_store_path):
     # plt.imshow(image_xy)
     # plt.show()
 
-    ##### NOTE: fill this is in lab #######
     image_xz = msr.stack('ExpControl Ch1 {13}').data()
+    
     image_xz = helpers.preprocess(image_xz)
-    image_xz = rotate(image_xz, 90)
+    image_xz = rotate(image_xz, -90)
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
@@ -159,7 +159,10 @@ def abberior_multi(model_store_path):
     plt.show()
 
     # # coeffs, _, image = test(model, image, model_store_path)
-    coeffs = test(model, image, model_store_path)
+    results = test(model, image, model_store_path)
+    coeffs = results
+    # coeffs = results[:-2]
+    # offset = results[-2:]
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
     fig = helpers.plot_xsection(reconstructed)
     plt.show()
@@ -168,20 +171,20 @@ def abberior_multi(model_store_path):
     # a dictionary of correction terms to be passed to SLM control
     corrections = {
             "sphere": [
-                coeffs[9],
+                -coeffs[9],
                 0.0
             ],
             "astig": [
-                coeffs[0],
-                coeffs[2]
+                -coeffs[0],
+                -coeffs[2]
             ],
             "coma": [
-                coeffs[4],
-                coeffs[5]
+                -coeffs[4],
+                -coeffs[5]
             ],
             "trefoil": [
-                coeffs[3],
-                coeffs[6]
+                -coeffs[3],
+                -coeffs[6]
             ]
         }
 

@@ -189,7 +189,7 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
     else:
         plane = 'xy'
     img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
-    return img, coeffs, offset_label
+    return img
 
 def gen_fluor_psf(res=64, offset=False, multi=False):
     """generates a fluor psf at random"""
