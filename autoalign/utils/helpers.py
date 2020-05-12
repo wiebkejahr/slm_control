@@ -250,13 +250,13 @@ def plot_xsection(img3d):
     fig = plt.figure()
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
-    ax1.imshow(img3d[0], cmap='hot')
+    ax1.imshow(img3d[0])#, cmap='hot')
     ax2 = fig.add_subplot(1,3,2)
     ax2.set_title('xz')
-    ax2.imshow(img3d[1], cmap='hot')
+    ax2.imshow(img3d[1])#, cmap='hot')
     ax3 = fig.add_subplot(1,3,3)
     ax3.set_title('yz')
-    ax3.imshow(img3d[2], cmap='hot')
+    ax3.imshow(img3d[2])#, cmap='hot')
     return fig
 # TODO: redirect to the original now that it's in the same repo
 #########################################################################################

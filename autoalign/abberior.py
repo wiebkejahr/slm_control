@@ -21,8 +21,8 @@ except:
     print("Specpy not installed!")
     pass
 
-import utils.helpers as helpers
-import utils.my_models as my_models
+import autoalign.utils.helpers as helpers
+import autoalign.utils.my_models as my_models
 
 
 def test(model, input_image, model_store_path):
@@ -119,7 +119,7 @@ def correct(model_store_path):
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.MultiNet()
+    model = my_models.MultiOffsetNet()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -139,7 +139,7 @@ def abberior_multi(model_store_path):
     ##### NOTE: fill this is in lab #######
     image_xz = msr.stack('ExpControl Ch1 {13}').data()
     image_xz = helpers.preprocess(image_xz)
-    image_xz = np.fliplr(rotate(image_xz, 90))
+    image_xz = np.fliplr(rotate(image_xz, -90))
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
@@ -162,7 +162,8 @@ def abberior_multi(model_store_path):
     coeffs = test(model, image, model_store_path)
     # print(coeffs)
     coeffs = coeffs[:-2]
-    offset = coeffs[-2:])
+    offset = coeffs[-2:]
+    # coeffs = coeffs*3
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
     fig1 = helpers.plot_xsection(reconstructed)
     plt.show()
