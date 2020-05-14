@@ -71,7 +71,6 @@ def normalize_img(img):
     if np.max(img) != 0:
         if (np.max(img) - np.min(img)) != 0:
             img_norm = 1 / (np.max(img) - np.min(img)) * (img - np.min(img))
-
     return img_norm
 
 
@@ -80,7 +79,6 @@ def normalize_radius(obj_ba, mag, slm_px, size_slm):
         the laser beam. """
     radius_slm = obj_ba / mag / slm_px / np.mean(size_slm * 2)
     print("radius_slm ", radius_slm, "mag ", mag)
-    
     return radius_slm
 
 
@@ -102,15 +100,20 @@ def crop(full, size, offset = [0, 0]):
     return cropped
 
 
-def create_coords(size, off = [0,0]):
+def create_coords(size, off = [0,0], res = None):
     """ Returns the cartesian coordinates of each pixel in a matrix from the 
         inputs size and offset (defining the center position). ATTENTION:
-        array of cartesian coordinates is created at 2x the size needed. Will 
-        be cropped later in the workflow for easy offsetting. """
-    x = np.arange((-size[0]//2 + off[0]), (size[0]-size[0]//2 + off[0]))
-    y = np.arange((-size[1]//2 + off[1]), (size[1]-size[1]//2 + off[1]))    
+        size that's passed in needs to be two times the size needed due to 
+        cropping later. Offset here will be offset of the pattern in the 
+        backaperture."""
+    #x = np.arange((-(size[0]//2) + off[0]), (size[0]-size[0]//2 + off[0]))
+    #y = np.arange((-(size[1]//2) + off[1]), (size[1]-size[1]//2 + off[1]))
+    if res == None:
+        res = size
+    x = np.linspace((-(size[0]//2) + off[0]), (size[0]-size[0]//2-1 + off[0]), res[0])
+    y = np.linspace((-(size[1]//2) + off[1]), (size[1]-size[1]//2-1 + off[1]), res[1])
     xcoords = np.multiply.outer(np.ones(size[0]), y)
-    ycoords = np.multiply.outer(x, np.ones(size[1]))    
+    ycoords = np.multiply.outer(x, np.ones(size[1]))
     return xcoords, ycoords
 
 
@@ -155,7 +158,6 @@ def create_rect(size, a, b, rot, amp = 1, radscale = 1):
     xcoord, ycoord = create_coords(size)
     rho, phi = cart2polar(xcoord, ycoord)
     rho = rho * 4 / radscale
-
     rect = rho <= np.minimum(a / np.abs(np.cos(phi - (rot + 180) / 180 * np.pi)), 
                              b / np.abs(np.sin(phi - (rot + 180) / 180 * np.pi)))
     return rect * amp
@@ -186,7 +188,7 @@ def create_ring(size, r_inner, r_outer, amp = 1, radscale = 1):
 
 
 def create_gauss(size, amp = 1):
-    return np.zeros(size) * amp
+    return np.ones(size) * amp
 
 
 def create_donut(size, rot, amp = 1):
@@ -218,6 +220,13 @@ def create_segments(size, rot, steps, amp = 1):
     segments = amp / (steps + 1) * np.floor_divide(rad_cont, 
                                                      2 * np.pi / (steps + 1))
     return segments
+
+
+def create_bessel(size, amp = 1):
+    xcoord, ycoord = create_coords(size)
+    rho = cart2polar(xcoord, ycoord)[0]
+    axicon = rho / np.max(rho) * amp
+    return axicon
 
 
 def create_bivortex(size, radius, rot, amp = 1, radscale = 1):
