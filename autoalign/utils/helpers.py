@@ -18,7 +18,9 @@ from torch.utils.data import Dataset, DataLoader
 from skimage.transform import resize, rotate
 import skimage
 from skimage.transform import resize
+
 # local modules
+import Pattern_Calculator as PC
 import autoalign.utils.my_classes as my_classes
 import autoalign.utils.xysted
 from autoalign.utils.xysted import fluor_psf, sted_psf
@@ -144,7 +146,7 @@ def create_phase(coeffs, res=64, offset=[0,0]):
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
     
     # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
-    terms = [coeff*crop(create_zernike(size*2, order), size, offset) for coeff, order in list(zip(coeffs, orders))]  
+    terms = [coeff*PC.crop(PC.create_zernike(size*2, order), size, offset) for coeff, order in list(zip(coeffs, orders))]  
     zern = sum(terms)
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
@@ -264,90 +266,93 @@ def plot_xsection(img3d):
 #   Functions from Wiebke's Pattern Calculator code that are necessary for redundancy.
 #   I want my code to run as a self-contained unit that can be plugged into the pre-
 #   existing GUI, this helps me achieve that.
+
+# TODO: change to be actual PC fns
 #
 #########################################################################################
 
 
-######## fn to create a single zernike phase mask #######
-def create_zernike(size, order, rad=1):
-    """ Calculates the Zernike polynomial of a given order, for the given 
-        image size. Normalizes the polynomials in the center quadrant of the 
-        image to [0,1]. """
-    xcoord, ycoord = create_coords(size)
-    xcoordnorm = (xcoord/np.max(np.abs([np.max(xcoord), np.min(xcoord)])))*2
-    ycoordnorm = (ycoord/np.max(np.abs([np.max(ycoord), np.min(ycoord)])))*2
+# ######## fn to create a single zernike phase mask #######
+# def create_zernike(size, order, rad=1):
+#     """ Calculates the Zernike polynomial of a given order, for the given 
+#         image size. Normalizes the polynomials in the center quadrant of the 
+#         image to [0,1]. """
+#     xcoord, ycoord = create_coords(size)
+#     xcoordnorm = (xcoord/np.max(np.abs([np.max(xcoord), np.min(xcoord)])))*2
+#     ycoordnorm = (ycoord/np.max(np.abs([np.max(ycoord), np.min(ycoord)])))*2
     
-    rho, phi = cart2polar(xcoord, ycoord)
+#     rho, phi = cart2polar(xcoord, ycoord)
     
-    # when normalizing rho: factor of two is needed because I'm creating images
-    # double the size for subsequent cropping. Factor of 2 / sqrt(2) is needed 
-    # because I'm working on a square whereas the polynomials are defined on a 
-    # circle
-    rho = rho * 2 * 2 / np.sqrt(2) / rad
-    # print(size, np.min(xcoordnorm), np.max(xcoordnorm), np.min(ycoordnorm), np.max(ycoordnorm),
-    #       np.min(rho), np.max(rho), np.min(phi), np.max(phi))
+#     # when normalizing rho: factor of two is needed because I'm creating images
+#     # double the size for subsequent cropping. Factor of 2 / sqrt(2) is needed 
+#     # because I'm working on a square whereas the polynomials are defined on a 
+#     # circle
+#     # NOTE: this has totally changed
+#     rho = rho * 2 * 2 / np.sqrt(2) / rad
+#     # print(size, np.min(xcoordnorm), np.max(xcoordnorm), np.min(ycoordnorm), np.max(ycoordnorm),
+#     #       np.min(rho), np.max(rho), np.min(phi), np.max(phi))
     
-    if order[1] < 0:
-        zernike = zernike_coeff(rho, np.abs(order)) * np.sin(np.abs(order[1]) * phi)
-    elif order[1] >= 0:
-        zernike = zernike_coeff(rho, order) * np.cos(order[1] * phi)
+#     if order[1] < 0:
+#         zernike = zernike_coeff(rho, np.abs(order)) * np.sin(np.abs(order[1]) * phi)
+#     elif order[1] >= 0:
+#         zernike = zernike_coeff(rho, order) * np.cos(order[1] * phi)
     
-    #mask = (rho <= 1)
-    #zernike = zernike * mask
-    return zernike
+#     #mask = (rho <= 1)
+#     #zernike = zernike * mask
+#     return zernike
 
-######## and its helper fns ##################
-def create_coords(size, off = [0,0]):
-    """ Returns the cartesian coordinates of each pixel in a matrix from the 
-        inputs size and offset (defining the center position). ATTENTION:
-        array of cartesian coordinates is created at 2x the size needed. Will 
-        be cropped later in the workflow for easy offsetting. """
-    x = np.arange((-size[0]/2 + off[0]), (size[0]-size[0]/2 + off[0]))
-    y = np.arange((-size[1]/2 + off[1]), (size[1]-size[1]/2 + off[1]))    
-    xcoords = np.multiply.outer(np.ones(size[0]), y)
-    ycoords = np.multiply.outer(x, np.ones(size[1]))    
-    return xcoords, ycoords
+# ######## and its helper fns ##################
+# def create_coords(size, off = [0,0]):
+#     """ Returns the cartesian coordinates of each pixel in a matrix from the 
+#         inputs size and offset (defining the center position). ATTENTION:
+#         array of cartesian coordinates is created at 2x the size needed. Will 
+#         be cropped later in the workflow for easy offsetting. """
+#     x = np.arange((-size[0]/2 + off[0]), (size[0]-size[0]/2 + off[0]))
+#     y = np.arange((-size[1]/2 + off[1]), (size[1]-size[1]/2 + off[1]))    
+#     xcoords = np.multiply.outer(np.ones(size[0]), y)
+#     ycoords = np.multiply.outer(x, np.ones(size[1]))    
+#     return xcoords, ycoords
 
-def cart2polar(x, y):
-    """ Returns normalized polar coordinates for cartesian inputs x and y. """
-    z = x + 1j * y
-    return (np.abs(z)/np.max(np.abs(z)), np.angle(z))
+# def cart2polar(x, y):
+#     """ Returns normalized polar coordinates for cartesian inputs x and y. """
+#     z = x + 1j * y
+#     return (np.abs(z)/np.max(np.abs(z)), np.angle(z))
 
-def zernike_coeff(rho, order):
-    """ Calculates the Zernike coeff for a given order and radius rho. """
-    coeff = 0
-    nn = order[0]
-    mm = np.abs(order[1])
+# def zernike_coeff(rho, order):
+#     """ Calculates the Zernike coeff for a given order and radius rho. """
+#     coeff = 0
+#     nn = order[0]
+#     mm = np.abs(order[1])
     
-    for kk in range(int((nn - mm)/2)+1):
-        c = (np.power(-1, kk) * mfac(nn - kk))/ \
-            (mfac(kk) * \
-             mfac((nn + mm)/2 - kk) * \
-             mfac((nn - mm)/2 - kk))
-        r = (np.power(rho, nn - 2 * kk))
-        coeff = coeff + c * r
-    return coeff
+#     for kk in range(int((nn - mm)/2)+1):
+#         c = (np.power(-1, kk) * mfac(nn - kk))/ \
+#             (mfac(kk) * \
+#              mfac((nn + mm)/2 - kk) * \
+#              mfac((nn - mm)/2 - kk))
+#         r = (np.power(rho, nn - 2 * kk))
+#         coeff = coeff + c * r
+#     return coeff
 
 
-########## fn to create vortex (donut phase mask) ############
-def create_donut(size, rot, amp):
-    """" Creates the phasemask for shaping the 2D donut with the given image 
-        size, rotation and amplitude of the donut. """
-    xcoord, ycoord = create_coords(size)
-    dn = 0.5 / np.pi * np.mod(cart2polar(xcoord, ycoord)[1] + (rot + 180) /
-                              180 * np.pi, 2*np.pi) * amp
-    return dn
+# ########## fn to create vortex (donut phase mask) ############
+# def create_donut(size, rot, amp):
+#     """" Creates the phasemask for shaping the 2D donut with the given image 
+#         size, rotation and amplitude of the donut. """
+#     xcoord, ycoord = create_coords(size)
+#     dn = 0.5 / np.pi * np.mod(cart2polar(xcoord, ycoord)[1] + (rot + 180) /
+#                               180 * np.pi, 2*np.pi) * amp
+#     return dn
 
-########## fn to crop phase mask to the right scaling ########
+# ########## fn to crop phase mask to the right scaling ########
 
-def crop(full, size, offset = [0,0]):
-    """ Crops the full data to half the size, using the provided offset. """
-    minx = int(size[0]/2 + offset[0])
-    maxx = int(size[0]*3/2 + offset[0])
-    miny = int(size[1]/2 + offset[1])
-    maxy = int(size[1]*3/2 + offset[1])    
-    cropped = full[minx:maxx, miny:maxy]
-    return cropped
+# def crop(full, size, offset = [0,0]):
+#     """ Crops the full data to half the size, using the provided offset. """
+#     minx = int(size[0]/2 + offset[0])
+#     maxx = int(size[0]*3/2 + offset[0])
+#     miny = int(size[1]/2 + offset[1])
+#     maxy = int(size[1]*3/2 + offset[1])    
+#     cropped = full[minx:maxx, miny:maxy]
+#     return cropped
 
 
 

@@ -3,10 +3,9 @@ import matplotlib.pyplot as plt
 import json
 
 # local modules
+import Pattern_Calculator as PC
 from autoalign.utils import vector_diffraction as vd
-# import vector_diffraction as vd
-
-
+import autoalgin.utils.vector_diffraction as vd
 
 def stim_em(exc, sted, isat):
     #ln(2) is needed because I_sat is "half life", not lifetime
@@ -82,8 +81,9 @@ def sted_psf(rr, res=64, offset=[0,0], plane='xy'):
     #phasemask = np.zeros_like(r)
 
     # xy donut
+    phasemask = PC.create_donut(size=numerical_params["output_res"], rot=0)
+    # phasemask = phi + np.pi*(rr-0.5)
     # phasemask = phi
-    phasemask = phi + np.pi*(rr-0.5)
 
     # z donut
     #phasemask = (r < 0.64 / 2 / 0.9 * input_aperture_size) * np.pi
@@ -211,7 +211,8 @@ def fluor_psf(rr, res=64, offset=[0,0], plane='xy'):
     gauss_yz = gauss_yz * optical_params_gauss["transmittance"] # when plane is 'xy' this should just be 0
     # gauss_xyz = gauss_xyz * optical_params_gauss["transmittance"]
 
-    phasemask = phi + np.pi*(rr-0.5)
+    phasemask = PC.create_donut(numerical_params["output_res"], rot=0)
+    # phasemask = phi + np.pi*(rr-0.5)
 
     # intensity distribution depletion (STED)
     [sted_xy, sted_xz, sted_yz, sted_xyz] = vd.vector_diffraction(
