@@ -92,10 +92,10 @@ def bfp_radius(M, NA, f_TL):
 def crop(full, size, offset = [0, 0]):
     """ Crops the full data to half the size, using the provided offset. 
         Convention for directions and signs agrees with Abberior. """
-    minx = int(size[0] / 2 - offset[1])
-    maxx = int(size[0] * 3 / 2 - offset[1])
-    miny = int(size[1] / 2 - offset[0])
-    maxy = int(size[1] * 3 / 2 - offset[0])
+    minx = ((size[0] + 0) // 2 - offset[1]+0)
+    maxx = ((size[0] * 3 + 0) // 2 - offset[1]+0)
+    miny = ((size[1] + 0) // 2 - offset[0]+0)
+    maxy = ((size[1] * 3 + 0) // 2 - offset[0]+0)
     cropped = full[minx:maxx, miny:maxy]
     return cropped
 
@@ -106,14 +106,13 @@ def create_coords(size, off = [0,0], res = None):
         size that's passed in needs to be two times the size needed due to 
         cropping later. Offset here will be offset of the pattern in the 
         backaperture."""
-    #x = np.arange((-(size[0]//2) + off[0]), (size[0]-size[0]//2 + off[0]))
-    #y = np.arange((-(size[1]//2) + off[1]), (size[1]-size[1]//2 + off[1]))
     if res == None:
         res = size
-    x = np.linspace((-(size[0]//2) + off[0]), (size[0]-size[0]//2-1 + off[0]), res[0])
-    y = np.linspace((-(size[1]//2) + off[1]), (size[1]-size[1]//2-1 + off[1]), res[1])
-    xcoords = np.multiply.outer(np.ones(size[0]), y)
-    ycoords = np.multiply.outer(x, np.ones(size[1]))
+    x = np.linspace((-(size[0]/2) + off[0]), (size[0]-size[0]/2 + off[0]), res[0])
+    y = np.linspace((-(size[1]/2) + off[1]), (size[1]-size[1]/2 + off[1]), res[1])
+    xcoords, ycoords = np.meshgrid(y,x)
+    # xcoords = np.multiply.outer(np.ones(size[0]), y)
+    # ycoords = np.multiply.outer(x, np.ones(size[1]))
     return xcoords, ycoords
 
 
@@ -195,8 +194,12 @@ def create_donut(size, rot, amp = 1):
     """" Creates the phasemask for shaping the 2D donut with the given image 
         size, rotation and amplitude of the donut. """
     xcoord, ycoord = create_coords(size)
-    dn = 0.5 / np.pi * np.mod(cart2polar(xcoord, ycoord)[1] + (rot + 180) /
-                              180 * np.pi, 2*np.pi)
+    #I don't think mod division is needed here; phasewrapping later solves this
+    # just add all the angles
+    # offset of pi is needed to fit with Abberior
+    # dn = 0.5 / np.pi * np.mod(cart2polar(xcoord, ycoord)[1] + (rot + 180) /
+    #                           180 * np.pi, 2*np.pi)
+    dn = (cart2polar(xcoord, ycoord)[1] + rot / 180 * np.pi + np.pi) / np.pi / 2
     return dn * amp
 
 

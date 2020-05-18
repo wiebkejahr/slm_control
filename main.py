@@ -413,9 +413,9 @@ class Main_Window(QtWidgets.QMainWindow):
      
         s = np.asarray(self.p.general["size_slm"])    
         lhalf = pcalc.crop(np.asarray(pcalc.load_image(path_l))/255, 
-                           s, [ s[1] / 2, s[0] / 2])
+                           s, [ s[1] // 2, s[0] // 2])
         rhalf = pcalc.crop(np.asarray(pcalc.load_image(path_r))/255, 
-                           s, [-s[1] / 2, s[0] / 2])
+                           s, [-(s[1] // 2), s[0] // 2])
         
         # check whethere double pass is activated and cross correction as on 
         # Abberior should be applied: det offsets to [0,0] for not activated        
