@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import Pattern_Calculator as PC
+from slm_control import Pattern_Calculator as PC
 
 def gauss(x, x0, y0, sigma):
     p = [x0, y0, sigma]
@@ -65,7 +65,7 @@ def loop_indices(xi, yi, zi, c, sin_theta, cos_theta, phi):
     return ri, phii, temp_exp
 
 
-def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane = "all"):
+def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane = "all", offset=[0,0]):
     """ Calculates the focused PSF created by a given the wavefront in the 
         objective's backaperture according to vector diffraction threory 
         (Richards / Wolff 1959).
@@ -112,7 +112,8 @@ def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane =
     output_screen_size = p_num["out_scrn_size"]
     z_extent = p_num["z_extent"]
     out_res = p_num["out_res"]
-    inp_res = np.shape(phasemask)[0]
+    inp_res = p_num["inp_res"]
+    # inp_res = np.shape(phasemask)[0]
 
     lambd = lambd * 1e-9 * 1e3 # wavelength in mm
     k = 2 * np.pi / lambd  #wavevector in 1/mm

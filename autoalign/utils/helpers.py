@@ -18,13 +18,14 @@ from torch.utils.data import Dataset, DataLoader
 from skimage.transform import resize, rotate
 import skimage
 from skimage.transform import resize
-
+import sys, os
+sys.path.insert(1, '../slm_control/')
 # local modules
-import Pattern_Calculator as PC
-import autoalign.utils.my_classes as my_classes
-import autoalign.utils.xysted
-from autoalign.utils.xysted import fluor_psf, sted_psf
-from autoalign.utils.vector_diffraction import vector_diffraction as vd
+from slm_control import Pattern_Calculator as PC
+import utils.my_classes as my_classes
+import utils.xysted
+from utils.xysted import fluor_psf, sted_psf
+from utils.vector_diffraction import vector_diffraction as vd
 
 def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
@@ -107,7 +108,7 @@ def gen_coeffs():
     # c[3:6] = [random.uniform(-1.4, 1.4) for i in c[3:6]]
     # c[6:10] = [random.uniform(-0.8, 0.8) for i in c[6:10]]
     # c[10:] = [random.uniform(-0.6, 0.6) for i in c[10:]]
-    c = [round(random.uniform(-0.4, 0.4), 3) for i in c]
+    c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
     
     return c[3:]
 
@@ -141,7 +142,7 @@ def create_phase(coeffs, res=64, offset=[0,0]):
     assert(len(coeffs) == len(orders)) # should both be 12
     assert(isinstance(i, float) for i in coeffs)
 
-    size=np.asarray([res+1, res+1])
+    size=np.asarray([res, res]) # NOTE: used to be res+1
     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
     
@@ -163,35 +164,29 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
     else:
         offset_label = np.asarray([0,0])
 
-    aberr_phase_mask = create_phase(coeffs, res, offset_label)
+    zern = create_phase(coeffs, res, offset_label)
     
     if multi:
         plane = 'all'
     else:
         plane = 'xy'
-    img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
+
+    img = sted_psf(zern, res, offset=offset_label, plane=plane)
     img2 = np.stack([add_noise(i) for i in img], axis=0)
-    # fig = plt.figure()
-    # ax1 = fig.add_subplot(1,2,1)
-    # ax1.imshow(img[0])
-    # ax2 = fig.add_subplot(1,2,2)
-    # # adding noise to each of the images
-    # ax2.imshow(img2[0])
-    # plt.show()
-    return img2, coeffs, offset_label
+    # return img2, coeffs, offset_label
+    return img, coeffs, offset_label
 
 def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    aberr_phase_mask = create_phase(coeffs, res, offset_label)
+    zern = create_phase(coeffs, res, offset_label)
     
     if multi:
         plane = 'all'
     else:
         plane = 'xy'
-    img = sted_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
-    
+    img = sted_psf(zern, res, offset=offset_label, plane=plane)
 
     return img
 
