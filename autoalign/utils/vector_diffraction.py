@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import Pattern_Calculator as PC
+from slm_control import Pattern_Calculator as PC
 
 def gauss(x, x0, y0, sigma):
     p = [x0, y0, sigma]
