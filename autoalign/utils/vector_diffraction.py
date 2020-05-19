@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.insert(1, '../slm_control/')
 from slm_control import Pattern_Calculator as PC
 
 def gauss(x, x0, y0, sigma):

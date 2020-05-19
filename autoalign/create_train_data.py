@@ -54,13 +54,13 @@ def main(args):
     val_shape = (val_num, channel_num, res, res)
     test_shape = (test_num, channel_num, res, res)
 
-    # # open a hdf5 file and create arrays
-    # hdf5_file = h5py.File(hdf5_path, mode='w-')
+    # open a hdf5 file and create arrays
+    hdf5_file = h5py.File(hdf5_path, mode='w-')
 
-    # # create the image arrays
-    # hdf5_file.create_dataset("train_img", train_shape, np.float32)
-    # hdf5_file.create_dataset("val_img", val_shape, np.float32)
-    # hdf5_file.create_dataset("test_img", test_shape, np.float32)
+    # create the image arrays
+    hdf5_file.create_dataset("train_img", train_shape, np.float32)
+    hdf5_file.create_dataset("val_img", val_shape, np.float32)
+    hdf5_file.create_dataset("test_img", test_shape, np.float32)
     
     train_labels = []
     val_labels = []
@@ -75,13 +75,13 @@ def main(args):
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
             # TODO: fix the add_noise to work for multi images (used to wrap get_sted_psf())
-            img, zern_label, offset_label = gen_sted_psf(res, offset=False, multi=args.multi)
-            print(zern_label)
-            fig = plot_xsection(img)
-            plt.show()
-            exit()
+            img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
+            # print(zern_label)
+            # fig = plot_xsection(img)
+            # plt.show()
+            # exit()
         elif args.mode == 'fluor':
-            img, zern_label, offset_label = gen_fluor_psf(res, offset=True, multi=args.multi)
+            img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         # save the label and image
         if args.offset:
             train_labels.append(zern_label+offset_label)
