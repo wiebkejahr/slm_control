@@ -20,10 +20,10 @@ import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
 # local packages
-import autoalign.utils.my_models as my_models
-import autoalign.utils.my_classes as my_classes
-from autoalign.utils.vector_diffraction import *
-from autoalgin.utils.helpers import *
+import utils.my_models as my_models
+import utils.my_classes as my_classes
+from utils.vector_diffraction import *
+from utils.helpers import *
 
 def log_images(logdir, images, coeffs):
     logdir_test = logdir + '/test'
@@ -58,54 +58,35 @@ def test(model, test_loader, logdir, model_store_path):
     
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             # Get model outputs (the predicted Zernike coefficients)
-            to_plot = images.numpy().squeeze()
-            donut = to_plot
+            # image = images.numpy().squeeze()
+            preds = model(images).numpy().squeeze()
 
-
-            outputs = model(images)
-            preds = outputs.numpy().squeeze()
-
-            # remaining = labels.numpy().squeeze() - preds
-            # print(mean_squared_error(remaining, np.asarray([0.0]*14)))
-            
-            # corrected = get_fluor_psf(remaining) #, multi=True
-            # corrected = normalize_img(donut) + normalize_img(get_psf(-1*outputs.numpy().squeeze()))
-
-            # fig = plt.figure()
-            # ax1 = fig.add_subplot(1, 3, 1)
-            # ax1.imshow(to_plot)
-            # ax2 = fig.add_subplot(1,3,2)
-            # ax2.imshow(get_fluor_psf(preds))
-            # ax3 = fig.add_subplot(1,3,3)
-            # ax3.imshow(corrected)
-            # plt.show()
-            # fig = plt.figure()
-            # ax1 = fig.add_subplot(2,3,1)
-            # ax1.imshow(donut)
-            # # ax1.title.set_text('input img')
-            zern = preds[:-2]
-            offsets = preds[-2:]
-            reconstructed = get_sted_psf(coeffs=zern, offset_label=offsets, multi=True)
+            # zern = preds[:-2]
+            # offset = preds[-2:]
+            zern = preds
+            offset=[0,0]
+            reconstructed = get_sted_psf(coeffs=zern, offset_label=offset, multi=True)
             # print(preds)
             # print("zern is: {}".format(zern))
             # print("offsets are: {}".format(preds[-2:]))
             remaining = labels.numpy().squeeze() - preds
-            remaining_zern = remaining[:-2]
-            remaining_offsets = remaining[-2:]
+            # remaining_zern = remaining[:-2]
+            # remaining_offsets = remaining[-2:]
 
+            corrected = get_sted_psf(coeffs=remaining, multi=True)
             #TODO: here's where you need to split them
             #NOTE: the offset used to be a boolean
-            corrected = get_sted_psf(coeffs=remaining_zern, offset_label=remaining_offsets, multi=True) 
+            # corrected = get_sted_psf(coeffs=remaining_zern, offset_label=remaining_offsets, multi=True) 
             # # corrected = normalize_img(donut) + normalize_img(get_psf(-1*outputs.numpy().squeeze()))
 
-            fig = plot_xsection(donut)
+            # fig = plot_xsection(donut)
             # plt.show()
             # print(reconstructed.shape)
             # exit()
-            fig2 = plot_xsection(reconstructed[0])
+            fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
             plt.show()
-            fig3 = plot_xsection(corrected[0])
-            plt.show()
+            # fig3 = plot_xsection(corrected, 'corrected')
+            # plt.show()
             # exit()
             # fig = plt.figure()
             # ax1 = fig.add_subplot(1,3,1)

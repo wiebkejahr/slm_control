@@ -130,11 +130,21 @@ def abberior_multi(model_store_path):
 
     # get active measurement 
     msr = im.active_measurement()
-    image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    image_xz = msr.stack('ExpControl Ch1 {13}').data()
-    image_yz = msr.stack('ExpControl Ch1 {15}').data()
-
-
+    try:
+        image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+    except:
+        print("Cannot find 'ExpControl Ch1 {1}' window")
+        exit()
+    try:
+        image_xz = msr.stack('ExpControl Ch1 {13}').data()
+    except:
+        print("Cannot find 'ExpControl Ch1 {13}' window")
+        exit()
+    try:
+        image_yz = msr.stack('ExpControl Ch1 {15}').data()
+    except:
+        print("Cannot find 'ExpControl Ch1 {15}' window")
+        exit()
 
     image_xy = helpers.preprocess(image_xy)
     # plt.figure()
