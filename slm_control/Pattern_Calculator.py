@@ -92,10 +92,10 @@ def bfp_radius(M, NA, f_TL):
 def crop(full, size, offset = [0, 0]):
     """ Crops the full data to half the size, using the provided offset. 
         Convention for directions and signs agrees with Abberior. """
-    minx = ((size[0] + 0) // 2 - offset[1]+0)
-    maxx = ((size[0] * 3 + 0) // 2 - offset[1]+0)
-    miny = ((size[1] + 0) // 2 - offset[0]+0)
-    maxy = ((size[1] * 3 + 0) // 2 - offset[0]+0)
+    minx = int((size[0] + 0) / 2 - offset[1]+0)
+    maxx = int((size[0] * 3 + 0) / 2 - offset[1]+0)
+    miny = int((size[1] + 0) / 2 - offset[0]+0)
+    maxy = int((size[1] * 3 + 0) / 2 - offset[0]+0)
     cropped = full[minx:maxx, miny:maxy]
     return cropped
 

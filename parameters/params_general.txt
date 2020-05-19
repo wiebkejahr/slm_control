@@ -1,6 +1,6 @@
 {
-    "display_mode" : "imspector",
-    "data_source" : "imspector",
+    "display_mode": "imspector",
+    "data_source": "imspector",
     "size_slm_mm": [
         7.5,
         10
@@ -32,6 +32,6 @@
     ],
     "split_image": 1,
     "flat_field": 0,
-    "single_aberr": 0,
+    "single_aberr": 1,
     "double_pass": 0
 }

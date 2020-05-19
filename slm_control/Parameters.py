@@ -142,7 +142,7 @@ class param():
             dbl_ps = 1
         
         self.general = {
-                    "display_mode" : daddy.p.general["displaye_mode"],
+                    "display_mode" : daddy.p.general["display_mode"],
                     "data_source"  : daddy.p.general["data_source"],
                     "size_slm_mm"  : daddy.p.general["size_slm_mm"],
                     "slm_px"       : daddy.p.general["slm_px"],
