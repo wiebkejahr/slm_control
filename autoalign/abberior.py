@@ -130,41 +130,60 @@ def abberior_multi(model_store_path):
 
     # get active measurement 
     msr = im.active_measurement()
-    image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+    try:
+        image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+    except:
+        print("Cannot find 'ExpControl Ch1 {1}' window")
+        exit()
+    try:
+        image_xz = msr.stack('ExpControl Ch1 {13}').data()
+    except:
+        print("Cannot find 'ExpControl Ch1 {13}' window")
+        exit()
+    try:
+        image_yz = msr.stack('ExpControl Ch1 {15}').data()
+    except:
+        print("Cannot find 'ExpControl Ch1 {15}' window")
+        exit()
+
     image_xy = helpers.preprocess(image_xy)
     # plt.figure()
     # plt.imshow(image_xy)
     # plt.show()
 
-    image_xz = msr.stack('ExpControl Ch1 {13}').data()
+    
     
     image_xz = helpers.preprocess(image_xz)
-    image_xz = np.fliplr(rotate(image_xz, -90))
+    #image_xz = np.fliplr(rotate(image_xz, -90))
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
     
-    image_yz = msr.stack('ExpControl Ch1 {15}').data()
     image_yz = helpers.preprocess(image_yz)
+    #image_yz = np.fliplr(imgage_yz)
+    
     # plt.figure()
     # plt.imshow(image_yz, aspect="equal")
     # plt.show()
     # ##################
-    
-
+    image = np.stack((image_xy,image_xz, image_yz), axis=0)    
+    #image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
+    # fig = helpers.plot_xsection(image)
+    # plt.show()
     
     # exit()
-    image = np.stack((image_xy, image_xz, image_yz), axis=0)
-    fig = helpers.plot_xsection(image)
-    plt.show()
+
 
     # # coeffs, _, image = test(model, image, model_store_path)
     results = test(model, image, model_store_path)
     coeffs = results
+    print(coeffs)
     # coeffs = results[:-2]
     # offset = results[-2:]
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
-    fig1 = helpers.plot_xsection(reconstructed)
+    # fig1 = helpers.plot_xsection(reconstructed)
+    # plt.show()
+    fig = helpers.plot_xsection_eval(image, reconstructed)
     plt.show()
     
 
@@ -172,20 +191,20 @@ def abberior_multi(model_store_path):
     # a dictionary of correction terms to be passed to SLM control
     corrections = {
             "sphere": [
-                -coeffs[9],
+                coeffs[9],
                 0.0
             ],
             "astig": [
-                -coeffs[0],
-                -coeffs[2]
+                coeffs[2], #used to be neg
+                coeffs[0]
             ],
             "coma": [
-                -coeffs[4],
-                -coeffs[5]
+                coeffs[5],
+                coeffs[4] #used to be neg
             ],
             "trefoil": [
-                -coeffs[3],
-                -coeffs[6]
+                coeffs[6],
+                coeffs[3]
             ]
         }
 

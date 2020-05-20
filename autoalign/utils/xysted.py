@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 import json
 
 # local modules
-from autoalign.utils import vector_diffraction as vd
-# import vector_diffraction as vd
-
-
+# import sys, os
+from slm_control import Pattern_Calculator as PC
+from utils import vector_diffraction as vd
+import utils.vector_diffraction as vd
+import utils.helpers as helpers
 
 def stim_em(exc, sted, isat):
     #ln(2) is needed because I_sat is "half life", not lifetime
@@ -15,7 +16,7 @@ def stim_em(exc, sted, isat):
     return depleted
 
 
-def sted_psf(rr, res=64, offset=[0,0], plane='xy'):
+def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     
     # with open('utils/params.txt') as json_file:
     with open('parameters/laser_params.txt') as json_file:
@@ -35,7 +36,7 @@ def sted_psf(rr, res=64, offset=[0,0], plane='xy'):
                             optical_params_sted["pulse_length"])
     #lp_scale_sted = vd.calc_lp(1,1,1)
 
-    radius = 0.64/2
+    # radius = 0.64/2
     I_sat = 11 * 1e6 * 1e-2 # in MW / cm^2, convert to W/mm^2
 
 
@@ -61,7 +62,7 @@ def sted_psf(rr, res=64, offset=[0,0], plane='xy'):
     "out_scrn_size" : 1,
     "z_extent" : 1.0,
     "out_res" : res, 
-    "inp_res" : res+1 
+    "inp_res" : res 
     }
 
     ##########################################################################
@@ -70,9 +71,9 @@ def sted_psf(rr, res=64, offset=[0,0], plane='xy'):
     #
     ##########################################################################
 
-    # calculate radius and angles needed to define phasemasks
-    [r, phi] = vd.calc_rphi(optical_params_sted["obj_ba"]/2,
-                            numerical_params["inp_res"], optical_params_sted["offset"])
+    # # calculate radius and angles needed to define phasemasks
+    # [r, phi] = vd.calc_rphi(optical_params_sted["obj_ba"]/2,
+    #                         numerical_params["inp_res"], offset)#optical_params_sted["offset"])
 
 
     #rr = np.zeros_like(r)
@@ -81,9 +82,17 @@ def sted_psf(rr, res=64, offset=[0,0], plane='xy'):
     # gauss
     #phasemask = np.zeros_like(r)
 
+    size=np.asarray([numerical_params["out_res"],numerical_params["out_res"]])
     # xy donut
+    # NOTE: the zern is already created twice the size and cropped in helpers.create_phase
+    # NOTE: try either normalizing this or 
+    donut = PC.crop(PC.create_donut(2*size, rot=0, amp=1), size, offset)
+    phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
+    print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
+    print(np.max(helpers.normalize_img(zern)), np.min(helpers.normalize_img(zern)))
+    print(np.max(phasemask), np.min(phasemask))
+    # phasemask = phi + np.pi*(rr-0.5)
     # phasemask = phi
-    phasemask = phi + np.pi*(rr-0.5)
 
     # z donut
     #phasemask = (r < 0.64 / 2 / 0.9 * input_aperture_size) * np.pi
@@ -96,24 +105,25 @@ def sted_psf(rr, res=64, offset=[0,0], plane='xy'):
     #phasemask = ((phi < 0) + (phi > np.pi)) * np.pi
 
     #amp = np.ones_like(r) * efield
-    amplitude = np.ones_like(r)
+    # amplitude = np.ones_like(r)
+    # NOTE: we don't pass in the offset here, it stays constant?
+    amplitude = PC.crop(PC.create_gauss(2*size), size)
 
     # intensity distribution depletion (STED)
     [sted_xy, sted_xz, sted_yz, sted_xyz] = vd.vector_diffraction(
-        optical_params_sted,numerical_params, polarization,phasemask, 
+        optical_params_sted, numerical_params, polarization, phasemask, 
         amplitude, lp_scale_sted, plane=plane, offset=offset)
 
     if plane == 'xy':
         return sted_xy
     elif plane == 'all':
         return np.stack((sted_xy, sted_xz, sted_yz), axis=0)
-
     else:
         raise("Plane argument not valid. Must be one of: ['xy', 'all']")
  
 
 
-def fluor_psf(rr, res=64, offset=[0,0], plane='xy'):
+def fluor_psf(zern, res=64, offset=[0,0], plane='xy'):
 
     # with open('utils/params.txt') as json_file:
     with open('parameters/laser_params.txt') as json_file:
@@ -135,7 +145,7 @@ def fluor_psf(rr, res=64, offset=[0,0], plane='xy'):
                             optical_params_sted["pulse_length"])
     #lp_scale_sted = vd.calc_lp(1,1,1)
 
-    radius = 0.64/2
+    # radius = 0.64/2
     I_sat = 11 * 1e6 * 1e-2 # in MW / cm^2, convert to W/mm^2
 
 
@@ -161,7 +171,7 @@ def fluor_psf(rr, res=64, offset=[0,0], plane='xy'):
     "out_scrn_size" : 0.05,
     "z_extent" : 1.0,
     "out_res" : res, #150,
-    "inp_res" : res+1 #151
+    "inp_res" : res #151
     }
 
  
@@ -172,15 +182,17 @@ def fluor_psf(rr, res=64, offset=[0,0], plane='xy'):
     ##########################################################################
 
     # calculate radius and angles needed to define phasemasks
-    [r, phi] = vd.calc_rphi(optical_params_gauss["obj_ba"]/2,
-                            numerical_params["inp_res"], optical_params_gauss["offset"])
+    # [r, phi] = vd.calc_rphi(optical_params_gauss["obj_ba"]/2,
+    #                         numerical_params["inp_res"], offset)#optical_params_gauss["offset"])
 
 
     #rr = np.zeros_like(r)
     #rr[r<2.5] = 1
 
+    size = np.asarray([numerical_params["out_res"], numerical_params["out_res"]])
     # gauss
-    phasemask = np.zeros_like(r)
+    phasemask = PC.crop(PC.create_gauss(2*size), size, offet)
+    # phasemask = np.zeros_like(r)
     
 
     # phasemask = rr
@@ -198,8 +210,9 @@ def fluor_psf(rr, res=64, offset=[0,0], plane='xy'):
     #phasemask = ((phi < 0) + (phi > np.pi)) * np.pi
 
     #amp = np.ones_like(r) * efield
-    amplitude = np.ones_like(r)
-
+    # amplitude = np.ones_like(r)
+    # NOTE: we don't pass in the offset here, it stays constant?
+    amplitude = PC.crop(PC.create_gauss(2*size), size)
     
 
     # intensity distribution excitation (gauss)
@@ -211,7 +224,8 @@ def fluor_psf(rr, res=64, offset=[0,0], plane='xy'):
     gauss_yz = gauss_yz * optical_params_gauss["transmittance"] # when plane is 'xy' this should just be 0
     # gauss_xyz = gauss_xyz * optical_params_gauss["transmittance"]
 
-    phasemask = phi + np.pi*(rr-0.5)
+    phasemask = PC.create_donut(numerical_params["output_res"], rot=0)
+    # phasemask = phi + np.pi*(rr-0.5)
 
     # intensity distribution depletion (STED)
     [sted_xy, sted_xz, sted_yz, sted_xyz] = vd.vector_diffraction(

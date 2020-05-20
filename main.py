@@ -43,6 +43,8 @@ import slm_control.SLM as SLM
 from slm_control.Parameters import param
 
 sys.path.insert(1, os.getcwd())
+sys.path.insert(1, 'slm_control/')
+sys.path.insert(1, 'autoalign/')
 import autoalign.abberior as abberior
 
 mpl.rc('text', usetex=False)
@@ -56,7 +58,8 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/4.27.20_3d_offset_sted_20k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.02.12_xsection_20k_15_epochs_Adam_lr_0.001_batchsize_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.05.04_larger_weight_range_20k_eps_15_lr_0.001_bs_64.pth"
-MODEL_STORE_PATH="autoalign/models/20.05.04_noise_20k_local_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.05.04_noise_20k_local_eps_15_lr_0.001_bs_64.pth"
+MODEL_STORE_PATH="autoalign/models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -412,9 +415,9 @@ class Main_Window(QtWidgets.QMainWindow):
      
         s = np.asarray(self.p.general["size_slm"])    
         lhalf = pcalc.crop(np.asarray(pcalc.load_image(path_l))/255, 
-                           s, [ s[1] / 2, s[0] / 2])
+                           s, [ s[1] // 2, s[0] // 2])
         rhalf = pcalc.crop(np.asarray(pcalc.load_image(path_r))/255, 
-                           s, [-s[1] / 2, s[0] / 2])
+                           s, [-(s[1] // 2), s[0] // 2])
         
         # check whethere double pass is activated and cross correction as on 
         # Abberior should be applied: det offsets to [0,0] for not activated        
