@@ -23,8 +23,8 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=2 # will do 90/10 train/validation split
 TEST_NUM=1 # number of additional test samples to create
-# NAME="20.05.18_scaling_fix"
-NAME='20.05.04_noise_20k_local' # for
+NAME="20.05.18_scaling_fix"
+# NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
 DATASET="${DATA_DIR}/${NAME}.hdf5"
@@ -55,8 +55,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 LR=0.001 # learning rate
 NUM_EPOCHS=15
 BATCH_SIZE=64
-SUFFIX='2'
-MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}${SUFFIX}"
+MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_2"
 
 # don't touch these
 MODEL_STORE_PATH="${MODEL_DIR}/${MODEL_NAME}.pth"

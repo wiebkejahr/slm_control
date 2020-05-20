@@ -258,7 +258,7 @@ def plot_xsection(img3d, name=''):
     fig.suptitle(name, fontsize=16)
     return fig
 
-def plot_xsection_eval(img1, img2):#, img3):
+def plot_xsection_eval(img1, img2, img3):
     fig = plt.figure(1)
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
@@ -283,18 +283,46 @@ def plot_xsection_eval(img1, img2):#, img3):
     ax3.imshow(img2[2], cmap='hot')
     fig.suptitle('Reconstructed', fontsize=16)
 
-    # fig = plt.figure(3)
-    # ax1 = fig.add_subplot(1,3,1)
-    # ax1.set_title('xy')
-    # ax1.imshow(img3[0], cmap='hot')
-    # ax2 = fig.add_subplot(1,3,2)
-    # ax2.set_title('xz')
-    # ax2.imshow(img3[1], cmap='hot')
-    # ax3 = fig.add_subplot(1,3,3)
-    # ax3.set_title('yz')
-    # ax3.imshow(img3[2], cmap='hot')
-    # fig.suptitle('Corrected', fontsize=16)
+    fig = plt.figure(3)
+    ax1 = fig.add_subplot(1,3,1)
+    ax1.set_title('xy')
+    ax1.imshow(img3[0], cmap='hot')
+    ax2 = fig.add_subplot(1,3,2)
+    ax2.set_title('xz')
+    ax2.imshow(img3[1], cmap='hot')
+    ax3 = fig.add_subplot(1,3,3)
+    ax3.set_title('yz')
+    ax3.imshow(img3[2], cmap='hot')
+    fig.suptitle('Corrected', fontsize=16)
     return fig
+
+def plot_xsection_abber(img1, img2):
+    fig = plt.figure(1)
+    ax1 = fig.add_subplot(1,3,1)
+    ax1.set_title('xy')
+    ax1.imshow(img1[0], cmap='hot')
+    ax2 = fig.add_subplot(1,3,2)
+    ax2.set_title('xz')
+    ax2.imshow(img1[1], cmap='hot')
+    ax3 = fig.add_subplot(1,3,3)
+    ax3.set_title('yz')
+    ax3.imshow(img1[2], cmap='hot')
+    fig.suptitle('Original', fontsize=16)
+    
+    fig = plt.figure(2)
+    ax1 = fig.add_subplot(1,3,1)
+    ax1.set_title('xy')
+    ax1.imshow(img2[0], cmap='hot')
+    ax2 = fig.add_subplot(1,3,2)
+    ax2.set_title('xz')
+    ax2.imshow(img2[1], cmap='hot')
+    ax3 = fig.add_subplot(1,3,3)
+    ax3.set_title('yz')
+    ax3.imshow(img2[2], cmap='hot')
+    fig.suptitle('Reconstructed', fontsize=16)
+
+    return fig
+
 # TODO: redirect to the original now that it's in the same repo
 #########################################################################################
 #

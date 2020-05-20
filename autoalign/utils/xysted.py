@@ -84,13 +84,14 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
 
     size=np.asarray([numerical_params["out_res"],numerical_params["out_res"]])
     # xy donut
-    # NOTE: the zern is already created twice the size and cropped in helpers.create_phase
-    # NOTE: try either normalizing this or 
+    # NOTE: the zern is already created twice the size and cropped in helpers.create_phase 
     donut = PC.crop(PC.create_donut(2*size, rot=0, amp=1), size, offset)
-    phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
-    print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
-    print(np.max(helpers.normalize_img(zern)), np.min(helpers.normalize_img(zern)))
-    print(np.max(phasemask), np.min(phasemask))
+    # NOTE: not sure if the zern should be normalized, but by no means normalize both
+    phasemask = donut + zern
+    # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
+    # print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
+    # print(np.max(helpers.normalize_img(zern)), np.min(helpers.normalize_img(zern)))
+    # print(np.max(phasemask), np.min(phasemask))
     # phasemask = phi + np.pi*(rr-0.5)
     # phasemask = phi
 
