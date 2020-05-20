@@ -111,8 +111,6 @@ def create_coords(size, off = [0,0], res = None):
     x = np.linspace((-(size[0]/2) + off[0]), (size[0]-size[0]/2 + off[0]), res[0])
     y = np.linspace((-(size[1]/2) + off[1]), (size[1]-size[1]/2 + off[1]), res[1])
     xcoords, ycoords = np.meshgrid(y,x)
-    # xcoords = np.multiply.outer(np.ones(size[0]), y)
-    # ycoords = np.multiply.outer(x, np.ones(size[1]))
     return xcoords, ycoords
 
 
@@ -186,11 +184,11 @@ def create_ring(size, r_inner, r_outer, amp = 1, radscale = 1):
     return (ring - 1) * amp
 
 
-def create_gauss(size, amp = 1):
+def create_gauss(size, amp = 1, radscale = 1):
     return np.ones(size) * amp
 
 
-def create_donut(size, rot, amp = 1):
+def create_donut(size, rot, amp = 1, radscale = 1):
     """" Creates the phasemask for shaping the 2D donut with the given image 
         size, rotation and amplitude of the donut. """
     xcoord, ycoord = create_coords(size)
@@ -211,7 +209,7 @@ def create_bottleneck(size, radius, amp = 1, radscale = 1):
     return bn
 
 
-def create_segments(size, rot, steps, amp = 1):
+def create_segments(size, rot, steps, amp = 1, radscale = 1):
     """ Creates segmented phase masks depending on the number of steps:
         1 step: Half moon phase mask for "broetchenmode", hollow light sheets etc
         2 steps: 
@@ -225,7 +223,7 @@ def create_segments(size, rot, steps, amp = 1):
     return segments
 
 
-def create_bessel(size, amp = 1):
+def create_bessel(size, amp = 1, radscale = 1):
     xcoord, ycoord = create_coords(size)
     rho = cart2polar(xcoord, ycoord)[0]
     axicon = rho / np.max(rho) * amp
@@ -284,7 +282,7 @@ def correct_flatfield(path):
     return ff
 
     
-def correct_aberrations(size, ratios, orders, off = [0,0]):
+def correct_aberrations(size, ratios, orders, off = [0,0], radscale = 1):
     """ Calculates an aberration correction by summing up Zernike polynomials.
         Output with given size and offsets. Ratios is a 1D array containing the
         weights of the Zernike polynomials. Orders is a 1D of the same length 
@@ -292,7 +290,7 @@ def correct_aberrations(size, ratios, orders, off = [0,0]):
         polynomial. """
     ab = np.zeros(size)
     for oo, ooo in enumerate(orders):
-        zernike = create_zernike(size, off, ooo)
+        zernike = create_zernike(size, off, ooo, radscale)
         ab = ab + ratios[oo]*zernike
     return ab
 
