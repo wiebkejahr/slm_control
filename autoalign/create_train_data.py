@@ -54,13 +54,13 @@ def main(args):
     val_shape = (val_num, channel_num, res, res)
     test_shape = (test_num, channel_num, res, res)
 
-    # open a hdf5 file and create arrays
-    hdf5_file = h5py.File(hdf5_path, mode='w-')
+    # # open a hdf5 file and create arrays
+    # hdf5_file = h5py.File(hdf5_path, mode='w-')
 
-    # create the image arrays
-    hdf5_file.create_dataset("train_img", train_shape, np.float32)
-    hdf5_file.create_dataset("val_img", val_shape, np.float32)
-    hdf5_file.create_dataset("test_img", test_shape, np.float32)
+    # # create the image arrays
+    # hdf5_file.create_dataset("train_img", train_shape, np.float32)
+    # hdf5_file.create_dataset("val_img", val_shape, np.float32)
+    # hdf5_file.create_dataset("test_img", test_shape, np.float32)
     
     train_labels = []
     val_labels = []
@@ -76,6 +76,10 @@ def main(args):
         if args.mode == 'sted':
             # TODO: fix the add_noise to work for multi images (used to wrap get_sted_psf())
             img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
+            # img = get_sted_psf(res, coeffs=np.asarray([0,0,0,0,0.1,0,0,0,0,0,0,0]), multi=True)
+            # print('max: {}  min: {}'.format(np.max(img[0]), np.min(img[0])))
+            # img= np.stack([normalize_img(i) for i in img], axis=0)
+            # print('max: {}  min: {}'.format(np.max(img[0]), np.min(img[0])))
             # print(zern_label)
             # fig = plot_xsection(img)
             # plt.show()

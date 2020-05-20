@@ -7,6 +7,7 @@ import json
 from slm_control import Pattern_Calculator as PC
 from utils import vector_diffraction as vd
 import utils.vector_diffraction as vd
+import utils.helpers as helpers
 
 def stim_em(exc, sted, isat):
     #ln(2) is needed because I_sat is "half life", not lifetime
@@ -84,9 +85,12 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     size=np.asarray([numerical_params["out_res"],numerical_params["out_res"]])
     # xy donut
     # NOTE: the zern is already created twice the size and cropped in helpers.create_phase
-    phasemask = PC.crop(PC.create_donut(2*size, rot=0, amp=1), size, offset) + zern
-    
-
+    # NOTE: try either normalizing this or 
+    donut = PC.crop(PC.create_donut(2*size, rot=0, amp=1), size, offset)
+    phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
+    print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
+    print(np.max(helpers.normalize_img(zern)), np.min(helpers.normalize_img(zern)))
+    print(np.max(phasemask), np.min(phasemask))
     # phasemask = phi + np.pi*(rr-0.5)
     # phasemask = phi
 
