@@ -48,13 +48,18 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         for i, (images, labels) in enumerate(data_loaders['train']):
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
             # if GPU is available, this allows the computation to happen there
-            ex = images.numpy()
-            print(ex.shape) #(64, 3, 64, 64)
-            first = ex[1]
-            fig = helpers.plot_xsection(first)
-            plt.show()
-            print(np.max(first[1]), np.min(first[1])) #(4.955691, -0.591)
-            exit()
+            # ex = images.numpy()
+            # NOTE: here's where you normalize it. 
+            # print(images.numpy().shape)
+            # print(np.max(images.numpy()), np.min(images.numpy()))
+            # NOTE: this normalizes all the incoming images to be between 0 and 1
+            # ideally, you have a dataset where that's already done, but this is a hack
+            images = torch.from_numpy(np.stack([helpers.normalize_img(i) for i in images.numpy()], axis=0))
+            # print(images.numpy().shape)
+            # print(np.max(images.numpy()), np.min(images.numpy()))
+            # exit()
+
+            # exit()
             images = images.to(device)
             labels = labels.to(device)
             

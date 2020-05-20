@@ -59,6 +59,15 @@ def test(model, test_loader, logdir, model_store_path):
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             # Get model outputs (the predicted Zernike coefficients)
             # image = images.numpy().squeeze()
+            print(images.numpy().shape) # (1, 3, 64, 64)
+            print(np.max(images.numpy()), np.min(images.numpy())) # 5.04, -0.96
+            images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))
+            print(images.numpy().shape)
+            print(np.max(images.numpy()), np.min(images.numpy())) # 1, 0 
+            # example for syntax
+            # img2 = np.stack([add_noise(i) for i in img], axis=0)
+            # exit()
+            # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
             preds = model(images).numpy().squeeze()
 
             # zern = preds[:-2]
@@ -66,6 +75,8 @@ def test(model, test_loader, logdir, model_store_path):
             zern = preds
             offset=[0,0]
             reconstructed = get_sted_psf(coeffs=zern, offset_label=offset, multi=True)
+            print('reconstructed')
+            print(np.max(reconstructed), np.min(reconstructed))
             # print(preds)
             # print("zern is: {}".format(zern))
             # print("offsets are: {}".format(preds[-2:]))
@@ -74,6 +85,8 @@ def test(model, test_loader, logdir, model_store_path):
             # remaining_offsets = remaining[-2:]
 
             corrected = get_sted_psf(coeffs=remaining, multi=True)
+            print('corrected')
+            print(np.max(corrected), np.min(corrected))
             #TODO: here's where you need to split them
             #NOTE: the offset used to be a boolean
             # corrected = get_sted_psf(coeffs=remaining_zern, offset_label=remaining_offsets, multi=True) 
@@ -85,6 +98,7 @@ def test(model, test_loader, logdir, model_store_path):
             # exit()
             fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
             plt.show()
+            exit()
             # fig3 = plot_xsection(corrected, 'corrected')
             # plt.show()
             # exit()
