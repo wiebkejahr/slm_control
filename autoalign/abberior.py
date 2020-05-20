@@ -168,8 +168,8 @@ def abberior_multi(model_store_path):
     # ##################
     image = np.stack((image_xy,image_xz, image_yz), axis=0)    
     #image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
-    fig = helpers.plot_xsection(image)
-    plt.show()
+    # fig = helpers.plot_xsection(image)
+    # plt.show()
     
     # exit()
 
@@ -177,10 +177,13 @@ def abberior_multi(model_store_path):
     # # coeffs, _, image = test(model, image, model_store_path)
     results = test(model, image, model_store_path)
     coeffs = results
+    print(coeffs)
     # coeffs = results[:-2]
     # offset = results[-2:]
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
-    fig1 = helpers.plot_xsection(reconstructed)
+    # fig1 = helpers.plot_xsection(reconstructed)
+    # plt.show()
+    fig = helpers.plot_xsection_eval(image, reconstructed)
     plt.show()
     
 
@@ -192,12 +195,12 @@ def abberior_multi(model_store_path):
                 0.0
             ],
             "astig": [
-                -coeffs[2],
+                coeffs[2], #used to be neg
                 coeffs[0]
             ],
             "coma": [
                 coeffs[5],
-                -coeffs[4]
+                coeffs[4] #used to be neg
             ],
             "trefoil": [
                 coeffs[6],

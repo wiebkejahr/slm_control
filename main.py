@@ -44,6 +44,7 @@ from slm_control.Parameters import param
 
 sys.path.insert(1, os.getcwd())
 sys.path.insert(1, 'slm_control/')
+sys.path.insert(1, 'autoalign/')
 import autoalign.abberior as abberior
 
 mpl.rc('text', usetex=False)
@@ -55,9 +56,10 @@ mpl.rc('pdf', fonttype=42)
 # NOTE: hardcoded for now:
 # MODEL_STORE_PATH="autoalign/models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
 # MODEL_STORE_PATH="autoalign/models/4.27.20_3d_offset_sted_20k_eps_15_lr_0.001_bs_64.pth"
-MODEL_STORE_PATH="autoalign/models/20.02.12_xsection_20k_15_epochs_Adam_lr_0.001_batchsize_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.02.12_xsection_20k_15_epochs_Adam_lr_0.001_batchsize_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.05.04_larger_weight_range_20k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.05.04_noise_20k_local_eps_15_lr_0.001_bs_64.pth"
+MODEL_STORE_PATH="autoalign/models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
