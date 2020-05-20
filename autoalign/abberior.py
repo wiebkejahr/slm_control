@@ -20,9 +20,10 @@ try:
 except:
     print("Specpy not installed!")
     pass
-
-import autoalign.utils.helpers as helpers
-import autoalign.utils.my_models as my_models
+import sys
+sys.path.insert(1, 'autoalign/')
+import utils.helpers as helpers
+import utils.my_models as my_models
 
 
 def test(model, input_image, model_store_path):
@@ -119,7 +120,7 @@ def correct(model_store_path):
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.MultiOffsetNet()
+    model = my_models.MultiNet()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -172,15 +173,17 @@ def abberior_multi(model_store_path):
     # plt.show()
     
     # exit()
-
+    print(np.max(image), np.min(image))
+    # exit()
 
     # # coeffs, _, image = test(model, image, model_store_path)
     results = test(model, image, model_store_path)
     coeffs = results
-    print(coeffs)
+    # print(coeffs)
     # coeffs = results[:-2]
     # offset = results[-2:]
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
+    print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
     fig = helpers.plot_xsection_eval(image, reconstructed)
@@ -209,3 +212,6 @@ def abberior_multi(model_store_path):
         }
 
     return corrections
+
+if __name__ == "__main__":
+    abberior_multi('models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64.pth')

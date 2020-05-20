@@ -19,11 +19,10 @@ from skimage.transform import resize, rotate
 import skimage
 from skimage.transform import resize
 import sys, os
-sys.path.insert(1, '../slm_control/')
+sys.path.insert(1, '../../slm_control/')
 # local modules
 from slm_control import Pattern_Calculator as PC
 import utils.my_classes as my_classes
-import utils.xysted
 from utils.xysted import fluor_psf, sted_psf
 from utils.vector_diffraction import vector_diffraction as vd
 
@@ -49,8 +48,8 @@ def preprocess(image):
     print(np.max(image))
     image = normalize_img(np.squeeze(image)) # normalized (200,200) array
     image = crop_image(image, tol=0.2) # get rid of dark line on edge
-    image = normalize_img(image) # renormalize
     image = resize(image, (64,64)) # resize
+    image = normalize_img(image) # renormalize
     return image
 
 

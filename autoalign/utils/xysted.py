@@ -7,7 +7,7 @@ import json
 from slm_control import Pattern_Calculator as PC
 from utils import vector_diffraction as vd
 import utils.vector_diffraction as vd
-import utils.helpers as helpers
+# import utils.helpers as helpers
 
 def stim_em(exc, sted, isat):
     #ln(2) is needed because I_sat is "half life", not lifetime
@@ -19,7 +19,7 @@ def stim_em(exc, sted, isat):
 def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     
     # with open('utils/params.txt') as json_file:
-    with open('parameters/laser_params.txt') as json_file:
+    with open('../parameters/laser_params.txt') as json_file:
         data = json.load(json_file)
         # params is a text file containing a dict of dicts
         optical_params_sted = data["optical_params_sted"]
@@ -87,10 +87,11 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     # NOTE: the zern is already created twice the size and cropped in helpers.create_phase
     # NOTE: try either normalizing this or 
     donut = PC.crop(PC.create_donut(2*size, rot=0, amp=1), size, offset)
-    phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
-    print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
-    print(np.max(helpers.normalize_img(zern)), np.min(helpers.normalize_img(zern)))
-    print(np.max(phasemask), np.min(phasemask))
+    phasemask = donut + zern
+    # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
+    # print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
+    # print(np.max(helpers.normalize_img(zern)), np.min(helpers.normalize_img(zern)))
+    # print(np.max(phasemask), np.min(phasemask))
     # phasemask = phi + np.pi*(rr-0.5)
     # phasemask = phi
 
