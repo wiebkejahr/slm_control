@@ -98,7 +98,7 @@ def test(model, test_loader, logdir, model_store_path):
             # exit()
             fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
             plt.show()
-            exit()
+            # exit()
             # fig3 = plot_xsection(corrected, 'corrected')
             # plt.show()
             # exit()
