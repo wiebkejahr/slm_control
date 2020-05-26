@@ -7,7 +7,7 @@ import json
 from slm_control import Pattern_Calculator as PC
 from utils import vector_diffraction as vd
 import utils.vector_diffraction as vd
-import utils.helpers as helpers
+# import utils.helpers as helpers
 
 def stim_em(exc, sted, isat):
     #ln(2) is needed because I_sat is "half life", not lifetime
