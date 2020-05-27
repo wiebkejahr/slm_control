@@ -19,7 +19,7 @@ from skimage.transform import resize, rotate
 import skimage
 from skimage.transform import resize
 import sys, os
-sys.path.insert(1, '../../slm_control/')
+sys.path.insert(1, '../slm_control/')
 # local modules
 from slm_control import Pattern_Calculator as PC
 import utils.my_classes as my_classes
@@ -96,24 +96,66 @@ def gen_offset():
     return [x,y]
 
 
-def gen_coeffs():
+def gen_coeffs(num):
     """ Generates a random set of Zernike coefficients given piecewise constraints
     from Zhang et al's paper.
     1st-3rd: [0]   |  4th-6th: [+/- 1.4]  | 7th-10th: [+/- 0.8]  |  11th-15th: [+/- 0.6] 
     
     For physical intuition's sake, I'm creating a 15 dim vector, but only returning the 12 values that are non-zero.
     NOTE: this could be modified to accomodate further Zernike terms, but CNN code would have to be adjusted as well
+    NOTE: changing this as of 5/27/20
     """
-    c = np.zeros(15)
+    c = np.zeros(num)
     # c[3:6] = [random.uniform(-1.4, 1.4) for i in c[3:6]]
     # c[6:10] = [random.uniform(-0.8, 0.8) for i in c[6:10]]
     # c[10:] = [random.uniform(-0.6, 0.6) for i in c[10:]]
     c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
     
-    return c[3:]
+    return c
 
 
-def create_phase(coeffs, res=64, offset=[0,0]):
+def create_phase_no_crop(coeffs, res1=64, res2=64, offset=[0,0]):
+    """
+    Creates a phase mask of all of the weighted Zernike terms (= phase masks)
+    
+    coeffs: list of floats of weights for corresponding zernike terms
+    size: one dim of the square output array (in pixels)
+    rot, amp, offset: all necessary, static values needed for the Pattern_Calculator code. 
+                      Don't change them without good reason.
+ 
+    Zernike polynomial orders = 
+            1 = [[0,0],     11 = [4,-4],    21 = [5,5],
+            2 = [1,-1],     12 = [4,-2],    22 = [6,-6],
+            3 = [1,1],      13 = [4,0],     23 = [6,-4],
+            4 = [2,-2],     14 = [4,2],     24 = [6,-2],
+            5 = [2,0],      15 = [4,4],     25 = [6,0],
+            6 = [2,2],      16 = [5,-5],    26 = [6,2],
+            7 = [3,-3],     17 = [5,-3],    27 = [6,4],
+            8 = [3,-1],     18 = [5,-1],    28 = [6,6]] 
+            9 = [3,1],      19 = [5,1],
+            10 = [3,3],     20 = [5,3],
+    """
+   # NOTE: starting with the 4th order, bc we set the first three to zero.
+    orders = [[2,-2], [2,2], # Astig2 & 1
+            [3,-3], [3,-1],  # Trefoil2 & Coma2
+            [3,1],[3,3], # Coma1 & Trefoil1
+            [4,0]] # Spherical
+    # sanity checks
+    assert(len(coeffs) == len(orders)) # should both be 12
+    assert(isinstance(i, float) for i in coeffs)
+
+    size=np.asarray([res1, res2]) # NOTE: used to be res+1
+    # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
+    # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
+    
+    # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
+    terms = [coeff*PC.create_zernike(size, order, radscale=2) for coeff, order in list(zip(coeffs, orders))]  
+    zern = sum(terms)
+    # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
+    # zern represents the collective abberations that will be added to an ideal donut.
+    return zern
+
+def create_phase(coeffs, res1=64, res2=64, offset=[0,0]):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -142,7 +184,7 @@ def create_phase(coeffs, res=64, offset=[0,0]):
     assert(len(coeffs) == len(orders)) # should both be 12
     assert(isinstance(i, float) for i in coeffs)
 
-    size=np.asarray([res, res]) # NOTE: used to be res+1
+    size=np.asarray([res1, res2]) # NOTE: used to be res+1
     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
     
@@ -153,18 +195,20 @@ def create_phase(coeffs, res=64, offset=[0,0]):
     # zern represents the collective abberations that will be added to an ideal donut.
     return zern
 
-def gen_sted_psf(res=64, offset=False,  multi=False):
+def gen_sted_psf(res=64, offset=False,  multi=False, num=12):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    coeffs = gen_coeffs()
+    coeffs = gen_coeffs(num)
     
     if offset:
         offset_label = gen_offset()
     else:
         offset_label = np.asarray([0,0])
 
-    zern = create_phase(coeffs, res, offset_label)
+    # NOTE: changing this for no crop
+    zern = create_phase_no_crop(coeffs, offset=offset_label)
+    # zern = create_phase(coeffs, res, offset_label)
     
     if multi:
         plane = 'all'
@@ -172,6 +216,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
         plane = 'xy'
 
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
+    img = normalize_img(img)
     img2 = np.stack([add_noise(i) for i in img], axis=0)
     # return img2, coeffs, offset_label
     return img, coeffs, offset_label
@@ -247,10 +292,10 @@ def plot_xsection(img3d, name=''):
     fig = plt.figure()
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
-    ax1.imshow(img3d[0])#, cmap='hot')
+    ax1.imshow(img3d[0], cmap='hot')
     ax2 = fig.add_subplot(1,3,2)
     ax2.set_title('xz')
-    ax2.imshow(img3d[1])#, cmap='hot')
+    ax2.imshow(img3d[1], cmap='hot')
     ax3 = fig.add_subplot(1,3,3)
     ax3.set_title('yz')
     ax3.imshow(img3d[2], cmap='hot')
