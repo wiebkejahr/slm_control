@@ -40,9 +40,9 @@ def main(args):
     val_num = num_data_pts - train_num 
     test_num = args.test_num
     
-    print('number of training examples: {}'.format(train_num))
-    print('number of validation examples: {}'.format(val_num))
-    print('number of test images: {}'.format(test_num))
+    # print('number of training examples: {}'.format(train_num))
+    # print('number of validation examples: {}'.format(val_num))
+    # print('number of test images: {}'.format(test_num))
 
     # if the flag for multi-channel is there, give it 3 color channels
     if args.multi:
@@ -71,6 +71,25 @@ def main(args):
     else:
         label_dim = 12
     
+    c = gen_coeffs()
+    print('sphere: {}, astig1: {}, astig2: {}, coma1: {}, coma2: {}, trefoil1: {}, trefoil2: {}'.format(c[9], c[2], c[0], c[5], c[4], c[6], c[3]))
+    #  "sphere": [
+    #             coeffs[9],
+    #             0.0
+    #         ],
+    #         "astig": [
+    #             coeffs[2], #used to be neg
+    #             coeffs[0]
+    #         ],
+    #         "coma": [
+    #             coeffs[5],
+    #             coeffs[4] #used to be neg
+    #         ],
+    #         "trefoil": [
+    #             coeffs[6],
+    #             coeffs[3]
+    #         ]
+    exit()
     #create train set
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':

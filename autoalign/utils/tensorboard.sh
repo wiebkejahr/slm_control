@@ -10,7 +10,8 @@
 # -o
 
 # OUTPUT_DIR='/c/Users/hmcgover/Seafile/My Library'
-OUTPUT_DIR='../runs/*'
+# OUTPUT_DIR='../runs/*'
+OUTPUT_DIR="~/Users/hope/Documents/GitHub/slm_control/autoalign/utils/runs/*"
 # tensorboard --logdir="${OUTPUT_DIR}/Runs/"
 tensorboard --logdir="${OUTPUT_DIR}"
 
