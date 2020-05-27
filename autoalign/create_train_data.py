@@ -69,7 +69,9 @@ def main(args):
     if args.offset:
         label_dim = 14
     else:
-        label_dim = 12
+        # NOTE: label dim here is 7
+        label_dim = 7
+        #label_dim = 12
     
     #create train set
     for i in tqdm(range(train_num)):

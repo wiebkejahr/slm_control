@@ -87,7 +87,7 @@ class MultiNetLtd(nn.Module):
     to include a multi-channelled image
     """
     def __init__(self):
-        super(MultiNet, self).__init__()
+        super(MultiNetLtd, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, 5, padding=2)
         self.conv2 = nn.Conv2d(32, 32, 5, padding=2) 
         self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
