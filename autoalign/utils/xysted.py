@@ -5,8 +5,8 @@ import json
 # local modules
 # import sys, os
 from slm_control import Pattern_Calculator as PC
-from utils import vector_diffraction as vd
-import utils.vector_diffraction as vd
+from autoalign.utils import vector_diffraction as vd
+import autoalign.utils.vector_diffraction as vd
 # import utils.helpers as helpers
 
 def stim_em(exc, sted, isat):

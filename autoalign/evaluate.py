@@ -20,10 +20,10 @@ import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
 # local packages
-import utils.my_models as my_models
-import utils.my_classes as my_classes
-from utils.vector_diffraction import *
-from utils.helpers import *
+import autoalign.utils.my_models as my_models
+import autoalign.utils.my_classes as my_classes
+from autoalign.utils.vector_diffraction import *
+from autoalign.utils.helpers import *
 
 def log_images(logdir, images, coeffs):
     logdir_test = logdir + '/test'
@@ -76,8 +76,8 @@ def test(model, test_loader, logdir, model_store_path):
             zern = preds
             offset=[0,0]
             reconstructed = get_sted_psf(coeffs=zern, offset_label=offset, multi=True)
-            print('reconstructed')
-            print(np.max(reconstructed), np.min(reconstructed))
+            # print('reconstructed')
+            # print(np.max(reconstructed), np.min(reconstructed))
             # print(preds)
             # print("zern is: {}".format(zern))
             # print("offsets are: {}".format(preds[-2:]))
@@ -86,8 +86,8 @@ def test(model, test_loader, logdir, model_store_path):
             # remaining_offsets = remaining[-2:]
 
             corrected = get_sted_psf(coeffs=remaining, multi=True)
-            print('corrected')
-            print(np.max(corrected), np.min(corrected))
+            # print('corrected')
+            # print(np.max(corrected), np.min(corrected))
             #TODO: here's where you need to split them
             #NOTE: the offset used to be a boolean
             # corrected = get_sted_psf(coeffs=remaining_zern, offset_label=remaining_offsets, multi=True) 
