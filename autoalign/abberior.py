@@ -120,7 +120,7 @@ def correct(model_store_path):
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.MultiNet()
+    model = my_models.MultiNetLtd()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -173,7 +173,7 @@ def abberior_multi(model_store_path):
     # plt.show()
     
     # exit()
-    print(np.max(image), np.min(image))
+    # print(np.max(image), np.min(image))
     # exit()
 
     # # coeffs, _, image = test(model, image, model_store_path)
@@ -183,10 +183,10 @@ def abberior_multi(model_store_path):
     # coeffs = results[:-2]
     # offset = results[-2:]
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
-    print(np.max(reconstructed), np.min(reconstructed))
+    # print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
-    fig = helpers.plot_xsection_eval(image, reconstructed)
+    fig = helpers.plot_xsection_abber(image, reconstructed)
     plt.show()
     
 
