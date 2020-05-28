@@ -59,11 +59,12 @@ def test(model, test_loader, logdir, model_store_path):
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             # Get model outputs (the predicted Zernike coefficients)
             # image = images.numpy().squeeze()
-            print(images.numpy().shape) # (1, 3, 64, 64)
-            print(np.max(images.numpy()), np.min(images.numpy())) # 5.04, -0.96
+            print(i)
+            # print(images.numpy().shape) # (1, 3, 64, 64)
+            # print(np.max(images.numpy()), np.min(images.numpy())) # 5.04, -0.96
             images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))
-            print(images.numpy().shape)
-            print(np.max(images.numpy()), np.min(images.numpy())) # 1, 0 
+            # print(images.numpy().shape)
+            # print(np.max(images.numpy()), np.min(images.numpy())) # 1, 0 
             # example for syntax
             # img2 = np.stack([add_noise(i) for i in img], axis=0)
             # exit()
