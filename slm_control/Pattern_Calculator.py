@@ -106,6 +106,7 @@ def create_coords(size, off = [0,0], res = None):
         size that's passed in needs to be two times the size needed due to 
         cropping later. Offset here will be offset of the pattern in the 
         backaperture."""
+    # print(size, type(size))
     if res == None:
         res = size
     x = np.linspace((-(size[0]/2) + off[0]), (size[0]-size[0]/2 + off[0]), res[0])

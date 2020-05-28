@@ -14,7 +14,7 @@
     "defoc": 0.0,
     "mode": "2D STED",
     "astig": [
-        0.1,
+        0.0,
         0.0
     ],
     "coma": [
