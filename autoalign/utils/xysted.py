@@ -19,7 +19,7 @@ def stim_em(exc, sted, isat):
 def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     
     # with open('utils/params.txt') as json_file:
-    with open('parameters/laser_params_test.txt') as json_file:
+    with open('parameters/laser_params.txt') as json_file:
         data = json.load(json_file)
         # params is a text file containing a dict of dicts
         optical_params_sted = data["optical_params_sted"]
