@@ -45,7 +45,8 @@ from slm_control.Parameters import param
 sys.path.insert(1, os.getcwd())
 sys.path.insert(1, 'slm_control/')
 sys.path.insert(1, 'autoalign/')
-import autoalign.abberior as abberior
+import autoalign.abberior as abberior   
+import autoalign.utils.helpers as helpers
 
 mpl.rc('text', usetex=False)
 mpl.rc('font', family='serif')
@@ -148,7 +149,8 @@ class Main_Window(QtWidgets.QMainWindow):
         # print("right", self.p.right)
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
-        
+        self.zernikes_all = np.zeros_like(self.img_l.data)
+
         #self.objective_changed()
         # TODO WJ
         #self.split_image(self.splt_img_state.checkState())
@@ -178,27 +180,32 @@ class Main_Window(QtWidgets.QMainWindow):
         self.zernike = abberior.abberior_multi(MODEL_STORE_PATH)
         # this needs to be scaled by some factor that's input from the GUI
         
+        self.zernikes_all = (-1.)*helpers.create_phase(self.zernike, res1=600, res2=396)
+        print(self.zernike)
+        # plt.figure()
+        # plt.imshow(self.zernikes_all)
+        # plt.show()
 
-        # NOTE: self.p exists bc load_params() is called during creation of mainframe
-        # this is setting each value to its current value plus the correction
-        self.p.left["astig"] = [x+y for x,y in zip(self.p.left["astig"], self.zernike["astig"])]
-        self.p.left["coma"] = [x+y for x,y in zip(self.p.left["coma"], self.zernike["coma"])]
-        self.p.left["sphere"] = [x+y for x,y in zip(self.p.left["sphere"], self.zernike["sphere"])]
-        self.p.left["trefoil"] = [x+y for x,y in zip(self.p.left["trefoil"], self.zernike["trefoil"])]
+        # # NOTE: self.p exists bc load_params() is called during creation of mainframe
+        # # this is setting each value to its current value plus the correction
+        # self.p.left["astig"] = [x+y for x,y in zip(self.p.left["astig"], self.zernike["astig"])]
+        # self.p.left["coma"] = [x+y for x,y in zip(self.p.left["coma"], self.zernike["coma"])]
+        # self.p.left["sphere"] = [x+y for x,y in zip(self.p.left["sphere"], self.zernike["sphere"])]
+        # self.p.left["trefoil"] = [x+y for x,y in zip(self.p.left["trefoil"], self.zernike["trefoil"])]
 
-        self.p.right["astig"] = [x+y for x,y in zip(self.p.right["astig"], self.zernike["astig"])]
-        self.p.right["coma"] = [x+y for x,y in zip(self.p.right["coma"], self.zernike["coma"])]
-        self.p.right["sphere"] = [x+y for x,y in zip(self.p.right["sphere"], self.zernike["sphere"])]
-        self.p.right["trefoil"] = [x+y for x,y in zip(self.p.right["trefoil"], self.zernike["trefoil"])]
+        # self.p.right["astig"] = [x+y for x,y in zip(self.p.right["astig"], self.zernike["astig"])]
+        # self.p.right["coma"] = [x+y for x,y in zip(self.p.right["coma"], self.zernike["coma"])]
+        # self.p.right["sphere"] = [x+y for x,y in zip(self.p.right["sphere"], self.zernike["sphere"])]
+        # self.p.right["trefoil"] = [x+y for x,y in zip(self.p.right["trefoil"], self.zernike["trefoil"])]
         
 
-        # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
-        self.img_l.update_guivalues(self.p, self.p.left)
-        self.img_r.update_guivalues(self.p, self.p.right)
-        #self.objective_changed()
-        #self.split_image(self.splt_img_state.checkState())
-        #self.single_correction(self.sngl_corr_state.checkState())
-        #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
+        # # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
+        # self.img_l.update_guivalues(self.p, self.p.left)
+        # self.img_r.update_guivalues(self.p, self.p.right)
+        # #self.objective_changed()
+        # #self.split_image(self.splt_img_state.checkState())
+        # #self.single_correction(self.sngl_corr_state.checkState())
+        # #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
 
         self.recalc_images()
 
@@ -218,6 +225,8 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_r = PI.Half_Pattern(self.p)
         self.img_r.call_daddy(self)
         self.img_r.set_name("img_r")
+
+        self.zernikes_all = np.zeros_like(self.img_l.data)
         
         
     def init_zernikes(self):
@@ -589,10 +598,12 @@ class Main_Window(QtWidgets.QMainWindow):
             into the Pixmap for display. """
             
         l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
-                         self.flatfield[0]]), self.p.left["phasewrap"])
+                        self.flatfield[0], self.img_l.vort.tempscalegui.value() * self.zernikes_all]), self.p.left["phasewrap"])
         r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
-                        self.flatfield[1]]), self.p.right["phasewrap"])
+                        self.flatfield[1], self.img_l.vort.tempscalegui.value() * self.zernikes_all]), self.p.right["phasewrap"])
         
+        print(np.max(self.zernikes_all), np.max(self.img_l.data), np.max(self.img_l.aberr.data))
+
         self.img_data = pcalc.stitch_images(l * self.p.left["slm_range"],
                                             r * self.p.right["slm_range"])
         

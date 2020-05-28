@@ -22,6 +22,7 @@ except:
     pass
 import sys
 sys.path.insert(1, 'autoalign/')
+sys.path.insert(1, 'parameters/')
 import utils.helpers as helpers
 import utils.my_models as my_models
 
@@ -173,7 +174,7 @@ def abberior_multi(model_store_path):
     # plt.show()
     
     # exit()
-    print(np.max(image), np.min(image))
+    # print(np.max(image), np.min(image))
     # exit()
 
     # # coeffs, _, image = test(model, image, model_store_path)
@@ -210,8 +211,9 @@ def abberior_multi(model_store_path):
     #             coeffs[3]
     #         ]
     #     }
-    return coeffs
+
     # return corrections
+    return coeffs
 
 if __name__ == "__main__":
-    abberior_multi('models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64.pth')
+    abberior_multi('models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_2.pth')

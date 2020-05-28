@@ -118,7 +118,7 @@ def gen_coeffs():
     return c[3:]
 
 
-def create_phase(coeffs, res=64, offset=[0,0]):
+def create_phase(coeffs, res1=64, res2=64, offset=[0,0]):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -147,7 +147,7 @@ def create_phase(coeffs, res=64, offset=[0,0]):
     assert(len(coeffs) == len(orders)) # should both be 12
     assert(isinstance(i, float) for i in coeffs)
 
-    size=np.asarray([res, res]) # NOTE: used to be res+1
+    size=np.asarray([res1, res2]) # NOTE: used to be res+1
     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
     
@@ -265,6 +265,10 @@ def plot_xsection(img3d, name=''):
     return fig
 
 def plot_xsection_eval(img1, img2, img3):
+    img1 = normalize_img(img1)
+    img2 = normalize_img(img2)
+    img3 = normalize_img(img3)
+    
     fig = plt.figure(1)
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
@@ -303,6 +307,8 @@ def plot_xsection_eval(img1, img2, img3):
     return fig
 
 def plot_xsection_abber(img1, img2):
+    img1 = normalize_img(img1)
+    img2 = normalize_img(img2)
     fig = plt.figure(1)
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
