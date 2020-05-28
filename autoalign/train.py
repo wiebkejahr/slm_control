@@ -82,7 +82,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         
 
             total_step= len(data_loaders['train']) 
-            update_num = 2
+            update_num = 1
             if (i + 1) % update_num == 0: # will log to tensorboard after `update_num` batches, roughly
                 # ...log the running loss
                 train_writer.add_scalar('training loss',
@@ -113,7 +113,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 # statistics logging
                 val_loss += loss.item()
                 total_step= len(data_loaders['val']) # number of batches
-                update_num = 2
+                update_num = 1
                 if (i + 1) % update_num == 0:
                     # ...log the validation loss
                     train_writer.add_scalar('validation loss',
@@ -163,7 +163,7 @@ def main(args):
     dataset_sizes = {'train': len(train_dataset), 'val': len(val_dataset)}
     for i, j in dataset_sizes.items():
         print(i, j)
-    
+    # exit()
     print('is CUDA available? {}'.format(torch.cuda.is_available()))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     ################################## running ###################################

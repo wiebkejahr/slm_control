@@ -21,9 +21,9 @@ MODEL_DIR=$OUTPUT_DIR/models
 LOG_DIR=$OUTPUT_DIR/runs
 
 ####################### 1. MAKE DATASET #############################
-NUM_POINTS=2 # will do 90/10 train/validation split
-TEST_NUM=1 # number of additional test samples to create
-NAME="random"
+NUM_POINTS=15000 # will do 90/10 train/validation split
+TEST_NUM=10 # number of additional test samples to create
+NAME="20.05.27_shift_invariant_15k"
 # NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
@@ -76,11 +76,11 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --logdir              path to logging dir for optional tensorboard visualization
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
-# if [ ! -f ${MODEL_STORE_PATH} ]; then
-# python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
-# else
-# echo "Model already exists"
-# fi
+if [ ! -f ${MODEL_STORE_PATH} ]; then
+python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
+else
+echo "Model already exists"
+fi
 ####################### 3. EVALUATE ################################
 # To see all options, run 'python evaluate.py --help'. Output copied below.
 #

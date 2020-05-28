@@ -19,7 +19,7 @@ def stim_em(exc, sted, isat):
 def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     
     # with open('utils/params.txt') as json_file:
-    with open('parameters/laser_params_test.txt') as json_file:
+    with open('parameters/laser_params.txt') as json_file:
         data = json.load(json_file)
         # params is a text file containing a dict of dicts
         optical_params_sted = data["optical_params_sted"]
@@ -86,7 +86,7 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     # xy donut
     # NOTE: the zern is already created twice the size and cropped in helpers.create_phase 
     donut = PC.crop(PC.create_donut(2*size, rot=0, amp=1), size, offset)
-    # NOTE: not sure if the zern should be normalized, but by no means normalize both
+    # NOTE: not sure if the zern should be normalized, but by no means normalize the sum
     phasemask = donut + zern
     # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
     # print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))

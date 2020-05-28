@@ -89,6 +89,11 @@ def save_params(fname):
     with open(fname, 'w') as outfile:
         json.dump(data, outfile)
 
+def gen_shift():
+    x = random.randint(-7,7)
+    y = random.randint(-7,7)
+    return x,y
+
 def gen_offset():
     """A function to generate an offset [x, y] to displace the STED psf. Returns an 1d array of 2 ints"""
     x = round(random.uniform(-0.2, 0.2), 3)
@@ -172,9 +177,10 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
         plane = 'xy'
 
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
+    img = normalize_img(img)
     img2 = np.stack([add_noise(i) for i in img], axis=0)
-    # return img2, coeffs, offset_label
-    return img, coeffs, offset_label
+
+    return img2, coeffs, offset_label
 
 def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
@@ -187,6 +193,7 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
     else:
         plane = 'xy'
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
+    img = normalize_img(img)
 
     return img
 
@@ -247,10 +254,10 @@ def plot_xsection(img3d, name=''):
     fig = plt.figure()
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
-    ax1.imshow(img3d[0])#, cmap='hot')
+    ax1.imshow(img3d[0], cmap='hot')
     ax2 = fig.add_subplot(1,3,2)
     ax2.set_title('xz')
-    ax2.imshow(img3d[1])#, cmap='hot')
+    ax2.imshow(img3d[1], cmap='hot')
     ax3 = fig.add_subplot(1,3,3)
     ax3.set_title('yz')
     ax3.imshow(img3d[2], cmap='hot')
