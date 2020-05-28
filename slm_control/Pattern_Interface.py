@@ -171,7 +171,8 @@ class Half_Pattern(QtWidgets.QWidget):
             self.off.compute_pattern(update = False)
         
         #TODO: tempscalegui.value needs to be removed
-        self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.vort.tempscalegui.value() * self.aberr.data])
+        self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.aberr.data])
+        #self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.vort.tempscalegui.value() * self.aberr.data])
         self.data = self.crop(update = False)
         
         if update:

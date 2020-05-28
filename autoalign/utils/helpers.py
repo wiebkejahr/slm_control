@@ -22,9 +22,9 @@ import sys, os
 sys.path.insert(1, '../slm_control/')
 # local modules
 from slm_control import Pattern_Calculator as PC
-import utils.my_classes as my_classes
-from utils.xysted import fluor_psf, sted_psf
-from utils.vector_diffraction import vector_diffraction as vd
+import autoalign.utils.my_classes as my_classes
+from autoalign.utils.xysted import fluor_psf, sted_psf
+from autoalign.utils.vector_diffraction import vector_diffraction as vd
 
 def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
@@ -45,7 +45,7 @@ def crop_image(img,tol=0.2):
 def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
     # a little preprocessing
-    print(np.max(image))
+    # print(np.max(image))
     image = normalize_img(np.squeeze(image)) # normalized (200,200) array
     image = crop_image(image, tol=0.2) # get rid of dark line on edge
     image = resize(image, (64,64)) # resize
@@ -227,7 +227,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
     else:
         offset_label = np.asarray([0,0])
 
-    zern = create_phase(coeffs, res, offset_label)
+    zern = create_phase(coeffs, res, res, offset_label)
     
     if multi:
         plane = 'all'
@@ -244,7 +244,7 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    zern = create_phase(coeffs, res, offset_label)
+    zern = create_phase(coeffs, res,res, offset_label)
     
     if multi:
         plane = 'all'
@@ -323,6 +323,10 @@ def plot_xsection(img3d, name=''):
     return fig
 
 def plot_xsection_eval(img1, img2, img3):
+    img1 = normalize_img(img1)
+    img2 = normalize_img(img2)
+    img3 = normalize_img(img3)
+    
     fig = plt.figure(1)
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
@@ -361,6 +365,8 @@ def plot_xsection_eval(img1, img2, img3):
     return fig
 
 def plot_xsection_abber(img1, img2):
+    img1 = normalize_img(img1)
+    img2 = normalize_img(img2)
     fig = plt.figure(1)
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')

@@ -22,6 +22,7 @@ except:
     pass
 import sys
 sys.path.insert(1, 'autoalign/')
+sys.path.insert(1, 'parameters/')
 import utils.helpers as helpers
 import utils.my_models as my_models
 
@@ -173,7 +174,7 @@ def abberior_multi(model_store_path):
     # plt.show()
     
     # exit()
-    print(np.max(image), np.min(image))
+    # print(np.max(image), np.min(image))
     # exit()
 
     # # coeffs, _, image = test(model, image, model_store_path)
@@ -183,35 +184,36 @@ def abberior_multi(model_store_path):
     # coeffs = results[:-2]
     # offset = results[-2:]
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
-    print(np.max(reconstructed), np.min(reconstructed))
+    # print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
-    fig = helpers.plot_xsection_eval(image, reconstructed)
+    fig = helpers.plot_xsection_abber(image, reconstructed)
     plt.show()
     
 
     # print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
-    corrections = {
-            "sphere": [
-                coeffs[9],
-                0.0
-            ],
-            "astig": [
-                coeffs[2], #used to be neg
-                coeffs[0]
-            ],
-            "coma": [
-                coeffs[5],
-                coeffs[4] #used to be neg
-            ],
-            "trefoil": [
-                coeffs[6],
-                coeffs[3]
-            ]
-        }
+    # corrections = {
+    #         "sphere": [
+    #             coeffs[9],
+    #             0.0
+    #         ],
+    #         "astig": [
+    #             coeffs[2], #used to be neg
+    #             coeffs[0]
+    #         ],
+    #         "coma": [
+    #             coeffs[5],
+    #             coeffs[4] #used to be neg
+    #         ],
+    #         "trefoil": [
+    #             coeffs[6],
+    #             coeffs[3]
+    #         ]
+    #     }
 
-    return corrections
+    # return corrections
+    return coeffs
 
 if __name__ == "__main__":
-    abberior_multi('models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64.pth')
+    abberior_multi('models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_2.pth')
