@@ -19,7 +19,7 @@ from skimage.transform import resize, rotate
 import skimage
 from skimage.transform import resize
 import sys, os
-sys.path.insert(1, '../../slm_control/')
+sys.path.insert(1, '../slm_control/')
 # local modules
 from slm_control import Pattern_Calculator as PC
 import utils.my_classes as my_classes
@@ -328,6 +328,8 @@ def plot_xsection_abber(img1, img2):
 
     return fig
 
+if __name__ == "__main__":
+    print(gen_coeffs())
 # TODO: redirect to the original now that it's in the same repo
 #########################################################################################
 #
