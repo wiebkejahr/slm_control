@@ -46,6 +46,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
 
         # TRAINING LOOP
         for i, (images, labels) in enumerate(data_loaders['train']):
+            # print(i)
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
             # if GPU is available, this allows the computation to happen there
             # ex = images.numpy()
@@ -57,9 +58,6 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             images = torch.from_numpy(np.stack([helpers.normalize_img(i) for i in images.numpy()], axis=0))
             # print(images.numpy().shape)
             # print(np.max(images.numpy()), np.min(images.numpy()))
-            # exit()
-
-            # exit()
             images = images.to(device)
             labels = labels.to(device)
             
@@ -82,9 +80,10 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         
 
             total_step= len(data_loaders['train']) 
-            update_num = 1
+            update_num = 2
             if (i + 1) % update_num == 0: # will log to tensorboard after `update_num` batches, roughly
                 # ...log the running loss
+                # print('running train loss: {}'.format(running_loss))
                 train_writer.add_scalar('training loss',
                             running_loss/update_num,
                             epoch * total_step + i)
@@ -113,9 +112,10 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 # statistics logging
                 val_loss += loss.item()
                 total_step= len(data_loaders['val']) # number of batches
-                update_num = 1
+                update_num = 2
                 if (i + 1) % update_num == 0:
                     # ...log the validation loss
+                    # print('running val loss: {}'.format(val_loss))
                     train_writer.add_scalar('validation loss',
                                 val_loss/update_num,
                                 epoch * total_step + i)
