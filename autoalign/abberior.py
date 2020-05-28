@@ -192,24 +192,43 @@ def abberior_multi(model_store_path):
 
     # print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
+    # corrections = {
+    #         "sphere": [
+    #             coeffs[9],
+    #             0.0
+    #         ],
+    #         "astig": [
+    #             coeffs[2], #used to be neg
+    #             coeffs[0]
+    #         ],
+    #         "coma": [
+    #             coeffs[5],
+    #             coeffs[4] #used to be neg
+    #         ],
+    #         "trefoil": [
+    #             coeffs[6],
+    #             coeffs[3]
+    #         ]
+    #     }
     corrections = {
             "sphere": [
-                coeffs[9],
+                coeffs[6],
                 0.0
             ],
             "astig": [
-                coeffs[2], #used to be neg
+                coeffs[1], #used to be neg
                 coeffs[0]
             ],
             "coma": [
-                coeffs[5],
-                coeffs[4] #used to be neg
+                coeffs[4],
+                coeffs[3] #used to be neg
             ],
             "trefoil": [
-                coeffs[6],
-                coeffs[3]
+                coeffs[5],
+                coeffs[2]
             ]
         }
+
 
     return corrections
 
