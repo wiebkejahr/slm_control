@@ -219,14 +219,15 @@ def gen_sted_psf(res=64, offset=False,  multi=False, num=12):
     img = normalize_img(img)
     img2 = np.stack([add_noise(i) for i in img], axis=0)
     # return img2, coeffs, offset_label
-    return img, coeffs, offset_label
+    return img2, coeffs, offset_label
 
 def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    zern = create_phase(coeffs, res, offset_label)
-    
+    # zern = create_phase(coeffs, res, offset_label)
+    zern = create_phase_no_crop(coeffs, res, res, offset_label)
+
     if multi:
         plane = 'all'
     else:
