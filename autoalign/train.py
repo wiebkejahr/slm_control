@@ -171,7 +171,7 @@ def main(args):
         if args.offset:
             model = my_models.MultiOffsetNet()
         else:
-            model = my_models.MultiNet()
+            model = my_models.MultiNetShift()
     else:
         if args.offset:
             model = my_models.OffsetNet()

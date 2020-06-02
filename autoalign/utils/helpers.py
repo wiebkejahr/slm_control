@@ -33,7 +33,7 @@ def normalize_img(img):
 def add_noise(img):
     """Adds Poisson noise to the image using skimage's built-in method. Function normalizes image before adding noise"""
     # return img + np.random.poisson(img)
-    return skimage.util.random_noise(normalize_img(img), mode='gaussian', seed=None, clip=True, var=0.0001)
+    return skimage.util.random_noise(img, mode='gaussian', seed=None, clip=True, var=0.0001)
 
 def crop_image(img,tol=0.2):
     """Function to crop the dark line on the edge of the acquired image data.
@@ -163,6 +163,19 @@ def create_phase_shifted(coeffs, res1=64, res2=64, offset=[0,0]):
 def gen_sted_psf_shifted(multi=True):
     
     coeffs = gen_coeffs(num=14)
+    zern = create_phase_shifted(coeffs)
+    
+    if multi:
+        plane = 'all'
+    else:
+        plane = 'xy'
+
+    img = sted_psf(zern, plane=plane)
+    img = np.stack([add_noise(i) for i in img], axis=0)
+    # print(coeffs)
+    return img, coeffs[3:]
+
+def get_sted_psf_shifted(coeffs=np.asarray([0.0]*14), multi=True):
     zern = create_phase_shifted(coeffs)
     
     if multi:
@@ -337,7 +350,8 @@ def plot_xsection_eval(img1, img2, img3):
     ax3 = fig.add_subplot(1,3,3)
     ax3.set_title('yz')
     ax3.imshow(img1[2], cmap='hot')
-    fig.suptitle('Original', fontsize=16)
+    fig.suptitle('Tip', fontsize=16)
+    # fig.suptitle('Original', fontsize=16)
     
     fig = plt.figure(2)
     ax1 = fig.add_subplot(1,3,1)
@@ -349,7 +363,8 @@ def plot_xsection_eval(img1, img2, img3):
     ax3 = fig.add_subplot(1,3,3)
     ax3.set_title('yz')
     ax3.imshow(img2[2], cmap='hot')
-    fig.suptitle('Reconstructed', fontsize=16)
+    fig.suptitle('Tilt', fontsize=16)
+    # fig.suptitle('Reconstructed', fontsize=16)
 
     fig = plt.figure(3)
     ax1 = fig.add_subplot(1,3,1)
@@ -361,7 +376,8 @@ def plot_xsection_eval(img1, img2, img3):
     ax3 = fig.add_subplot(1,3,3)
     ax3.set_title('yz')
     ax3.imshow(img3[2], cmap='hot')
-    fig.suptitle('Corrected', fontsize=16)
+    # fig.suptitle('Corrected', fontsize=16)
+    fig.suptitle('Defocus', fontsize=16)
     return fig
 
 def plot_xsection_abber(img1, img2):

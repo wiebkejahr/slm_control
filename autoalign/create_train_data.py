@@ -16,7 +16,7 @@ import skimage
 from skimage.transform import resize, AffineTransform, warp
 
 # local packages
-from autoalign.utils.helpers import *
+from utils.helpers import *
 
 ###############################################################################    
     
@@ -56,12 +56,12 @@ def main(args):
     test_shape = (test_num, channel_num, res, res)
 
     # open a hdf5 file and create arrays
-    # hdf5_file = h5py.File(hdf5_path, mode='w-')
+    hdf5_file = h5py.File(hdf5_path, mode='w-')
 
-    # # create the image arrays
-    # hdf5_file.create_dataset("train_img", train_shape, np.float32)
-    # hdf5_file.create_dataset("val_img", val_shape, np.float32)
-    # hdf5_file.create_dataset("test_img", test_shape, np.float32)
+    # create the image arrays
+    hdf5_file.create_dataset("train_img", train_shape, np.float32)
+    hdf5_file.create_dataset("val_img", val_shape, np.float32)
+    hdf5_file.create_dataset("test_img", test_shape, np.float32)
     
     train_labels = []
     val_labels = []
@@ -71,7 +71,7 @@ def main(args):
         label_dim = 14
     else:
         label_dim = 12
-    
+    label_dim = 11
     # # NOTE: added for shift invariant
     # train_img = []
     # val_img = []
@@ -79,11 +79,19 @@ def main(args):
 
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
+            # coeffs = [0.2,0,0,0,0,0.1,0.1,0,0,0,0.1,0,0,0]
             img, zern_label = gen_sted_psf_shifted()
-            print(zern_label)
-            fig = plot_xsection(img)
-            plt.show()
-            exit()
+            # coeffs2 = [0,0.2,0,0,0,0.1,0.1,0,0,0,0.1,0,0,0]
+            # img2, zern_label2 = get_sted_psf_shifted(coeffs=coeffs2)
+            # coeffs3 = [0,0,0.2,0,0,0.1,0.1,0,0,0,0.1,0,0,0]
+            # img3, zern_label3 = get_sted_psf_shifted(coeffs=coeffs3)
+            # img, zern_label = gen_sted_psf_shifted()
+            # print(zern_label)
+            # fig = plot_xsection_eval(img1, img2, img3)
+            # fig = plot_xsection(img)
+            
+            # plt.show()
+            # exit()
             # img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
             # train_img.append(img)
             
@@ -123,7 +131,8 @@ def main(args):
     
     for i in tqdm(range(val_num)):
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
+            img, zern_label = gen_sted_psf_shifted()
+            # img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
             # val_img.append(img)
             
             # c1 = gen_shift()
@@ -157,7 +166,8 @@ def main(args):
     for i in tqdm(range(test_num)):
         
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
+            img, zern_label = gen_sted_psf_shifted()
+            # img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
             # test_img.append(img)
             
             # c1 = gen_shift()

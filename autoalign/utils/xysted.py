@@ -109,7 +109,8 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     #amp = np.ones_like(r) * efield
     # amplitude = np.ones_like(r)
     # NOTE: we don't pass in the offset here, it stays constant?
-    amplitude = PC.crop(PC.create_gauss(2*size), size)
+    amplitude = PC.create_gauss(size, radscale=2)
+    # amplitude = PC.crop(PC.create_gauss(2*size), size)
 
     # intensity distribution depletion (STED)
     [sted_xy, sted_xz, sted_yz, sted_xyz] = vd.vector_diffraction(
