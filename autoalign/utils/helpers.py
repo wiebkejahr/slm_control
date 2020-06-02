@@ -33,7 +33,7 @@ def normalize_img(img):
 def add_noise(img):
     """Adds Poisson noise to the image using skimage's built-in method. Function normalizes image before adding noise"""
     # return img + np.random.poisson(img)
-    return skimage.util.random_noise(img, mode='gaussian', seed=None, clip=True, var=0.0001)
+    return skimage.util.random_noise(normalize_img(img), mode='gaussian', seed=None, clip=True, var=0.0001)
 
 def crop_image(img,tol=0.2):
     """Function to crop the dark line on the edge of the acquired image data.

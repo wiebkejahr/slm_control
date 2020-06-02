@@ -1,6 +1,8 @@
 # Images
 # *.bmp
 
+*.hdf5
+*.pth
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

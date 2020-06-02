@@ -21,9 +21,9 @@ MODEL_DIR=$OUTPUT_DIR/models
 LOG_DIR=$OUTPUT_DIR/runs
 
 ####################### 1. MAKE DATASET #############################
-NUM_POINTS=81 # will do 90/10 train/validation split
+NUM_POINTS=500 # will do 90/10 train/validation split
 TEST_NUM=10 # number of additional test samples to create
-NAME="tiptilt_test_81"
+NAME="tiptilt_test_500_noise_norm"
 # NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
@@ -54,7 +54,7 @@ fi
 # HYPERPARAMETERS 
 LR=0.001 # learning rate
 NUM_EPOCHS=15
-BATCH_SIZE=64
+BATCH_SIZE=32
 MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}"
 
 # don't touch these
