@@ -48,8 +48,8 @@ def test(model, test_loader, logdir, model_store_path):
     # logdir_test = logdir + '/test'
     # test_writer = SummaryWriter(log_dir=logdir_test)
     
-    with open('full.txt', 'r') as fname:
-        full = [list(eval(i.rstrip())) for i in fname.readlines()]
+    # with open('full.txt', 'r') as fname:
+    #     full = [list(eval(i.rstrip())) for i in fname.readlines()]
 
     ideal_coeffs = np.asarray([0.0]*12)
     # donut = get_psf(ideal_coeffs, res=64, multi=True) # (64,64)
@@ -59,39 +59,33 @@ def test(model, test_loader, logdir, model_store_path):
     for i, (images, labels) in enumerate(test_loader): # i is 0 when batch_size is 1
     
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
-            # Get model outputs (the predicted Zernike coefficients)
-            # image = images.numpy().squeeze()
+            
+            # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
+            images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))
 
             # example for syntax
             # img2 = np.stack([add_noise(i) for i in img], axis=0)
-            # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
-            preds = model(images).numpy().squeeze()
+            
+            # Get model outputs (the predicted Zernike coefficients)
+            outputs = model(images[:,0].unsqueeze(1), 
+                            images[:,1].unsqueeze(1),
+                            images[:,2].unsqueeze(1))
+
+            preds = outputs.numpy().squeeze()
 
             # zern = preds[:-2]
             # offset = preds[-2:]
-            zern = preds
+            # zern = preds
 
             offset=[0,0]
-            reconstructed = get_sted_psf_shifted(coeffs=zern)
+            reconstructed = get_sted_psf(coeffs=preds, multi=True)
 
             remaining = labels.numpy().squeeze() - preds
             # remaining_zern = remaining[:-2]
             # remaining_offsets = remaining[-2:]
-            remaining = np.insert(remaining, 0, 0)
-            remaining = np.insert(remaining, 0, 0)
-            remaining = np.insert(remaining, 0, 0)
-            corrected = get_sted_psf_shifted(coeffs=remaining)
-            # print('corrected')
-            # print(np.max(corrected), np.min(corrected))
-            #TODO: here's where you need to split them
-            #NOTE: the offset used to be a boolean
-            # corrected = get_sted_psf(coeffs=remaining_zern, offset_label=remaining_offsets, multi=True) 
-            # # corrected = normalize_img(donut) + normalize_img(get_psf(-1*outputs.numpy().squeeze()))
 
-            # fig = plot_xsection(donut)
-            # plt.show()
-            # print(reconstructed.shape)
-            # exit()
+            corrected = get_sted_psf(coeffs=remaining, multi=True)
+
             fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
             plt.show()
 
@@ -113,6 +107,8 @@ def main(args):
             model = my_models.OffsetNet()
         else:
             model = my_models.Net()
+    
+    model = my_models.MultiNetCat()
     # print(model)
     
     # NOTE: this part needs work. determine which model to use from loading the data and checking the shape

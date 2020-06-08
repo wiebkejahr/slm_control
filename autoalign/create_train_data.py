@@ -71,18 +71,16 @@ def main(args):
         label_dim = 14
     else:
         label_dim = 12
-    label_dim = 11
-    # # NOTE: added for shift invariant
-    # train_img = []
-    # val_img = []
-    # test_img = []
 
-    full = []
+
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
             # coeffs = [0.2,0,0,0,0,0.1,0.1,0,0,0,0.1,0,0,0]
-            img, zern_label = gen_sted_psf_shifted()
-           
+            img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
+            # print(zern_label)
+            # fig = plot_xsection(img)
+            # plt.show()
+
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         # save the label and image
@@ -90,7 +88,7 @@ def main(args):
             train_labels.append(zern_label+offset_label)
         else:
             # NOTE: super hack, make three images, so three labels
-            train_labels.append(zern_label[3:])
+            train_labels.append(zern_label)
         
         hdf5_file["train_img"][i, ...] = img[None]
 
@@ -101,7 +99,7 @@ def main(args):
     
     for i in tqdm(range(val_num)):
         if args.mode == 'sted':
-            img, zern_label = gen_sted_psf_shifted()
+            img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
 
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
@@ -110,7 +108,7 @@ def main(args):
         if args.offset:
             val_labels.append(zern_label+offset_label)
         else:
-            val_labels.append(zern_label[3:])
+            val_labels.append(zern_label)
 
         hdf5_file["val_img"][i, ...] = img[None]
         
@@ -122,7 +120,7 @@ def main(args):
     for i in tqdm(range(test_num)):
         
         if args.mode == 'sted':
-            img, zern_label = gen_sted_psf_shifted()
+            img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
 
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
@@ -131,7 +129,7 @@ def main(args):
         if args.offset:
             test_labels.append(zern_label+offset_label)
         else:
-            test_labels.append(zern_label[3:])
+            test_labels.append(zern_label)
             full.append(zern_label)
   
     

@@ -2,7 +2,6 @@
 # *.bmp
 
 *.hdf5
-*.pth
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -141,3 +140,11 @@ autoalign/runs/4.27.20_noiseTEST_eps_15_lr_0.001_bs_64/events.out.tfevents.15886
 autoalign/models/4.27.20_noiseTEST_eps_15_lr_0.001_bs_64.pth
 autoalign/runs/4.27.20_noiseTEST_eps_15_lr_0.001_bs_64/events.out.tfevents.1588617546.Hopes-MacBook-Pro.local.21125.0
 *.0
+autoalign/models/tiptilt_test_80_w_noise_norm_eps_15_lr_0.001_bs_16.pth
+autoalign/models/20.06.02_tiptiltdefocus_20k_eps_15_lr_0.001_bs_32.pth
+autoalign/models/20.06.02_tiptiltdefocus_20k_eps_15_lr_0.001_bs_64.pth
+autoalign/models/20.06.07_multi_cnn_test_5_eps_15_lr_0.001_bs_64.pth
+autoalign/models/tiptilt_test_500_noise_norm_eps_15_lr_0.001_bs_32.pth
+autoalign/models/tiptilt_test_80_no_crop_eps_15_lr_0.001_bs_64.pth
+autoalign/models/tiptilt_test_80_no_noise_eps_15_lr_0.001_bs_16.pth
+autoalign/models/tiptilt_test_80_w_noise_eps_15_lr_0.001_bs_16.pth
