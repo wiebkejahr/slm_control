@@ -121,7 +121,7 @@ def correct(model_store_path):
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.MultiNet()
+    model = my_models.MultiNetCat()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -168,7 +168,7 @@ def abberior_multi(model_store_path):
     # plt.imshow(image_yz, aspect="equal")
     # plt.show()
     # ##################
-    image = np.stack((image_xy,image_xz, image_yz), axis=0)    
+    # image = np.stack((image_xy,image_xz, image_yz), axis=0)    
     #image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
     # fig = helpers.plot_xsection(image)
     # plt.show()
@@ -177,9 +177,36 @@ def abberior_multi(model_store_path):
     # print(np.max(image), np.min(image))
     # exit()
 
+    checkpoint = torch.load(model_store_path)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    
+
+    # ideal_coeffs = np.asarray([0.0]*12)
+
+    # donut = helpers.get_psf(ideal_coeffs)
+    
+    # Test the model
+    model.eval()
+    
+    with torch.no_grad():
+        # adds 3rd color channel dim and batch dim 
+        # NOTE: THIS IS ONLY FOR 1D
+        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        # NOTE: THIS IS ONLY FOR 3D
+        # image = torch.from_numpy(input_image).unsqueeze(0)
+       
+        # avg = []
+        # i = 0
+        # while i < 20:
+            # pass it through the trained model to get the predicted coeffs
+        outputs = model(torch.from_numpy(image_xy).unsqueeze(0).unsqueeze(0),
+                        torch.from_numpy(image_yz).unsqueeze(0).unsqueeze(0),
+                        torch.from_numpy(image_xz).unsqueeze(0).unsqueeze(0))
+    coeffs = outputs.numpy().squeeze()
+
     # # coeffs, _, image = test(model, image, model_store_path)
-    results = test(model, image, model_store_path)
-    coeffs = results
+    # results = test(model, image, model_store_path)
+    # coeffs = results
     # print(coeffs)
     # coeffs = results[:-2]
     # offset = results[-2:]
