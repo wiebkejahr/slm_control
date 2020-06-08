@@ -20,10 +20,10 @@ import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 
 # local packages
-import autoalign.utils.my_models as my_models
-import autoalign.utils.my_classes as my_classes
-from autoalign.utils.vector_diffraction import *
-from autoalign.utils.helpers import *
+import utils.my_models as my_models
+import utils.my_classes as my_classes
+from utils.vector_diffraction import *
+from utils.helpers import *
 
 def log_images(logdir, images, coeffs):
     logdir_test = logdir + '/test'
@@ -48,6 +48,8 @@ def test(model, test_loader, logdir, model_store_path):
     # logdir_test = logdir + '/test'
     # test_writer = SummaryWriter(log_dir=logdir_test)
     
+    with open('full.txt', 'r') as fname:
+        full = [list(eval(i.rstrip())) for i in fname.readlines()]
 
     ideal_coeffs = np.asarray([0.0]*12)
     # donut = get_psf(ideal_coeffs, res=64, multi=True) # (64,64)
@@ -59,23 +61,33 @@ def test(model, test_loader, logdir, model_store_path):
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             # Get model outputs (the predicted Zernike coefficients)
             # image = images.numpy().squeeze()
-            print(i)
+            # print(i)
             # print(images.numpy().shape) # (1, 3, 64, 64)
             # print(np.max(images.numpy()), np.min(images.numpy())) # 5.04, -0.96
-            images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))
+            # images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))
             # print(images.numpy().shape)
             # print(np.max(images.numpy()), np.min(images.numpy())) # 1, 0 
             # example for syntax
             # img2 = np.stack([add_noise(i) for i in img], axis=0)
-            # exit()
             # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
             preds = model(images).numpy().squeeze()
 
             # zern = preds[:-2]
             # offset = preds[-2:]
             zern = preds
+            # print('zern')
+            # print(zern)
+            # print(full[i])
+            # exit()
+            zern = np.insert(zern, 0, full[i][2])
+            zern = np.insert(zern, 0, full[i][1])
+            zern = np.insert(zern, 0, full[i][0])
+            # print(zern)
+            # exit()
             offset=[0,0]
-            reconstructed = get_sted_psf(coeffs=zern, offset_label=offset, multi=True)
+            reconstructed = get_sted_psf_shifted(coeffs=zern)
+            # print(reconstructed.shape)
+            # exit()
             # print('reconstructed')
             # print(np.max(reconstructed), np.min(reconstructed))
             # print(preds)
@@ -84,8 +96,10 @@ def test(model, test_loader, logdir, model_store_path):
             remaining = labels.numpy().squeeze() - preds
             # remaining_zern = remaining[:-2]
             # remaining_offsets = remaining[-2:]
-
-            corrected = get_sted_psf(coeffs=remaining, multi=True)
+            remaining = np.insert(remaining, 0, 0)
+            remaining = np.insert(remaining, 0, 0)
+            remaining = np.insert(remaining, 0, 0)
+            corrected = get_sted_psf_shifted(coeffs=remaining)
             # print('corrected')
             # print(np.max(corrected), np.min(corrected))
             #TODO: here's where you need to split them
@@ -145,19 +159,19 @@ def main(args):
     data_path = args.test_dataset_dir
     logdir = args.logdir
     model_store_path = args.model_store_path
-    print(model_store_path) 
+    # print(model_store_path) 
     # exit()
     if args.multi:
         if args.offset:
             model = my_models.MultiOffsetNet()
         else:
-            model = my_models.MultiNet()
+            model = my_models.MultiNetShift()
     else:
         if args.offset:
             model = my_models.OffsetNet()
         else:
             model = my_models.Net()
-    print(model)
+    # print(model)
     
     # NOTE: this part needs work. determine which model to use from loading the data and checking the shape
     # multi = args.multi   

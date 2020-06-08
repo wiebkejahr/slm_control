@@ -173,7 +173,7 @@ def gen_sted_psf_shifted(multi=True):
     img = sted_psf(zern, plane=plane)
     img = np.stack([add_noise(i) for i in img], axis=0)
     # print(coeffs)
-    return img, coeffs[3:]
+    return img, coeffs
 
 def get_sted_psf_shifted(coeffs=np.asarray([0.0]*14), multi=True):
     zern = create_phase_shifted(coeffs)
@@ -185,8 +185,8 @@ def get_sted_psf_shifted(coeffs=np.asarray([0.0]*14), multi=True):
 
     img = sted_psf(zern, plane=plane)
     img = np.stack([add_noise(i) for i in img], axis=0)
-    print(coeffs)
-    return img, coeffs[3:]
+    # print(coeffs)
+    return img
 
 def create_phase(coeffs, res1=64, res2=64, offset=[0,0]):
     """
@@ -336,9 +336,9 @@ def plot_xsection(img3d, name=''):
     return fig
 
 def plot_xsection_eval(img1, img2, img3):
-    img1 = normalize_img(img1)
-    img2 = normalize_img(img2)
-    img3 = normalize_img(img3)
+    # img1 = normalize_img(img1)
+    # img2 = normalize_img(img2)
+    # img3 = normalize_img(img3)
     
     fig = plt.figure(1)
     ax1 = fig.add_subplot(1,3,1)
@@ -350,7 +350,7 @@ def plot_xsection_eval(img1, img2, img3):
     ax3 = fig.add_subplot(1,3,3)
     ax3.set_title('yz')
     ax3.imshow(img1[2], cmap='hot')
-    fig.suptitle('Tip', fontsize=16)
+    fig.suptitle('GT', fontsize=16)
     # fig.suptitle('Original', fontsize=16)
     
     fig = plt.figure(2)
@@ -363,7 +363,7 @@ def plot_xsection_eval(img1, img2, img3):
     ax3 = fig.add_subplot(1,3,3)
     ax3.set_title('yz')
     ax3.imshow(img2[2], cmap='hot')
-    fig.suptitle('Tilt', fontsize=16)
+    fig.suptitle('reconstructed', fontsize=16)
     # fig.suptitle('Reconstructed', fontsize=16)
 
     fig = plt.figure(3)
@@ -377,7 +377,7 @@ def plot_xsection_eval(img1, img2, img3):
     ax3.set_title('yz')
     ax3.imshow(img3[2], cmap='hot')
     # fig.suptitle('Corrected', fontsize=16)
-    fig.suptitle('Defocus', fontsize=16)
+    fig.suptitle('corrected', fontsize=16)
     return fig
 
 def plot_xsection_abber(img1, img2):

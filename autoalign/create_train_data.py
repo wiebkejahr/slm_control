@@ -77,6 +77,7 @@ def main(args):
     # val_img = []
     # test_img = []
 
+    full = []
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
             # coeffs = [0.2,0,0,0,0,0.1,0.1,0,0,0,0.1,0,0,0]
@@ -117,7 +118,7 @@ def main(args):
             train_labels.append(zern_label+offset_label)
         else:
             # NOTE: super hack, make three images, so three labels
-            train_labels.append(zern_label)
+            train_labels.append(zern_label[3:])
             # train_labels.append(zern_label)
             # train_labels.append(zern_label)
         
@@ -152,7 +153,7 @@ def main(args):
         if args.offset:
             val_labels.append(zern_label+offset_label)
         else:
-            val_labels.append(zern_label)
+            val_labels.append(zern_label[3:])
             # val_labels.append(zern_label)
             # val_labels.append(zern_label)
         hdf5_file["val_img"][i, ...] = img[None]
@@ -186,11 +187,16 @@ def main(args):
         if args.offset:
             test_labels.append(zern_label+offset_label)
         else:
-            test_labels.append(zern_label)
+            test_labels.append(zern_label[3:])
+            full.append(zern_label)
             # test_labels.append(zern_label)
             # test_labels.append(zern_label)
     
         hdf5_file["test_img"][i, ...] = img[None]
+    print(full)
+    with open('full.txt', 'w') as f:
+        for i in range(len(full)):
+            f.write("{}\n".format(full[i]))
     # hdf5_file["test_img"][...] = test_img    
     # create the label array
     hdf5_file.create_dataset("test_labels", (test_num, label_dim), np.float32)
