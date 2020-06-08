@@ -42,13 +42,19 @@ def crop_image(img,tol=0.2):
     mask = img>tol
     return img[np.ix_(mask.any(1),mask.any(0))]
 
+def crop_new(img):
+    print(np.shape(img), np.shape(img[2:-2, 2:-2]))
+    return img[2:-2, 2:-2]
+
+
 def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
     # a little preprocessing
     # print(np.max(image))
-    image = normalize_img(np.squeeze(image)) # normalized (200,200) array
-    image = crop_image(image, tol=0.2) # get rid of dark line on edge
-    image = resize(image, (64,64)) # resize
+    #image = normalize_img(np.squeeze(image)) # normalized (200,200) array
+    #image = crop_image(image, tol=0.2) # get rid of dark line on edge
+    image = crop_new(np.squeeze(image)) # get rid of dark line on edge
+    #image = resize(image, (64,64)) # resize
     image = normalize_img(image) # renormalize
     return image
 
