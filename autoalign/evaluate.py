@@ -61,12 +61,7 @@ def test(model, test_loader, logdir, model_store_path):
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             # Get model outputs (the predicted Zernike coefficients)
             # image = images.numpy().squeeze()
-            # print(i)
-            # print(images.numpy().shape) # (1, 3, 64, 64)
-            # print(np.max(images.numpy()), np.min(images.numpy())) # 5.04, -0.96
-            # images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))
-            # print(images.numpy().shape)
-            # print(np.max(images.numpy()), np.min(images.numpy())) # 1, 0 
+
             # example for syntax
             # img2 = np.stack([add_noise(i) for i in img], axis=0)
             # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
@@ -75,24 +70,10 @@ def test(model, test_loader, logdir, model_store_path):
             # zern = preds[:-2]
             # offset = preds[-2:]
             zern = preds
-            # print('zern')
-            # print(zern)
-            # print(full[i])
-            # exit()
-            zern = np.insert(zern, 0, full[i][2])
-            zern = np.insert(zern, 0, full[i][1])
-            zern = np.insert(zern, 0, full[i][0])
-            # print(zern)
-            # exit()
+
             offset=[0,0]
             reconstructed = get_sted_psf_shifted(coeffs=zern)
-            # print(reconstructed.shape)
-            # exit()
-            # print('reconstructed')
-            # print(np.max(reconstructed), np.min(reconstructed))
-            # print(preds)
-            # print("zern is: {}".format(zern))
-            # print("offsets are: {}".format(preds[-2:]))
+
             remaining = labels.numpy().squeeze() - preds
             # remaining_zern = remaining[:-2]
             # remaining_offsets = remaining[-2:]
@@ -113,45 +94,6 @@ def test(model, test_loader, logdir, model_store_path):
             # exit()
             fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
             plt.show()
-            # exit()
-            # fig3 = plot_xsection(corrected, 'corrected')
-            # plt.show()
-            # exit()
-            # fig = plt.figure()
-            # ax1 = fig.add_subplot(1,3,1)
-            # ax1.imshow(donut)
-            # ax1.title.set_text('input img')
-            # ax2 = fig.add_subplot(1,3,2)
-            # ax2.title.set_text('reconstructed')
-            # ax2.imshow(get_sted_psf(zern, offset_label=offsets))
-            # ax3 = fig.add_subplot(1,3,3)
-            # ax3.imshow(corrected)
-            # ax3.title.set_text('corrected')
-            # plt.show()
-            
-            # fig = plt.figure()
-            # ax1 = fig.add_subplot(2,3,1)
-            # ax1.imshow(donut)
-            # ax1.title.set_text('input img')
-            # ax2 = fig.add_subplot(2,3,2)
-            # ax2.imshow(to_plot[1])
-            # ax3 = fig.add_subplot(2,3,3)
-            # ax3.imshow(to_plot[2])
-            # ax4 = fig.add_subplot(2,3,4)
-            # # ax4.title.set_text('reconstructed')
-            # ax4.imshow(corrected[0])
-            # ax5 = fig.add_subplot(2,3,5)
-            # ax5.imshow(corrected[1])
-            # ax6 = fig.add_subplot(2,3,6)
-            # ax6.imshow(corrected[2])
-            # # ax5.title.set_text('corrected')
-            # ax4.title.set_text('reconstructed')
-            # ax4.imshow(get_sted_psf(preds))
-            # ax5 = fig.add_subplot(2,3,5)
-            # ax5.imshow(corrected)
-            # ax5.title.set_text('corrected')
-        
-            # plt.show()
 
 
 

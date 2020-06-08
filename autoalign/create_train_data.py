@@ -82,35 +82,7 @@ def main(args):
         if args.mode == 'sted':
             # coeffs = [0.2,0,0,0,0,0.1,0.1,0,0,0,0.1,0,0,0]
             img, zern_label = gen_sted_psf_shifted()
-            # coeffs2 = [0,0.2,0,0,0,0.1,0.1,0,0,0,0.1,0,0,0]
-            # img2, zern_label2 = get_sted_psf_shifted(coeffs=coeffs2)
-            # coeffs3 = [0,0,0.2,0,0,0.1,0.1,0,0,0,0.1,0,0,0]
-            # img3, zern_label3 = get_sted_psf_shifted(coeffs=coeffs3)
-            # img, zern_label = gen_sted_psf_shifted()
-            # print(zern_label)
-            # fig = plot_xsection_eval(img1, img2, img3)
-            # fig = plot_xsection(img)
-            
-            # plt.show()
-            # exit()
-            # img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
-            # train_img.append(img)
-            
-            # c1 = gen_shift()
-            # transform = AffineTransform(translation=c1)
-            # img2 = np.stack([warp(i, transform, mode='edge') for i in img], axis=0)
-            # train_img.append(img2)
-            
-            # c2 = gen_shift()
-            # transform = AffineTransform(translation=c2)
-            # img3 = np.stack([warp(i, transform, mode='edge') for i in img], axis=0)
-            # train_img.append(img3)
-
-            # fig2 = plot_xsection_abber(img, img2)
-            # plt.show()
-            # fig = plot_xsection_abber(img, img3)
-            # plt.show()
-            # exit()
+           
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         # save the label and image
@@ -119,12 +91,9 @@ def main(args):
         else:
             # NOTE: super hack, make three images, so three labels
             train_labels.append(zern_label[3:])
-            # train_labels.append(zern_label)
-            # train_labels.append(zern_label)
         
         hdf5_file["train_img"][i, ...] = img[None]
 
-    # hdf5_file["train_img"][...] = train_img
     # create the label array
     hdf5_file.create_dataset("train_labels", (train_num, label_dim), np.float32)
     hdf5_file["train_labels"][...] = train_labels
@@ -133,18 +102,6 @@ def main(args):
     for i in tqdm(range(val_num)):
         if args.mode == 'sted':
             img, zern_label = gen_sted_psf_shifted()
-            # img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
-            # val_img.append(img)
-            
-            # c1 = gen_shift()
-            # transform = AffineTransform(translation=c1)
-            # img2 = np.stack([warp(i, transform, mode='edge') for i in img], axis=0)
-            # val_img.append(img2)
-            
-            # c2 = gen_shift()
-            # transform = AffineTransform(translation=c2)
-            # img3 = np.stack([warp(i, transform, mode='edge') for i in img], axis=0)
-            # val_img.append(img3)
 
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
@@ -154,11 +111,9 @@ def main(args):
             val_labels.append(zern_label+offset_label)
         else:
             val_labels.append(zern_label[3:])
-            # val_labels.append(zern_label)
-            # val_labels.append(zern_label)
+
         hdf5_file["val_img"][i, ...] = img[None]
         
-    # hdf5_file["val_img"][...] = val_img
     # create the label array
     hdf5_file.create_dataset("val_labels", (val_num, label_dim), np.float32)
     hdf5_file["val_labels"][...] = val_labels
@@ -168,18 +123,7 @@ def main(args):
         
         if args.mode == 'sted':
             img, zern_label = gen_sted_psf_shifted()
-            # img, zern_label, offset_label = gen_sted_psf(res, offset=args.offset, multi=args.multi)
-            # test_img.append(img)
-            
-            # c1 = gen_shift()
-            # transform = AffineTransform(translation=c1)
-            # img2 = np.stack([warp(i, transform, mode='edge') for i in img], axis=0)
-            # test_img.append(img2)
-            
-            # c2 = gen_shift()
-            # transform = AffineTransform(translation=c2)
-            # img3 = np.stack([warp(i, transform, mode='edge') for i in img], axis=0)
-            # test_img.append(img3)
+
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
@@ -189,15 +133,14 @@ def main(args):
         else:
             test_labels.append(zern_label[3:])
             full.append(zern_label)
-            # test_labels.append(zern_label)
-            # test_labels.append(zern_label)
+  
     
         hdf5_file["test_img"][i, ...] = img[None]
-    print(full)
-    with open('full.txt', 'w') as f:
-        for i in range(len(full)):
-            f.write("{}\n".format(full[i]))
-    # hdf5_file["test_img"][...] = test_img    
+
+    # with open('full.txt', 'w') as f:
+    #     for i in range(len(full)):
+    #         f.write("{}\n".format(full[i]))
+    
     # create the label array
     hdf5_file.create_dataset("test_labels", (test_num, label_dim), np.float32)
     hdf5_file["test_labels"][...] = test_labels
