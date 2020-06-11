@@ -21,9 +21,9 @@ MODEL_DIR=$OUTPUT_DIR/models
 LOG_DIR=$OUTPUT_DIR/runs
 
 ####################### 1. MAKE DATASET #############################
-NUM_POINTS=20000 # will do 90/10 train/validation split
-TEST_NUM=10 # number of additional test samples to create
-NAME="20.05.18_scaling_fix"
+NUM_POINTS=2 # will do 90/10 train/validation split
+TEST_NUM=1 # number of additional test samples to create
+NAME="20.01.08_corrected_pattern_calc_w_val"
 # NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
@@ -45,7 +45,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 #   --mode {fluor,sted,z-sted} which mode of data to create
 
 # if [ ! -f ${DATASET} ]; then
-# python3 ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --multi --mode 'sted'
+# python3 ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted'
 # else
 # echo "Dataset already exists"
 # fi
@@ -55,7 +55,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 LR=0.001 # learning rate
 NUM_EPOCHS=15
 BATCH_SIZE=64
-MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_new_model"
+MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_testing"
 
 # don't touch these
 MODEL_STORE_PATH="${MODEL_DIR}/${MODEL_NAME}.pth"
@@ -76,11 +76,11 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --logdir              path to logging dir for optional tensorboard visualization
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
-# if [ ! -f ${MODEL_STORE_PATH} ]; then
-# python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
-# else
-# echo "Model already exists"
-# fi
+if [ ! -f ${MODEL_STORE_PATH} ]; then
+python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR}
+else
+echo "Model already exists"
+fi
 ####################### 3. EVALUATE ################################
 # To see all options, run 'python evaluate.py --help'. Output copied below.
 #
@@ -93,6 +93,6 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-python3 ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
+# python3 ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
 
 # ./utils/tensorboard.sh

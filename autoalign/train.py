@@ -55,21 +55,19 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # print(np.max(images.numpy()), np.min(images.numpy()))
             # NOTE: this normalizes all the incoming images to be between 0 and 1
             # ideally, you have a dataset where that's already done, but this is a hack
-            images = torch.from_numpy(np.stack([helpers.normalize_img(i) for i in images.numpy()], axis=0))
-            # print(images[0,0].numpy().shape)
-            # plt.figure()
-            # plt.imshow(images[0,2])
-            # # plt.show()
-            # print(images[:,0].unsqueeze(1).size())
+            # images = torch.from_numpy(np.stack([helpers.normalize_img(i) for i in images.numpy()], axis=0))
+            
+            # print(images.size())
+            # print(images.numpy().shape) # (64,1,64,64)
+            # centers the images before training. 
+            images = torch.from_numpy(np.stack([helpers.center(i, 64) for i in images.numpy().squeeze()], axis=0)).unsqueeze(1)
+            # print(images.size())
             # exit()
-            # print(np.max(images.numpy()), np.min(images.numpy()))
             images = images.to(device)
             labels = labels.to(device)
             
             # Run the forward pass
-            outputs = model(images[:,0].unsqueeze(1), 
-                            images[:,1].unsqueeze(1),
-                            images[:,2].unsqueeze(1)) # e.g. [32, 12] = [batch_size, output_dim]
+            outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
 
             # no activation function on the final layer means that outputs is the weight of the final layer
             loss = criterion(outputs, labels) # MSE
@@ -113,9 +111,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             with torch.no_grad(): # drastically increases computation speed and reduces memory usage
                 # Get model outputs (the predicted Zernike coefficients)
                 # outputs = model(images)
-                outputs = model(images[:,0].unsqueeze(1), 
-                                images[:,1].unsqueeze(1),
-                                images[:,2].unsqueeze(1))
+                outputs = model(images)
                 loss = criterion(outputs, labels) # performing  mean squared error calculation
                 loss = torch.sum(torch.mean(loss, dim=0))
 
@@ -181,14 +177,13 @@ def main(args):
         if args.offset:
             model = my_models.MultiOffsetNet()
         else:
-            model = my_models.MultiNetShift()
+            model = my_models.MultiNet()
     else:
         if args.offset:
             model = my_models.OffsetNet()
         else:
             model = my_models.Net()
-    # NOTE: OVERRIDING HERE
-    model = my_models.MultiNetCat()
+
     print(model)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)

@@ -17,6 +17,8 @@ from sklearn.metrics import mean_squared_error
 from torch.utils.data import Dataset, DataLoader
 from skimage.transform import resize, rotate
 import skimage
+from scipy.ndimage.measurements import center_of_mass
+from scipy.ndimage import shift
 from skimage.transform import resize
 import sys, os
 sys.path.insert(1, '../slm_control/')
@@ -51,6 +53,10 @@ def preprocess(image):
     image = resize(image, (64,64)) # resize
     image = normalize_img(image) # renormalize
     return image
+
+def center(image, res):
+    a = center_of_mass(image)
+    return shift(image, (res/2-a[0], res/2-a[1]))
 
 def save_params(fname):
     """Given an output file name and a resolution which defaults to 64, this fn creates a .txt file formatted as a json, 
@@ -175,10 +181,9 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
         plane = 'xy'
 
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
-    img2 = np.stack([add_noise(i) for i in img], axis=0)
-    # img2 = normalize_img(img2)
+    # img = np.stack([add_noise(i) for i in img], axis=0)
 
-    return img2, coeffs, offset_label
+    return img, coeffs, offset_label
 
 def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.

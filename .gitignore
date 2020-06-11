@@ -148,3 +148,5 @@ autoalign/models/tiptilt_test_500_noise_norm_eps_15_lr_0.001_bs_32.pth
 autoalign/models/tiptilt_test_80_no_crop_eps_15_lr_0.001_bs_64.pth
 autoalign/models/tiptilt_test_80_no_noise_eps_15_lr_0.001_bs_16.pth
 autoalign/models/tiptilt_test_80_w_noise_eps_15_lr_0.001_bs_16.pth
+autoalign/models/20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_testing.pth
+autoalign/models/20.05.27_shift_invariant_15k_eps_15_lr_0.001_bs_64_new_model.pth

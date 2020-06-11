@@ -70,7 +70,7 @@ def test(model, test_loader, logdir, model_store_path):
             outputs = model(images[:,0].unsqueeze(1), 
                             images[:,1].unsqueeze(1),
                             images[:,2].unsqueeze(1))
-
+            # print(images.size())
             preds = outputs.numpy().squeeze()
 
             # zern = preds[:-2]
@@ -81,6 +81,7 @@ def test(model, test_loader, logdir, model_store_path):
             reconstructed = get_sted_psf(coeffs=preds, multi=True)
 
             remaining = labels.numpy().squeeze() - preds
+            print(remaining)
             # remaining_zern = remaining[:-2]
             # remaining_offsets = remaining[-2:]
 
