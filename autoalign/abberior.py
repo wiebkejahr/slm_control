@@ -152,8 +152,6 @@ def abberior_multi(model_store_path):
     # plt.figure()
     # plt.imshow(image_xy)
     # plt.show()
-
-    
     
     image_xz = helpers.preprocess(image_xz)
     #image_xz = np.fliplr(rotate(image_xz, -90))
@@ -199,9 +197,10 @@ def abberior_multi(model_store_path):
         # i = 0
         # while i < 20:
             # pass it through the trained model to get the predicted coeffs
-        outputs = model(torch.from_numpy(image_xy).unsqueeze(0).unsqueeze(0),
-                        torch.from_numpy(image_yz).unsqueeze(0).unsqueeze(0),
-                        torch.from_numpy(image_xz).unsqueeze(0).unsqueeze(0))
+        print(torch.from_numpy(image_xy).unsqueeze(0).unsqueeze(0).size())
+        outputs = model(torch.from_numpy(helpers.normalize_img(image_xy)).unsqueeze(0).unsqueeze(0),
+                        torch.from_numpy(helpers.normalize_img(image_yz)).unsqueeze(0).unsqueeze(0),
+                        torch.from_numpy(helpers.normalize_img(image_xz)).unsqueeze(0).unsqueeze(0))
     coeffs = outputs.numpy().squeeze()
 
     # # coeffs, _, image = test(model, image, model_store_path)
@@ -214,6 +213,7 @@ def abberior_multi(model_store_path):
     # print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
+    image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
     fig = helpers.plot_xsection_abber(image, reconstructed)
     plt.show()
     
