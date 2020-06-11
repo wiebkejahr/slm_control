@@ -213,7 +213,7 @@ def abberior_multi(model_store_path):
     # print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
-    image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
+    image = np.stack((image_xy,image_xz, image_yz), axis=0)
     fig = helpers.plot_xsection_abber(image, reconstructed)
     plt.show()
     
