@@ -60,7 +60,8 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # print(images.size())
             # print(images.numpy().shape) # (64,1,64,64)
             # centers the images before training. 
-            images = torch.from_numpy(np.stack([helpers.center(i, 64) for i in images.numpy().squeeze()], axis=0)).unsqueeze(1)
+            images_np = np.stack([helpers.center(i, 64) for i in images.numpy().squeeze()], axis=0)
+            images = torch.from_numpy(images_np).unsqueeze(1)
             # print(images.size())
             # exit()
             images = images.to(device)

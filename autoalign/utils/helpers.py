@@ -54,7 +54,7 @@ def preprocess(image):
     image = normalize_img(image) # renormalize
     return image
 
-def center(image, res):
+def center(image, res=64):
     a = center_of_mass(image)
     return shift(image, (res/2-a[0], res/2-a[1]))
 
@@ -182,7 +182,8 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
 
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
     # img = np.stack([add_noise(i) for i in img], axis=0)
-
+    img = center(img, res)
+    img = normalize_img(img)
     return img, coeffs, offset_label
 
 def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False):
