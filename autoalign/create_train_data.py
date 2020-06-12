@@ -120,7 +120,7 @@ def main(args):
 
         # hdf5_file["train_img"][i, ...] = img[None]
 
-    hdf5_file["train_data"][...] = train_data
+    hdf5_file["train_img"][...] = train_data
     # exit()
     # create the label array
     hdf5_file.create_dataset("train_labels", (train_num, label_dim), np.float32)
@@ -148,7 +148,7 @@ def main(args):
 
         # hdf5_file["val_img"][i, ...] = img[None]
 
-    hdf5_file["val_data"][...] = val_data  
+    hdf5_file["val_img"][...] = val_data  
     # create the label array
     hdf5_file.create_dataset("val_labels", (val_num, label_dim), np.float32)
     hdf5_file["val_labels"][...] = val_labels
@@ -177,7 +177,7 @@ def main(args):
   
     
         # hdf5_file["test_img"][i, ...] = img[None]
-    hdf5_file["test_data"][...] = test_data
+    hdf5_file["test_img"][...] = test_data
     # with open('full.txt', 'w') as f:
     #     for i in range(len(full)):
     #         f.write("{}\n".format(full[i]))
