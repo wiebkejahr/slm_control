@@ -77,16 +77,7 @@ def main(args):
     train_data = []
     val_data = []
     test_data = []
-#     final_train_data = []
-# final_target_train = []
-# for i in tqdm(range(train_x.shape[0])):
-#     final_train_data.append(train_x[i])
-#     final_train_data.append(rotate(train_x[i], angle=45, mode = 'wrap'))
-#     final_train_data.append(np.fliplr(train_x[i]))
-#     final_train_data.append(np.flipud(train_x[i]))
-#     final_train_data.append(random_noise(train_x[i],var=0.2**2))
-#     for j in range(5):
-#         final_target_train.append(train_y[i])
+
 
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
@@ -104,7 +95,7 @@ def main(args):
             # plt.imshow(center(rotate(img, angle=90)))
             # plt.show()
             
-            for j in range(4):
+            for j in range(3):
                 train_labels.append(zern_label)
             # print(np.max(img), np.min(img))
             # a = center_of_mass(img)
@@ -120,10 +111,10 @@ def main(args):
 
         # hdf5_file["train_img"][i, ...] = img[None]
 
-    hdf5_file["train_img"][...] = train_data
+    hdf5_file["train_img"][...] = np.expand_dims(train_data, axis=1)
     # exit()
     # create the label array
-    hdf5_file.create_dataset("train_labels", (train_num, label_dim), np.float32)
+    hdf5_file.create_dataset("train_labels", (train_num*4, label_dim), np.float32)
     hdf5_file["train_labels"][...] = train_labels
     print('Training examples completed.')
     
@@ -132,10 +123,10 @@ def main(args):
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
             val_data.append(center(img))
             val_data.append(center(np.fliplr(img)))
-            val_data.append(center(flipud(img)))
+            val_data.append(center(np.flipud(img)))
             val_data.append(center(rotate(img, angle=90)))
             
-            for j in range(4):
+            for j in range(3):
                 val_labels.append(zern_label)
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
@@ -148,9 +139,9 @@ def main(args):
 
         # hdf5_file["val_img"][i, ...] = img[None]
 
-    hdf5_file["val_img"][...] = val_data  
+    hdf5_file["val_img"][...] = np.expand_dims(val_data, axis=1)
     # create the label array
-    hdf5_file.create_dataset("val_labels", (val_num, label_dim), np.float32)
+    hdf5_file.create_dataset("val_labels", (val_num*4, label_dim), np.float32)
     hdf5_file["val_labels"][...] = val_labels
     print('Validation examples completed.')
     
@@ -160,10 +151,10 @@ def main(args):
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
             test_data.append(center(img))
             test_data.append(center(np.fliplr(img)))
-            test_data.append(center(flipud(img)))
+            test_data.append(center(np.flipud(img)))
             test_data.append(center(rotate(img, angle=90)))
             
-            for j in range(4):
+            for j in range(3):
                 test_labels.append(zern_label)
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
@@ -177,13 +168,13 @@ def main(args):
   
     
         # hdf5_file["test_img"][i, ...] = img[None]
-    hdf5_file["test_img"][...] = test_data
+    hdf5_file["test_img"][...] = np.expand_dims(test_data, axis=1)
     # with open('full.txt', 'w') as f:
     #     for i in range(len(full)):
     #         f.write("{}\n".format(full[i]))
     
     # create the label array
-    hdf5_file.create_dataset("test_labels", (test_num, label_dim), np.float32)
+    hdf5_file.create_dataset("test_labels", (test_num*4, label_dim), np.float32)
     hdf5_file["test_labels"][...] = test_labels
     print('Test images completed.')
 

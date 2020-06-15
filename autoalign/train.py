@@ -86,7 +86,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         
 
             total_step= len(data_loaders['train']) 
-            update_num = 1
+            update_num = 5
             if (i + 1) % update_num == 0: # will log to tensorboard after `update_num` batches, roughly
                 # ...log the running loss
                 # print('running train loss: {}'.format(running_loss))
@@ -119,7 +119,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 # statistics logging
                 val_loss += loss.item()
                 total_step= len(data_loaders['val']) # number of batches
-                update_num = 1
+                update_num = 5
                 if (i + 1) % update_num == 0:
                     # ...log the validation loss
                     # print('running val loss: {}'.format(val_loss))
