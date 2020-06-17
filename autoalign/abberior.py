@@ -25,6 +25,8 @@ sys.path.insert(1, 'autoalign/')
 sys.path.insert(1, 'parameters/')
 import utils.helpers as helpers
 import utils.my_models as my_models
+from scipy.ndimage.measurements import center_of_mass
+from scipy.ndimage import shift
 
 
 def test(model, input_image, model_store_path):
@@ -147,7 +149,13 @@ def abberior_multi(model_store_path):
         print("Cannot find 'ExpControl Ch1 {15}' window")
         exit()
 
+    # print(image_xy.shape)
+    # print(center_of_mass(image_xy))
+    
     image_xy = helpers.preprocess(image_xy)
+    # print(image_xy.shape)
+    # print(center_of_mass(image_xy))
+    # exit()
     # plt.figure()
     # plt.imshow(image_xy)
     # plt.show()
