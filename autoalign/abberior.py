@@ -34,10 +34,8 @@ def test(model, input_image, model_store_path):
     checkpoint = torch.load(model_store_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     
-
-    ideal_coeffs = np.asarray([0.0]*12)
-
-    # donut = helpers.get_psf(ideal_coeffs)
+    mean = 0.1083
+    std = 0.2225
     
     # Test the model
     model.eval()
@@ -47,8 +45,9 @@ def test(model, input_image, model_store_path):
         # NOTE: THIS IS ONLY FOR 1D
         # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
+        print(np.max(input_image), np.min(input_image))
         image = torch.from_numpy(input_image).unsqueeze(0)
-       
+        
         # avg = []
         # i = 0
         # while i < 20:
@@ -161,8 +160,6 @@ def abberior_multi(model_store_path):
     # plt.imshow(image_xy)
     # plt.show()
 
-    
-    
     image_xz = helpers.preprocess(image_xz)
     #image_xz = np.fliplr(rotate(image_xz, -90))
     # plt.figure()

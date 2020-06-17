@@ -7,7 +7,7 @@ import json
 from slm_control import Pattern_Calculator as PC
 from autoalign.utils import vector_diffraction as vd
 import autoalign.utils.vector_diffraction as vd
-# import utils.helpers as helpers
+import utils.helpers as helpers
 
 def stim_em(exc, sted, isat):
     #ln(2) is needed because I_sat is "half life", not lifetime
@@ -85,10 +85,17 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     size=np.asarray([numerical_params["out_res"],numerical_params["out_res"]])
     # xy donut
     # NOTE: the zern is already created twice the size and cropped in helpers.create_phase 
-    donut = PC.create_donut(size, rot=0, amp=1, radscale=2)
+    donut = PC.create_donut(size, rot=0, amp=1, radscale=2) 
+    # print('donut')
+    # print(np.max(donut), np.min(donut)) # (0.997, 0.0025)
+    # print('zern')
+    # print(np.max(zern), np.min(zern)) # (0.4697, -3.121)
+
     # donut = PC.crop(PC.create_donut(2*size, rot=0, amp=1), size, offset)
     # NOTE: not sure if the zern should be normalized, but by no means normalize the sum
-    phasemask = donut + zern
+    phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
+    # print('phase')
+    # print(np.max(phasemask), np.min(phasemask)) # (2.646, -1.696)
     # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
     # print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
     # print(np.max(helpers.normalize_img(zern)), np.min(helpers.normalize_img(zern)))
@@ -118,9 +125,11 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
         amplitude, lp_scale_sted, plane=plane, offset=offset)
 
     if plane == 'xy':
-        return sted_xy
+        return helpers.normalize_img(sted_xy)
     elif plane == 'all':
-        return np.stack((sted_xy, sted_xz, sted_yz), axis=0)
+        return np.stack((helpers.normalize_img(sted_xy), 
+                        helpers.normalize_img(sted_xz), 
+                        helpers.normalize_img(sted_yz)), axis=0)
     else:
         raise("Plane argument not valid. Must be one of: ['xy', 'all']")
  

@@ -52,6 +52,7 @@ class PSFDataset(data.Dataset):
 
         return (sample['image'], sample['label'])
 
+
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
