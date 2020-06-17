@@ -44,19 +44,35 @@ def crop_image(img,tol=0.2):
     mask = img>tol
     return img[np.ix_(mask.any(1),mask.any(0))]
 
+def new_crop(img):
+    print(img[0,32])
+
 def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
     # a little preprocessing
-    # print(np.max(image))
     image = normalize_img(np.squeeze(image)) # normalized (200,200) array
     image = crop_image(image, tol=0.2) # get rid of dark line on edge
-    image = resize(image, (64,64)) # resize
     image = normalize_img(image) # renormalize
+    image = resize(image, (64,64))
+
+    # a = center_of_mass(image)
+
+    # image = center(image)
+    # plt.figure()
+    # plt.imshow(image)
+    # # plt.scatter(a[0], a[1], color='r')
+    # b = center_of_mass(image)
+    # print(b)
+    # plt.scatter(b[0], b[1], color='b')
+    # # plt.scatter(32,32, color='w')
+    # plt.show()
+
+    # image = normalize_img(image) # renormalize
     return image
 
-def center(image, res):
+def center(image, res=64):
     a = center_of_mass(image)
-    return shift(image, (res/2-a[0], res/2-a[1]))
+    return shift(image, (res/2-a[0], res/2-a[1]))#, mode='reflect')
 
 def save_params(fname):
     """Given an output file name and a resolution which defaults to 64, this fn creates a .txt file formatted as a json, 
