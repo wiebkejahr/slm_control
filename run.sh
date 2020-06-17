@@ -23,7 +23,7 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=25 # will do 90/10 train/validation split
 TEST_NUM=10 # number of additional test samples to create
-NAME="20.16.06_1D_20k"
+NAME="20.16.06_1D_20k_RANDOM"
 # NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
@@ -44,11 +44,11 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 #   --offset              (FLAG) whether or not to incorporate offset
 #   --mode {fluor,sted,z-sted} which mode of data to create
 
-# if [ ! -f ${DATASET} ]; then
-# python3 ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted'
-# else
-# echo "Dataset already exists"
-# fi
+if [ ! -f ${DATASET} ]; then
+python3 ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted'
+else
+echo "Dataset already exists"
+fi
 
 ######################### 2. TRAIN ##################################
 # HYPERPARAMETERS 
@@ -76,11 +76,11 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --logdir              path to logging dir for optional tensorboard visualization
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
-if [ ! -f ${MODEL_STORE_PATH} ]; then
-python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR}
-else
-echo "Model already exists"
-fi
+# if [ ! -f ${MODEL_STORE_PATH} ]; then
+# python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR}
+# else
+# echo "Model already exists"
+# fi
 ####################### 3. EVALUATE ################################
 # To see all options, run 'python evaluate.py --help'. Output copied below.
 #

@@ -58,12 +58,12 @@ def main(args):
     test_shape = (test_num, channel_num, res, res)
 
     # open a hdf5 file and create arrays
-    hdf5_file = h5py.File(hdf5_path, mode='w-')
+    # hdf5_file = h5py.File(hdf5_path, mode='w-')
 
-    # create the image arrays
-    hdf5_file.create_dataset("train_img", train_shape, np.float32)
-    hdf5_file.create_dataset("val_img", val_shape, np.float32)
-    hdf5_file.create_dataset("test_img", test_shape, np.float32)
+    # # create the image arrays
+    # hdf5_file.create_dataset("train_img", train_shape, np.float32)
+    # hdf5_file.create_dataset("val_img", val_shape, np.float32)
+    # hdf5_file.create_dataset("test_img", test_shape, np.float32)
     
     train_labels = []
     val_labels = []
@@ -82,6 +82,28 @@ def main(args):
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
+            plt.figure(1)
+            
+            
+            # print(np.max(img), np.min(img))
+            # print(np.mean(img), np.std(img))
+            # img2 = (img-np.mean(img))/ np.std(img)
+            # print(np.mean(img2), np.std(img2)) # [0, 1]
+            # print(np.max(img2), np.min(img2)) # 4, -0.5
+            # plt.figure(2)
+            # plt.imshow(img2, cmap='hot')
+            # img3 = normalize_img(img)
+            # print(np.mean(img3), np.std(img3)) # 0.09, 0.17
+            # print(np.max(img3), np.min(img3)) # [1, 0]
+            # plt.figure(3)
+            # plt.imshow(img3, cmap='hot')
+            img = normalize_img(img)
+            plt.imshow(img, cmap='hot')
+            plt.colorbar()
+            plt.show()
+            print(np.min(img), np.max(img))
+            # plt.show()
+            exit()
             # train_data.append(center(img))
             # plt.figure(1)
             # plt.imshow(img)

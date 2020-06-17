@@ -93,9 +93,10 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
 
     # donut = PC.crop(PC.create_donut(2*size, rot=0, amp=1), size, offset)
     # NOTE: not sure if the zern should be normalized, but by no means normalize the sum
-    phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
-    # print('phase')
-    # print(np.max(phasemask), np.min(phasemask)) # (2.646, -1.696)
+    # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
+    phasemask = donut + zern
+    print('phasemask')
+    print(np.max(phasemask), np.min(phasemask)) # (2.646, -1.696)
     # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
     # print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
     # print(np.max(helpers.normalize_img(zern)), np.min(helpers.normalize_img(zern)))
@@ -125,11 +126,13 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
         amplitude, lp_scale_sted, plane=plane, offset=offset)
 
     if plane == 'xy':
-        return helpers.normalize_img(sted_xy)
+        return sted_xy
+        # return helpers.normalize_img(sted_xy)
     elif plane == 'all':
-        return np.stack((helpers.normalize_img(sted_xy), 
-                        helpers.normalize_img(sted_xz), 
-                        helpers.normalize_img(sted_yz)), axis=0)
+        return np.stack((sted_xy, sted_xz, sted_yz), axis=0)
+        # return np.stack((helpers.normalize_img(sted_xy), 
+        #                 helpers.normalize_img(sted_xz), 
+        #                 helpers.normalize_img(sted_yz)), axis=0)
     else:
         raise("Plane argument not valid. Must be one of: ['xy', 'all']")
  
