@@ -45,20 +45,12 @@ def test(model, input_image, model_store_path):
         # NOTE: THIS IS ONLY FOR 1D
         # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
-        print(np.max(input_image), np.min(input_image))
+        # print(np.max(input_image), np.min(input_image))
         image = torch.from_numpy(input_image).unsqueeze(0)
         
-        # avg = []
-        # i = 0
-        # while i < 20:
-            # pass it through the trained model to get the predicted coeffs
         outputs = model(image)
     coeffs = outputs.numpy().squeeze()
-    #     # avg.append(coeffs)
-    #     # i += 1
-    # # avg = np.stack(avg)
-    # # avg = np.average(avg, axis=0)
-    # # coeffs = avg
+   
     # # corrected = normalize_img(input_image) + normalize_img(get_psf(-coeffs))
     # # plt.figure()
     # # plt.imshow(corrected)
@@ -153,12 +145,16 @@ def abberior_multi(model_store_path):
     # print(center_of_mass(image_xy))
     
     image_xy = helpers.preprocess(image_xy)
+    # print(np.min(image_xy), np.max(image_xy))
+    # image_xy = (image_xy-np.mean(image_xy))/np.std(image_xy)
+    print(np.min(image_xy), np.max(image_xy))
     # print(image_xy.shape)
     # print(center_of_mass(image_xy))
     # exit()
     # plt.figure()
     # plt.imshow(image_xy)
     # plt.show()
+    # exit()
 
     image_xz = helpers.preprocess(image_xz)
     #image_xz = np.fliplr(rotate(image_xz, -90))
@@ -173,8 +169,8 @@ def abberior_multi(model_store_path):
     # plt.imshow(image_yz, aspect="equal")
     # plt.show()
     # ##################
-    image = np.stack((image_xy,image_xz, image_yz), axis=0)    
-    #image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
+    # image = np.stack((image_xy,image_xz, image_yz), axis=0)    
+    image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
     # fig = helpers.plot_xsection(image)
     # plt.show()
     
@@ -183,8 +179,8 @@ def abberior_multi(model_store_path):
     # exit()
 
     # # coeffs, _, image = test(model, image, model_store_path)
-    results = test(model, image, model_store_path)
-    coeffs = results
+    coeffs = test(model, image, model_store_path)
+    # exit()
     # print(coeffs)
     # coeffs = results[:-2]
     # offset = results[-2:]

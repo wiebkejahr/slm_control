@@ -44,31 +44,15 @@ def crop_image(img,tol=0.2):
     mask = img>tol
     return img[np.ix_(mask.any(1),mask.any(0))]
 
-def new_crop(img):
-    print(img[0,32])
 
 def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
-    # a little preprocessing
-    image = normalize_img(np.squeeze(image)) # normalized (200,200) array
-    image = crop_image(image, tol=0.2) # get rid of dark line on edge
-    image = normalize_img(image) # renormalize
-    image = resize(image, (64,64))
-
-    # a = center_of_mass(image)
-
-    # image = center(image)
-    # plt.figure()
-    # plt.imshow(image)
-    # # plt.scatter(a[0], a[1], color='r')
-    # b = center_of_mass(image)
-    # print(b)
-    # plt.scatter(b[0], b[1], color='b')
-    # # plt.scatter(32,32, color='w')
-    # plt.show()
-
-    # image = normalize_img(image) # renormalize
+    # cropping one pixel all around
+    image = np.squeeze(image)[1:-1, 1:-1] 
+    image = resize(image, (64,64), preserve_range=True)
+    image = (image - np.mean(image))/np.std(image)
     return image
+
 
 def center(image, res=64):
     a = center_of_mass(image)
@@ -272,6 +256,7 @@ def get_stats(data_path, batch_size, mode='train'):
 
 def plot_xsection(img3d, name=''):
     fig = plt.figure()
+    plt.colorbar()
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
     ax1.imshow(img3d[0], cmap='hot')
