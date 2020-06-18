@@ -61,7 +61,8 @@ def test(model, test_loader, logdir, model_store_path):
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             
             # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
-            # print(np.max(images.numpy()), np.min(images.numpy()))
+            print(np.min(images.numpy()), np.max(images.numpy()))
+            print(np.mean(images.numpy()), np.std(images.numpy()))
             # images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))
             # print(np.max(images.numpy()), np.min(images.numpy()))
             # example for syntax
@@ -81,7 +82,8 @@ def test(model, test_loader, logdir, model_store_path):
 
             offset=[0,0]
             reconstructed = get_sted_psf(coeffs=preds, multi=False)
-            # print(np.max(reconstructed), np.min(reconstructed))
+            print(np.min(reconstructed), np.max(reconstructed))
+            print(np.mean(reconstructed), np.std(reconstructed))
             # print(labels.numpy().squeeze())
             # print(preds)
             
@@ -95,19 +97,20 @@ def test(model, test_loader, logdir, model_store_path):
             # print(np.max(original), np.min(original))
             # print(np.max(reconstructed), np.min(reconstructed))
             # # corrected = normalize_img(original - reconstructed)
-            # corrected = get_sted_psf(coeffs=remaining, multi=False)
+            corrected = get_sted_psf(coeffs=remaining, multi=False)
             plt.figure(1)
             plt.imshow(images.numpy().squeeze(), cmap='hot')
             plt.title('original')
-            # plt.figure(2)
-            # plt.imshow(reconstructed, cmap='hot')
-            # plt.title('reconstructed')
-            # plt.figure(3)
-            # plt.imshow(corrected, cmap='hot')
-            # plt.title('corrected')
+            plt.figure(2)
+            plt.imshow(reconstructed, cmap='hot')
+            plt.title('reconstructed')
+            plt.figure(3)
+            plt.imshow(corrected, cmap='hot')
+            plt.title('corrected')
 
             # fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
             plt.show()
+            
 
 
 

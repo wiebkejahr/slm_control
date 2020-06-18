@@ -28,46 +28,29 @@ import autoalign.utils.my_classes as my_classes
 from autoalign.utils.xysted import fluor_psf, sted_psf
 from autoalign.utils.vector_diffraction import vector_diffraction as vd
 
-def normalize_img(img):
-    """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
-    return (img-np.min(img))/(np.max(img)-np.min(img))
+# def normalize_img(img):
+#     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
+#     return (img-np.min(img))/(np.max(img)-np.min(img))
 
 def add_noise(img):
     """Adds Poisson noise to the image using skimage's built-in method. Function normalizes image before adding noise"""
     # return img + np.random.poisson(img)
     return skimage.util.random_noise(normalize_img(img), mode='gaussian', seed=None, clip=True, var=0.0001)
 
-def crop_image(img,tol=0.2):
-    """Function to crop the dark line on the edge of the acquired image data.
-    img is 2D image data (NOTE: it only works with 2D!)
-    tol  is tolerance."""
-    mask = img>tol
-    return img[np.ix_(mask.any(1),mask.any(0))]
+# def crop_image(img,tol=0.2):
+#     """Function to crop the dark line on the edge of the acquired image data.
+#     img is 2D image data (NOTE: it only works with 2D!)
+#     tol  is tolerance."""
+#     mask = img>tol
+#     return img[np.ix_(mask.any(1),mask.any(0))]
 
-def new_crop(img):
-    print(img[0,32])
 
 def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
-    # a little preprocessing
-    image = normalize_img(np.squeeze(image)) # normalized (200,200) array
-    image = crop_image(image, tol=0.2) # get rid of dark line on edge
-    image = normalize_img(image) # renormalize
-    image = resize(image, (64,64))
-
-    # a = center_of_mass(image)
-
-    # image = center(image)
-    # plt.figure()
-    # plt.imshow(image)
-    # # plt.scatter(a[0], a[1], color='r')
-    # b = center_of_mass(image)
-    # print(b)
-    # plt.scatter(b[0], b[1], color='b')
-    # # plt.scatter(32,32, color='w')
-    # plt.show()
-
-    # image = normalize_img(image) # renormalize
+    # cropping one pixel all around
+    image = np.squeeze(image)[1:-1, 1:-1] 
+    image = resize(image, (64,64), preserve_range=True)
+    image = (image - np.mean(image))/np.std(image)
     return image
 
 def center(image, res=64):
@@ -213,6 +196,7 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
     else:
         plane = 'xy'
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
+    img = (img - np.mean(img)) / np.std(img)
     # img = normalize_img(img)
 
     return img

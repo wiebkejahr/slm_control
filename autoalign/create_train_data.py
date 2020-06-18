@@ -87,9 +87,8 @@ def main(args):
             
             # print(np.max(img), np.min(img))
             # print(np.mean(img), np.std(img))
-            # img2 = (img-np.mean(img))/ np.std(img)
-            # print(np.mean(img2), np.std(img2)) # [0, 1]
-            # print(np.max(img2), np.min(img2)) # 4, -0.5
+            
+            
             # plt.figure(2)
             # plt.imshow(img2, cmap='hot')
             # img3 = normalize_img(img)
@@ -97,11 +96,6 @@ def main(args):
             # print(np.max(img3), np.min(img3)) # [1, 0]
             # plt.figure(3)
             # plt.imshow(img3, cmap='hot')
-            img = normalize_img(img)
-            plt.imshow(img, cmap='hot')
-            plt.colorbar()
-            plt.show()
-            print(np.min(img), np.max(img))
             # plt.show()
             exit()
             # train_data.append(center(img))

@@ -55,8 +55,13 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # print(np.max(images.numpy()), np.min(images.numpy()))
             # NOTE: this normalizes all the incoming images to be between 0 and 1
             # ideally, you have a dataset where that's already done, but this is a hack
+
             # images = torch.from_numpy(np.stack([helpers.normalize_img(i) for i in images.numpy()], axis=0))
             
+            
+            # print('min: {}      max: {}'.format(np.min(images.numpy()[0]), np.max(images.numpy()[0])))
+            # print('mean: {}     std: {}'.format(np.mean(images.numpy()[0]), np.std(images.numpy()[0])))
+            # exit()
             # print(images.size())
             # print(images.numpy().shape) # (64,1,64,64)
             # centers the images before training. 

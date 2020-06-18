@@ -95,8 +95,8 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     # NOTE: not sure if the zern should be normalized, but by no means normalize the sum
     # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
     phasemask = donut + zern
-    print('phasemask')
-    print(np.max(phasemask), np.min(phasemask)) # (2.646, -1.696)
+    # print('phasemask')
+    # print(np.max(phasemask), np.min(phasemask)) # (2.646, -1.696)
     # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
     # print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
     # print(np.max(helpers.normalize_img(zern)), np.min(helpers.normalize_img(zern)))
