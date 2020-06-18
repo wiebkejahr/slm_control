@@ -48,12 +48,6 @@ def test(model, test_loader, logdir, model_store_path):
     # logdir_test = logdir + '/test'
     # test_writer = SummaryWriter(log_dir=logdir_test)
     
-    # with open('full.txt', 'r') as fname:
-    #     full = [list(eval(i.rstrip())) for i in fname.readlines()]
-
-    ideal_coeffs = np.asarray([0.0]*12)
-    # donut = get_psf(ideal_coeffs, res=64, multi=True) # (64,64)
-
     # Test the model
     model.eval()
     for i, (images, labels) in enumerate(test_loader): # i is 0 when batch_size is 1
@@ -80,8 +74,8 @@ def test(model, test_loader, logdir, model_store_path):
             # offset = preds[-2:]
             # zern = preds
 
-            offset=[0,0]
-            reconstructed = get_sted_psf(coeffs=preds, multi=False)
+            # offset=[0,0]
+            reconstructed = get_sted_psf(coeffs=preds, multi=True)
             print(np.min(reconstructed), np.max(reconstructed))
             print(np.mean(reconstructed), np.std(reconstructed))
             # print(labels.numpy().squeeze())
@@ -97,18 +91,18 @@ def test(model, test_loader, logdir, model_store_path):
             # print(np.max(original), np.min(original))
             # print(np.max(reconstructed), np.min(reconstructed))
             # # corrected = normalize_img(original - reconstructed)
-            corrected = get_sted_psf(coeffs=remaining, multi=False)
-            plt.figure(1)
-            plt.imshow(images.numpy().squeeze(), cmap='hot')
-            plt.title('original')
-            plt.figure(2)
-            plt.imshow(reconstructed, cmap='hot')
-            plt.title('reconstructed')
-            plt.figure(3)
-            plt.imshow(corrected, cmap='hot')
-            plt.title('corrected')
+            corrected = get_sted_psf(coeffs=remaining, multi=True)
+            # plt.figure(1)
+            # plt.imshow(images.numpy().squeeze(), cmap='hot')
+            # plt.title('original')
+            # plt.figure(2)
+            # plt.imshow(reconstructed, cmap='hot')
+            # plt.title('reconstructed')
+            # plt.figure(3)
+            # plt.imshow(corrected, cmap='hot')
+            # plt.title('corrected')
 
-            # fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
+            fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
             plt.show()
             
 
@@ -124,14 +118,14 @@ def main(args):
         if args.offset:
             model = my_models.MultiOffsetNet()
         else:
-            model = my_models.MultiNetShift()
+            model = my_models.MultiNet()
     else:
         if args.offset:
             model = my_models.OffsetNet()
         else:
             model = my_models.Net()
     
-    model = my_models.Net()
+    # model = my_models.Net()
     # print(model)
     
     # NOTE: this part needs work. determine which model to use from loading the data and checking the shape
