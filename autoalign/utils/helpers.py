@@ -53,6 +53,7 @@ def preprocess(image):
     image = (image - np.mean(image))/np.std(image)
     return image
 
+
 def center(image, res=64):
     a = center_of_mass(image)
     return shift(image, (res/2-a[0], res/2-a[1]))#, mode='reflect')
@@ -256,6 +257,7 @@ def get_stats(data_path, batch_size, mode='train'):
 
 def plot_xsection(img3d, name=''):
     fig = plt.figure()
+    plt.colorbar()
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
     ax1.imshow(img3d[0], cmap='hot')

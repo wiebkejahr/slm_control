@@ -7,7 +7,7 @@ import json
 from slm_control import Pattern_Calculator as PC
 from autoalign.utils import vector_diffraction as vd
 import autoalign.utils.vector_diffraction as vd
-import utils.helpers as helpers
+# import autoalign.utils.helpers as helpers
 
 def stim_em(exc, sted, isat):
     #ln(2) is needed because I_sat is "half life", not lifetime
@@ -94,6 +94,7 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     # donut = PC.crop(PC.create_donut(2*size, rot=0, amp=1), size, offset)
     # NOTE: not sure if the zern should be normalized, but by no means normalize the sum
     # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
+    # print('phase')
     phasemask = donut + zern
     # print('phasemask')
     # print(np.max(phasemask), np.min(phasemask)) # (2.646, -1.696)

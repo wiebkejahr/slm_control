@@ -34,8 +34,8 @@ def test(model, input_image, model_store_path):
     checkpoint = torch.load(model_store_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     
-    mean = 0.1083
-    std = 0.2225
+    # mean = 0.1083
+    # std = 0.2225
     
     # Test the model
     model.eval()
@@ -43,22 +43,14 @@ def test(model, input_image, model_store_path):
     with torch.no_grad():
         # adds 3rd color channel dim and batch dim 
         # NOTE: THIS IS ONLY FOR 1D
-        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
-        print(np.max(input_image), np.min(input_image))
-        image = torch.from_numpy(input_image).unsqueeze(0)
+        # print(np.max(input_image), np.min(input_image))
+        # image = torch.from_numpy(input_image).unsqueeze(0)
         
-        # avg = []
-        # i = 0
-        # while i < 20:
-            # pass it through the trained model to get the predicted coeffs
         outputs = model(image)
     coeffs = outputs.numpy().squeeze()
-    #     # avg.append(coeffs)
-    #     # i += 1
-    # # avg = np.stack(avg)
-    # # avg = np.average(avg, axis=0)
-    # # coeffs = avg
+   
     # # corrected = normalize_img(input_image) + normalize_img(get_psf(-coeffs))
     # # plt.figure()
     # # plt.imshow(corrected)
@@ -122,7 +114,7 @@ def correct(model_store_path):
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.MultiNet()
+    model = my_models.Net()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -153,28 +145,32 @@ def abberior_multi(model_store_path):
     # print(center_of_mass(image_xy))
     
     image_xy = helpers.preprocess(image_xy)
+    # print(np.min(image_xy), np.max(image_xy))
+    # image_xy = (image_xy-np.mean(image_xy))/np.std(image_xy)
+    print(np.min(image_xy), np.max(image_xy))
     # print(image_xy.shape)
     # print(center_of_mass(image_xy))
     # exit()
     # plt.figure()
     # plt.imshow(image_xy)
     # plt.show()
-
-    image_xz = helpers.preprocess(image_xz)
+    # exit()
+    # NOTE: going to 1D for now
+    # image_xz = helpers.preprocess(image_xz)
     #image_xz = np.fliplr(rotate(image_xz, -90))
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
     
-    image_yz = helpers.preprocess(image_yz)
+    # image_yz = helpers.preprocess(image_yz)
     #image_yz = np.fliplr(imgage_yz)
     
     # plt.figure()
     # plt.imshow(image_yz, aspect="equal")
     # plt.show()
     # ##################
-    image = np.stack((image_xy,image_xz, image_yz), axis=0)    
-    #image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
+    # image = np.stack((image_xy,image_xz, image_yz), axis=0)    
+    # image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
     # fig = helpers.plot_xsection(image)
     # plt.show()
     
@@ -183,16 +179,20 @@ def abberior_multi(model_store_path):
     # exit()
 
     # # coeffs, _, image = test(model, image, model_store_path)
-    results = test(model, image, model_store_path)
-    coeffs = results
+    coeffs = test(model, image_xy, model_store_path)
+    # exit()
     # print(coeffs)
     # coeffs = results[:-2]
     # offset = results[-2:]
-    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
+    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False)
     # print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
-    fig = helpers.plot_xsection_abber(image, reconstructed)
+    plt.figure(1)
+    plt.imshow(image_xy, cmap='hot')
+    plt.figure(2)
+    plt.imshow(reconstructed, cmap='hot')
+    # fig = helpers.plot_xsection_abber(image_xy, reconstructed)
     plt.show()
     
 
