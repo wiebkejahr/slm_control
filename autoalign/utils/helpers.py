@@ -316,8 +316,8 @@ def plot_xsection_eval(img1, img2, img3):
     return fig
 
 def plot_xsection_abber(img1, img2):
-    img1 = normalize_img(img1)
-    img2 = normalize_img(img2)
+    # img1 = normalize_img(img1)
+    # img2 = normalize_img(img2)
     fig = plt.figure(1)
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
