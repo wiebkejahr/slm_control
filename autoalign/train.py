@@ -52,7 +52,9 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # ex = images.numpy()
             # NOTE: here's where you normalize it. 
             # print(images.numpy().shape)
-            # print(np.max(images.numpy()), np.min(images.numpy()))
+            # print(np.min(images.numpy()[0]), np.max(images.numpy()[0]))
+            # print(np.mean(images.numpy()[0]), np.std(images.numpy()[0]))
+            # exit()
             # NOTE: this normalizes all the incoming images to be between 0 and 1
             # ideally, you have a dataset where that's already done, but this is a hack
 
@@ -149,6 +151,7 @@ def main(args):
     data_path = args.dataset
     model_store_path = args.model_store_path
     logdir = args.logdir
+    warm_start = args.warm_start
     
 
     mean, std = helpers.get_stats(data_path, batch_size)
@@ -168,7 +171,8 @@ def main(args):
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
-    val_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
+    # NOTE: my dumb butt had this as train_dataset for a LONG time
+    val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
 
     data_loaders = {'train': train_loader, 'val': val_loader}
