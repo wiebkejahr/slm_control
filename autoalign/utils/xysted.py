@@ -60,7 +60,7 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
 
     numerical_params = {
     "out_scrn_size" : 1,
-    "z_extent" : 1.0,
+    "z_extent" : 1,
     "out_res" : res, 
     "inp_res" : res 
     }

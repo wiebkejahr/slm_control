@@ -53,10 +53,48 @@ def preprocess(image):
     image = (image - np.mean(image))/np.std(image)
     return image
 
+def get_D(a, dx, lambd=0.775, f=1.8):
 
-def center(image, res=64):
-    a = center_of_mass(image)
-    return shift(image, (res/2-a[0], res/2-a[1]))#, mode='reflect')
+    return (a*lambd*f*2) / (np.pi*dx)
+
+def correct_tip_tilt(img, lambd=0.775, f=1.8, D=0.052):
+    # D is potentially 7.2 instead of 5.04, need to test it out
+    # testing showed D is 0.052, which is interesting as it's neither the other two
+    # potentially switched bc of np vs plt coordinate system
+    b, a = center_of_mass(img)
+    dx = 31.5-a
+    dy = 31.5-b
+    # print('dx: {}   dy: {}'.format(dx, dy))
+    xtilt = (np.pi*dx)/(lambd*f)*D/2
+    ytilt = (np.pi*dy)/(lambd*f)*D/2
+    print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
+
+    # NOTE: okay but what if instead I create an alternate phase mask with the coeffs and add it on
+    coeffs = np.asarray([0.0]*14)
+    coeffs[0] = xtilt
+    coeffs[1] = ytilt
+    new = get_sted_psf_tip_tilt(coeffs=coeffs)
+    return new
+    # plt.figure()
+    # plt.imshow(new, cmap='hot')
+    # plt.show()
+    # # img = shift(img, (dy, dx))
+    # # b, a = center_of_mass(img)
+    # # dx = 31.5-a
+    # # dy = 31.5-b
+    # # # print('dx: {}   dy: {}'.format(dx, dy))
+    # # xtilt = (np.pi*dx)/(lambd*f)*D/2
+    # # ytilt = (np.pi*dy)/(lambd*f)*D/2
+    # # print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
+    # # return img
+    # # NOTE: don't want to shift them by the tip/tilt, want to shift them by the dx and dy, right?
+    # return xtilt, ytilt
+
+# def center(image, res=64):
+#     a, b = center_of_mass(image)
+#     # print((res-1)/2-a) # -0.020355
+#     return shift(image, ((res-1)/2-a, (res-1)/2-b), mode='constant')
+
 
 def save_params(fname):
     """Given an output file name and a resolution which defaults to 64, this fn creates a .txt file formatted as a json, 
@@ -94,11 +132,6 @@ def save_params(fname):
     with open(fname, 'w') as outfile:
         json.dump(data, outfile)
 
-def gen_shift():
-    x = random.randint(-7,7)
-    y = random.randint(-7,7)
-    return x,y
-
 def gen_offset():
     """A function to generate an offset [x, y] to displace the STED psf. Returns an 1d array of 2 ints"""
     x = round(random.uniform(-0.2, 0.2), 3)
@@ -119,6 +152,43 @@ def gen_coeffs(num=12):
     # c[10:] = [random.uniform(-0.6, 0.6) for i in c[10:]]
     c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
     return c
+
+def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0]):
+    """
+    Zernike polynomial orders = 
+            1 = [[0,0],     11 = [4,-4],    21 = [5,5],
+            2 = [1,-1],     12 = [4,-2],    22 = [6,-6],
+            3 = [1,1],      13 = [4,0],     23 = [6,-4],
+            4 = [2,-2],     14 = [4,2],     24 = [6,-2],
+            5 = [2,0],      15 = [4,4],     25 = [6,0],
+            6 = [2,2],      16 = [5,-5],    26 = [6,2],
+            7 = [3,-3],     17 = [5,-3],    27 = [6,4],
+            8 = [3,-1],     18 = [5,-1],    28 = [6,6]] 
+            9 = [3,1],      19 = [5,1],
+            10 = [3,3],     20 = [5,3],
+    """
+   # NOTE: starting with the 4th order, bc we set the first three to zero.
+    orders = [[1,-1], #Y-tilt
+            [1,1], # X-tilt
+            [2,-2], [2,0], [2,2],
+            [3,-3], [3,-1], [3,1],[3,3],
+            [4,-4], [4,-2], [4,0], [4,2], [4,4]]
+    # sanity checks
+    assert(len(coeffs) == len(orders)) # should both be 14
+    assert(isinstance(i, float) for i in coeffs)
+
+    size=np.asarray([res1, res2]) # NOTE: used to be res+1
+    # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
+    # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
+    
+    # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
+    terms = [coeff*PC.create_zernike(size, order, radscale=2) for coeff, order in list(zip(coeffs, orders))]  
+    zern = sum(terms)
+    # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
+    # zern represents the collective abberations that will be added to an ideal donut.
+    # plt.imshow(zern)
+    # plt.show()
+    return zern
 
 def create_phase(coeffs, res1=64, res2=64, offset=[0,0]):
     """
@@ -186,6 +256,24 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
     # img = normalize_img(img)
     return img, coeffs, offset_label
 
+def get_sted_psf_tip_tilt(res=64, coeffs=np.asarray([0.0]*14), offset_label=[0,0],  multi=False):
+    """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
+    If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF
+    
+    #returns image with mean of 0 and std of 1.
+    """
+    zern = create_phase_tip_tilt(coeffs, res,res, offset_label)
+    
+    if multi:
+        plane = 'all'
+    else:
+        plane = 'xy'
+    img = sted_psf(zern, res, offset=offset_label, plane=plane)
+    # img = center(img)
+    # img = (img - np.mean(img) / np.std(img)
+    
+    return img
+
 def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
@@ -197,7 +285,7 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
     else:
         plane = 'xy'
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
-    img = (img - np.mean(img)) / np.std(img)
+    # img = (img - np.mean(img)) / np.std(img)
     # img = normalize_img(img)
 
     return img
