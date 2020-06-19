@@ -43,10 +43,10 @@ def test(model, input_image, model_store_path):
     with torch.no_grad():
         # adds 3rd color channel dim and batch dim 
         # NOTE: THIS IS ONLY FOR 1D
-        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
         # print(np.max(input_image), np.min(input_image))
-        # image = torch.from_numpy(input_image).unsqueeze(0)
+        image = torch.from_numpy(input_image).unsqueeze(0)
         
         outputs = model(image)
     coeffs = outputs.numpy().squeeze()
@@ -62,6 +62,11 @@ def test(model, input_image, model_store_path):
     return coeffs
     
 def correct_tip_tilt():
+    
+    # acquire the image from Imspector    
+    # NOTE: from Imspector, must run Tools > Run Server for this to work
+    im = sp.Imspector()
+    
     # get active measurement 
     msr = im.active_measurement()
     try:
@@ -69,14 +74,14 @@ def correct_tip_tilt():
     except:
         print("Cannot find 'ExpControl Ch1 {1}' window")
         exit()
-    image = helpers.preprocess(image_xy)
-    return helpers.calc_tip_tilt(image)
+    # image = helpers.preprocess(image_xy) # (64,64), values (-.5, 4)
+    return helpers.calc_tip_tilt(image_xy)
     
 
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.Net()
+    model = my_models.MultiNet()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work

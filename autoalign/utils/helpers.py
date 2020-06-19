@@ -18,6 +18,10 @@ from torch.utils.data import Dataset, DataLoader
 from skimage.transform import resize, rotate
 import skimage
 from scipy.ndimage.measurements import center_of_mass
+
+from skimage import filters
+from skimage.measure import regionprops
+
 from scipy.ndimage import shift
 from skimage.transform import resize
 import sys, os
@@ -49,30 +53,50 @@ def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
     # cropping one pixel all around
     image = np.squeeze(image)[1:-1, 1:-1] 
-    image = resize(image, (64,64), preserve_range=True)
-    image = (image - np.mean(image))/np.std(image)
+    image = resize(image, (64,64))#, preserve_range=True)
+    image = (image - np.mean(image))/np.std(image) # (-.5, 4)
     return image
 
 def get_D(a, dx, lambd=0.775, f=1.8):
-
     return (a*lambd*f*2) / (np.pi*dx)
 
-def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.052):
+def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776):
     """this fn RETURNS THE COEFFS OF THE CALCULATED TIP TILT
     """
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
-    b, a = center_of_mass(img)
-    dx = 31.5-a
-    dy = 31.5-b
+    #img = (img - np.max(img)) / (img - np.min(img))
+    # img = (img - np.mean(img)) / np.std(img)
+    img = np.squeeze(img)[1:-1, 1:-1]
+    px_size = 10 # in nm. TODO:read from imspector!
+    # D = 5.04 # in mm. TODO: doublecheck what this should be!
+    
+    threshold_value = filters.threshold_otsu(img)
+    labeled_foreground = (img > threshold_value).astype(int)
+    properties = regionprops(labeled_foreground, img)
+    center_of_mass = properties[0].centroid
+    print(center_of_mass)
+    b = center_of_mass[0]
+    a = center_of_mass[1]
+    # plt.imshow(img)
+    # plt.scatter(a,b, color='b')
+    # plt.show()
+    
+    
+    print(b,a)
+    # b=147
+    # a=89
+    # print(get_D(a=0.5, dx=25)) #0.01776 for both
+    dx = (np.shape(img)[0]-1)/2-a
+    dy = (np.shape(img)[1]-1)/2-b
     # print('dx: {}   dy: {}'.format(dx, dy))
-    xtilt = (np.pi*dx)/(lambd*f)*D/2
-    ytilt = (np.pi*dy)/(lambd*f)*D/2
+    xtilt = (np.pi*dx*px_size)/(lambd*f)*D/2
+    ytilt = -(np.pi*dy*px_size)/(lambd*f)*D/2
     print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
 
-    tiptilt_mask = create_phase_tip_tilt(coeffs=[xtilt, ytilt])
-    return xtilt, ytilt
+    # tiptilt_mask = create_phase_tip_tilt(coeffs=[xtilt, ytilt])
+    return [xtilt, ytilt]
     # plt.figure()
     # plt.imshow(new, cmap='hot')
     # plt.show()
@@ -151,7 +175,7 @@ def gen_coeffs(num=12):
     c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
     return c
 
-def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0]):
+def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
     """
     Zernike polynomial orders = 
             1 = [[0,0],     11 = [4,-4],    21 = [5,5],
@@ -177,7 +201,7 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0]):
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
     
     # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
-    terms = [coeff*PC.create_zernike(size, order, radscale=2) for coeff, order in list(zip(coeffs, orders))]  
+    terms = [coeff*PC.create_zernike(size, order, radscale=radscale) for coeff, order in list(zip(coeffs, orders))]  
     zern = sum(terms)
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
@@ -185,7 +209,7 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0]):
     # plt.show()
     return zern
 
-def create_phase(coeffs, res1=64, res2=64, offset=[0,0]):
+def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -220,7 +244,7 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0]):
     
     # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
     # terms = [coeff*PC.crop(PC.create_zernike(size*2, order), size, offset) for coeff, order in list(zip(coeffs, orders))] 
-    terms = [coeff*PC.create_zernike(size, order, radscale=2) for coeff, order in list(zip(coeffs, orders))]  
+    terms = [PC.create_zernike(size, order, amp = coeff, radscale=radscale) for coeff, order in list(zip(coeffs, orders))]  
     zern = sum(terms)
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.

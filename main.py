@@ -153,6 +153,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_l.update_guivalues(self.p, self.p.left)
         self.img_r.update_guivalues(self.p, self.p.right)
         self.zernikes_all = np.zeros_like(self.img_l.data)
+        self.phase_tiptilt = np.zeros_like(self.img_l.data)
 
         #self.objective_changed()
         # TODO WJ
@@ -175,8 +176,8 @@ class Main_Window(QtWidgets.QMainWindow):
         
     def correct_tiptilt(self):
         self.tiptilt = abberior.correct_tip_tilt()
-        self.correct_tiptilt = (-1.)*helpers.create_phase_tip_tilt(self.tiptilt, res1=600, res2=396)
-        print(self.tiptilt)
+        self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase_tip_tilt(self.tiptilt, res1=600, res2=396, radscale = 2*self.rtiptilt)
+        self.recalc_images()
     
     # NOTE: I WROTE THIS
     def auto_align(self, model_store_path=MODEL_STORE_PATH):
@@ -187,8 +188,10 @@ class Main_Window(QtWidgets.QMainWindow):
         # the obejctives, but for now, can change manually 
         self.zernike = abberior.abberior_multi(MODEL_STORE_PATH)
         # this needs to be scaled by some factor that's input from the GUI
-        
-        self.zernikes_all = (-1.)*helpers.create_phase(self.zernike, res1=600, res2=396)
+        self.zernikes_all = self.zernikes_all + pcalc.crop((1.)*helpers.create_phase(self.zernike, res1=1200, res2=792, radscale = self.slm_radius), [600, 396])
+        #self.zernikes_all = self.zernikes_all + (-1.)*helpers.create_phase(self.zernike, res1=600, res2=396, radscale = 4*self.slm_radius)
+        plt.imshow(self.zernikes_all)
+        plt.show()
         print(self.zernike)
         # plt.figure()
         # plt.imshow(self.zernikes_all)
@@ -230,6 +233,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_r.set_name("img_r")
 
         self.zernikes_all = np.zeros_like(self.img_l.data)
+        self.phase_tiptilt = np.zeros_like(self.img_l.data)
         
         
     def init_zernikes(self):
@@ -249,12 +253,12 @@ class Main_Window(QtWidgets.QMainWindow):
         # patterns are created at double size, then cropped.
 
         size = 2 * np.asarray(self.p.general["size_slm"])
-        rtiptilt = 2 * pcalc.normalize_radius(1, 1, self.p.general["slm_px"], 
+        self.rtiptilt = 2 * pcalc.normalize_radius(1, 1, self.p.general["slm_px"], 
                                               self.p.general["size_slm"])
         
         self.zernikes_normalized = {
-            "tiptiltx" : pcalc.create_zernike(size, [ 1,  1], 1, rtiptilt),
-            "tiptilty" : pcalc.create_zernike(size, [ 1, -1], 1, rtiptilt),
+            "tiptiltx" : pcalc.create_zernike(size, [ 1,  1], 1, self.rtiptilt),
+            "tiptilty" : pcalc.create_zernike(size, [ 1, -1], 1, self.rtiptilt),
             "defocus"  : pcalc.create_zernike(size, [ 2,  0], 1, self.slm_radius),
             "astigx"   : pcalc.create_zernike(size, [ 2,  2], 1, self.slm_radius),
             "astigy"   : pcalc.create_zernike(size, [ 2, -2], 1, self.slm_radius),
@@ -605,9 +609,9 @@ class Main_Window(QtWidgets.QMainWindow):
             into the Pixmap for display. """
             
         l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
-                        self.flatfield[0], self.img_l.vort.tempscalegui.value() * self.zernikes_all]), self.p.left["phasewrap"])
+                        self.flatfield[0], self.img_l.vort.tempscalegui.value() * self.zernikes_all, self.phase_tiptilt]), self.p.left["phasewrap"])
         r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
-                        self.flatfield[1], self.img_l.vort.tempscalegui.value() * self.zernikes_all]), self.p.right["phasewrap"])
+                        self.flatfield[1], self.img_l.vort.tempscalegui.value() * self.zernikes_all, self.phase_tiptilt]), self.p.right["phasewrap"])
         
         print(np.max(self.zernikes_all), np.max(self.img_l.data), np.max(self.img_l.aberr.data))
 
