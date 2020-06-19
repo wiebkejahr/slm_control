@@ -43,10 +43,10 @@ def test(model, input_image, model_store_path):
     with torch.no_grad():
         # adds 3rd color channel dim and batch dim 
         # NOTE: THIS IS ONLY FOR 1D
-        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
         # print(np.max(input_image), np.min(input_image))
-        # image = torch.from_numpy(input_image).unsqueeze(0)
+        image = torch.from_numpy(input_image).unsqueeze(0)
         
         outputs = model(image)
     coeffs = outputs.numpy().squeeze()
@@ -61,60 +61,12 @@ def test(model, input_image, model_store_path):
     # # return coeffs, np.corrcoef(donut.flat, corrected.flat)[0][1], corrected
     return coeffs
     
-
-def correct(model_store_path):
-    
-    # creates an instance of CNN
-    model = my_models.Net()
-
-    # acquire the image from Imspector    
-    # NOTE: from Imspector, must run Tools > Run Server for this to work
-    im = sp.Imspector()
-    
-    # print Imspector host and version
-    # print('Connected to Imspector {} on {}'.format(im.version(), im.host()))
-
-    # get active measurement 
-    msr = im.active_measurement()
-    image = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    
-    image = preprocess(image)
-    # # a little preprocessing
-    # image = normalize_img(np.squeeze(image)) # normalized (200,200) array
-    # image = crop_image(image, tol=0.1) # get rid of dark line on edge
-    # image = normalize_img(image) # renormalize
-    # image = resize(image, (64,64)) # resize
-    
-    # coeffs, _, image = test(model, image, model_store_path)
-    coeffs = test(model, image, model_store_path)
-
-    # a dictionary of correction terms to be passed to SLM control
-    corrections = {
-            "sphere": [
-                coeffs[9],
-                0.0
-            ],
-            "astig": [
-                coeffs[0],
-                coeffs[2]
-            ],
-            "coma": [
-                coeffs[4],
-                coeffs[5]
-            ],
-            "trefoil": [
-                coeffs[3],
-                coeffs[6]
-            ]
-        }
-
-    return corrections
     
 
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.Net()
+    model = my_models.MultiNet()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -156,20 +108,20 @@ def abberior_multi(model_store_path):
     # plt.show()
     # exit()
     # NOTE: going to 1D for now
-    # image_xz = helpers.preprocess(image_xz)
+    image_xz = helpers.preprocess(image_xz)
     #image_xz = np.fliplr(rotate(image_xz, -90))
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
     
-    # image_yz = helpers.preprocess(image_yz)
+    image_yz = helpers.preprocess(image_yz)
     #image_yz = np.fliplr(imgage_yz)
     
     # plt.figure()
     # plt.imshow(image_yz, aspect="equal")
     # plt.show()
     # ##################
-    # image = np.stack((image_xy,image_xz, image_yz), axis=0)    
+    image = np.stack((image_xy,image_xz, image_yz), axis=0)    
     # image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
     # fig = helpers.plot_xsection(image)
     # plt.show()
@@ -178,21 +130,22 @@ def abberior_multi(model_store_path):
     # print(np.max(image), np.min(image))
     # exit()
 
+    # image = image_xy
     # # coeffs, _, image = test(model, image, model_store_path)
-    coeffs = test(model, image_xy, model_store_path)
+    coeffs = test(model, image, model_store_path)
     # exit()
     # print(coeffs)
     # coeffs = results[:-2]
     # offset = results[-2:]
-    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False)
+    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
     # print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
-    plt.figure(1)
-    plt.imshow(image_xy, cmap='hot')
-    plt.figure(2)
-    plt.imshow(reconstructed, cmap='hot')
-    # fig = helpers.plot_xsection_abber(image_xy, reconstructed)
+    # plt.figure(1)
+    # plt.imshow(image_xy, cmap='hot')
+    # plt.figure(2)
+    # plt.imshow(reconstructed, cmap='hot')
+    fig = helpers.plot_xsection_abber(image, reconstructed)
     plt.show()
     
 

@@ -62,8 +62,9 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/20.05.04_noise_20k_local_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_2.pth"
 # MODEL_STORE_PATH="autoalign/models/20.05.27_shift_invariant_15k_eps_15_lr_0.001_bs_64_2.pth"
-MODEL_STORE_PATH="autoalign/models/20.16.06_1D_20k_eps_15_lr_0.001_bs_64.pth"
-MODEL_STORE_PATH="autoalign/models/20.16.06_1D_20k_eps_15_lr_0.001_bs_64_standardized_not_norm.pth"
+# MODEL_STORE_PATH="autoalign/models/20.16.06_1D_20k_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.16.06_1D_20k_eps_15_lr_0.001_bs_64_standardized_not_norm.pth"
+MODEL_STORE_PATH="autoalign/models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_standardized.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
