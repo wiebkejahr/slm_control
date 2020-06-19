@@ -53,19 +53,47 @@ def preprocess(image):
     image = (image - np.mean(image))/np.std(image)
     return image
 
-def get_tip_tilt(img, lambd=775, f=1.8, D=5.04):
-    # D is potentially 7.2 instead of 5.04, need to test it out
-    dx, dy = center_of_mass(img)
-    print('dx: {}   dy: {}'.format(dx, dy))
-    tip = (np.pi*dx)/(lambd*f)*D/2
-    tilt = (np.pi*dy)/(lambd*f)*D/2
-    print('tip: {}  tilt: {}'.format(tip*np.pi, tilt*np.pi))
-    img = shift(img, (tip, tilt))
-    return img, tip, tilt
+def get_D(a, dx, lambd=0.775, f=1.8):
 
-def center(image, res=64):
-    a, b = center_of_mass(image)
-    return shift(image, (res/2-b, res/2-a))#, mode='reflect')
+    return (a*lambd*f*2) / (np.pi*dx)
+
+def correct_tip_tilt(img, lambd=0.775, f=1.8, D=0.052):
+    # D is potentially 7.2 instead of 5.04, need to test it out
+    # testing showed D is 0.052, which is interesting as it's neither the other two
+    # potentially switched bc of np vs plt coordinate system
+    b, a = center_of_mass(img)
+    dx = 31.5-a
+    dy = 31.5-b
+    # print('dx: {}   dy: {}'.format(dx, dy))
+    xtilt = (np.pi*dx)/(lambd*f)*D/2
+    ytilt = (np.pi*dy)/(lambd*f)*D/2
+    print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
+
+    # NOTE: okay but what if instead I create an alternate phase mask with the coeffs and add it on
+    coeffs = np.asarray([0.0]*14)
+    coeffs[0] = xtilt
+    coeffs[1] = ytilt
+    new = get_sted_psf_tip_tilt(coeffs=coeffs)
+    return new
+    # plt.figure()
+    # plt.imshow(new, cmap='hot')
+    # plt.show()
+    # # img = shift(img, (dy, dx))
+    # # b, a = center_of_mass(img)
+    # # dx = 31.5-a
+    # # dy = 31.5-b
+    # # # print('dx: {}   dy: {}'.format(dx, dy))
+    # # xtilt = (np.pi*dx)/(lambd*f)*D/2
+    # # ytilt = (np.pi*dy)/(lambd*f)*D/2
+    # # print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
+    # # return img
+    # # NOTE: don't want to shift them by the tip/tilt, want to shift them by the dx and dy, right?
+    # return xtilt, ytilt
+
+# def center(image, res=64):
+#     a, b = center_of_mass(image)
+#     # print((res-1)/2-a) # -0.020355
+#     return shift(image, ((res-1)/2-a, (res-1)/2-b), mode='constant')
 
 
 def save_params(fname):
@@ -140,7 +168,8 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0]):
             10 = [3,3],     20 = [5,3],
     """
    # NOTE: starting with the 4th order, bc we set the first three to zero.
-    orders = [[1,-1], [1,1],
+    orders = [[1,-1], #Y-tilt
+            [1,1], # X-tilt
             [2,-2], [2,0], [2,2],
             [3,-3], [3,-1], [3,1],[3,3],
             [4,-4], [4,-2], [4,0], [4,2], [4,4]]
@@ -157,6 +186,8 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0]):
     zern = sum(terms)
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
+    # plt.imshow(zern)
+    # plt.show()
     return zern
 
 def create_phase(coeffs, res1=64, res2=64, offset=[0,0]):

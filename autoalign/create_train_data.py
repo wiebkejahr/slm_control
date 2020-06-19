@@ -79,32 +79,41 @@ def main(args):
     # test_data = []
 
 
-    for i in tqdm(range(train_num)):
+    for i in range(train_num):
         if args.mode == 'sted':
-            # img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
+            img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
             # coeffs = np.asarray([0.0]*14)
+            # coeffs[0] = 0.2
+            # coeffs[1] = 0.1
+            # coeffs[2] = 0.2
+            # coeffs[4] = 0.1
             # img = get_sted_psf_tip_tilt(coeffs=coeffs)
-            coeffs = np.asarray([0.0]*12)
-            img = get_sted_psf(coeffs=coeffs)
-            # coeffs[0] = 0.1
-            # print(coeffs)
-            # exit()
-            
-            # print(img.shape)
-            # print(center_of_mass(img))
-            # shift_img, tip, tilt = get_tip_tilt(img)
-            # dx, dy = center_of_mass(shift_img)
-            # print('dx: {}   dy: {}'.format(dx, dy))
             # img = center(img)
-            dx, dy = center_of_mass(img)
-            print('dx: {}   dy: {}'.format(dx, dy))
-            img = shift(img, (0.479644, 0.520355), mode='constant')
-            dx, dy = center_of_mass(img)
-            print('dx: {}   dy: {}'.format(dx, dy))
+            # coeffs = np.asarray([0.0]*12)
+            # img = get_sted_psf(coeffs=coeffs)
+            # a,b = center_of_mass(img)
+            # print(a,b)
+            # print(31.5-a, 31.5-b)
+
+            # D = get_D(a=coeffs[1], dx=abs(31.5-a))
+            # print(D)
+            # shift_img = correct_tip_tilt(img) # 0.0001
+            print(center_of_mass(img))
+            new = correct_tip_tilt(img)
+
             plt.figure(1)
             plt.imshow(img, cmap='hot')
+            # plt.scatter(31.5, 31.5, color='b')
+            a,b = center_of_mass(img)
+            plt.scatter(b, a, color='r')
+            plt.figure(2)
+            plt.imshow(new, cmap='hot')
+            plt.figure(3)
+            corrected = img+new
+            plt.imshow(corrected, cmap='hot')
+            print(center_of_mass(corrected))
+            # plt.scatter(b,a, color='r')
             # plt uses (x, y) while NumPy uses (row, column)
-            plt.scatter(dy,dx, color='r')
             plt.show()
             
             exit()
