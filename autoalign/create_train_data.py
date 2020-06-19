@@ -81,10 +81,34 @@ def main(args):
 
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
+            # img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
+            # coeffs = np.asarray([0.0]*14)
+            # img = get_sted_psf_tip_tilt(coeffs=coeffs)
+            coeffs = np.asarray([0.0]*12)
+            img = get_sted_psf(coeffs=coeffs)
+            # coeffs[0] = 0.1
+            # print(coeffs)
+            # exit()
+            
+            # print(img.shape)
+            # print(center_of_mass(img))
+            # shift_img, tip, tilt = get_tip_tilt(img)
+            # dx, dy = center_of_mass(shift_img)
+            # print('dx: {}   dy: {}'.format(dx, dy))
+            # img = center(img)
+            dx, dy = center_of_mass(img)
+            print('dx: {}   dy: {}'.format(dx, dy))
+            img = shift(img, (0.479644, 0.520355), mode='constant')
+            dx, dy = center_of_mass(img)
+            print('dx: {}   dy: {}'.format(dx, dy))
             plt.figure(1)
+            plt.imshow(img, cmap='hot')
+            # plt uses (x, y) while NumPy uses (row, column)
+            plt.scatter(dy,dx, color='r')
+            plt.show()
             
-            
+            exit()
+            # plt.figure(1)
             # print(np.max(img), np.min(img))
             # print(np.mean(img), np.std(img))
             
@@ -97,7 +121,7 @@ def main(args):
             # plt.figure(3)
             # plt.imshow(img3, cmap='hot')
             # plt.show()
-            exit()
+            
             # train_data.append(center(img))
             # plt.figure(1)
             # plt.imshow(img)

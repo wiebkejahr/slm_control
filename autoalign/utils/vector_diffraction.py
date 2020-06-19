@@ -299,7 +299,7 @@ if __name__ == "__main__":
         }
     
     numerical_params = {
-        "out_scrn_size" : 1,
+        "out_scrn_size" : 1, #um
         "z_extent" : 1,
         "out_res" : 64,
         "inp_res" : 64
