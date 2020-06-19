@@ -43,10 +43,10 @@ def test(model, input_image, model_store_path):
     with torch.no_grad():
         # adds 3rd color channel dim and batch dim 
         # NOTE: THIS IS ONLY FOR 1D
-        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
         # print(np.max(input_image), np.min(input_image))
-        image = torch.from_numpy(input_image).unsqueeze(0)
+        # image = torch.from_numpy(input_image).unsqueeze(0)
         
         outputs = model(image)
     coeffs = outputs.numpy().squeeze()
@@ -61,12 +61,22 @@ def test(model, input_image, model_store_path):
     # # return coeffs, np.corrcoef(donut.flat, corrected.flat)[0][1], corrected
     return coeffs
     
+def correct_tip_tilt():
+    # get active measurement 
+    msr = im.active_measurement()
+    try:
+        image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+    except:
+        print("Cannot find 'ExpControl Ch1 {1}' window")
+        exit()
+    image = helpers.preprocess(image_xy)
+    return helpers.calc_tip_tilt(image)
     
 
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.MultiNet()
+    model = my_models.Net()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -100,6 +110,8 @@ def abberior_multi(model_store_path):
     # print(np.min(image_xy), np.max(image_xy))
     # image_xy = (image_xy-np.mean(image_xy))/np.std(image_xy)
     print(np.min(image_xy), np.max(image_xy))
+    
+    
     # print(image_xy.shape)
     # print(center_of_mass(image_xy))
     # exit()
@@ -147,7 +159,10 @@ def abberior_multi(model_store_path):
     # plt.imshow(reconstructed, cmap='hot')
     fig = helpers.plot_xsection_abber(image, reconstructed)
     plt.show()
-    
+
+    return coeffs
+
+        
 
     # print(coeffs)
     # a dictionary of correction terms to be passed to SLM control
@@ -171,7 +186,9 @@ def abberior_multi(model_store_path):
     #     }
 
     # return corrections
-    return coeffs
+
+
+
 
 if __name__ == "__main__":
     abberior_multi('models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_2.pth')

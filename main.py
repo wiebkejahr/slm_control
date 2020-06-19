@@ -173,6 +173,11 @@ class Main_Window(QtWidgets.QMainWindow):
         self.p.write_file(fname[0], self.current_objective, fname[1])
         
         
+    def correct_tiptilt(self):
+        self.tiptilt = abberior.correct_tip_tilt()
+        self.correct_tiptilt = (-1.)*helpers.create_phase_tip_tilt(self.tiptilt, res1=600, res2=396)
+        print(self.tiptilt)
+    
     # NOTE: I WROTE THIS
     def auto_align(self, model_store_path=MODEL_STORE_PATH):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
@@ -211,11 +216,6 @@ class Main_Window(QtWidgets.QMainWindow):
         # #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
 
         self.recalc_images()
-
-    def scale_weights(zernike):
-
-
-        pass  
         
     def init_images(self):
         """ Called upon startup of the program. Initizialises the variables
@@ -292,6 +292,10 @@ class Main_Window(QtWidgets.QMainWindow):
         vbox.addLayout(hbox)
         # NOTE: I WROTE THIS
         self.crea_but(hbox, self.auto_align, "Auto Align")
+
+        vbox.addLayout(hbox)
+        # NOTE: I WROTE THIS
+        self.crea_but(hbox, self.correct_tiptilt, "Tip/Tilt")
                     
         # doesn't do anything at the moment, could be used to set another path
         # to load the images from

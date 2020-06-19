@@ -57,7 +57,9 @@ def get_D(a, dx, lambd=0.775, f=1.8):
 
     return (a*lambd*f*2) / (np.pi*dx)
 
-def correct_tip_tilt(img, lambd=0.775, f=1.8, D=0.052):
+def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.052):
+    """this fn RETURNS THE COEFFS OF THE CALCULATED TIP TILT
+    """
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
@@ -69,12 +71,8 @@ def correct_tip_tilt(img, lambd=0.775, f=1.8, D=0.052):
     ytilt = (np.pi*dy)/(lambd*f)*D/2
     print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
 
-    # NOTE: okay but what if instead I create an alternate phase mask with the coeffs and add it on
-    coeffs = np.asarray([0.0]*14)
-    coeffs[0] = xtilt
-    coeffs[1] = ytilt
-    new = get_sted_psf_tip_tilt(coeffs=coeffs)
-    return new
+    tiptilt_mask = create_phase_tip_tilt(coeffs=[xtilt, ytilt])
+    return xtilt, ytilt
     # plt.figure()
     # plt.imshow(new, cmap='hot')
     # plt.show()
@@ -169,10 +167,7 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0]):
     """
    # NOTE: starting with the 4th order, bc we set the first three to zero.
     orders = [[1,-1], #Y-tilt
-            [1,1], # X-tilt
-            [2,-2], [2,0], [2,2],
-            [3,-3], [3,-1], [3,1],[3,3],
-            [4,-4], [4,-2], [4,0], [4,2], [4,4]]
+            [1,1]] # X-tilt
     # sanity checks
     assert(len(coeffs) == len(orders)) # should both be 14
     assert(isinstance(i, float) for i in coeffs)
