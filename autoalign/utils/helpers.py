@@ -60,16 +60,16 @@ def preprocess(image):
 def get_D(a, dx, lambd=0.775, f=1.8):
     return (a*lambd*f*2) / (np.pi*dx)
 
-def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776):
-    """this fn RETURNS THE COEFFS OF THE CALCULATED TIP TILT
+def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10):
+    """this fn returns the coeffs of the calculated tip/tilt
+    TODO:read px_size from imspector!
     """
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
-    #img = (img - np.max(img)) / (img - np.min(img))
-    # img = (img - np.mean(img)) / np.std(img)
+
     img = np.squeeze(img)[1:-1, 1:-1]
-    px_size = 10 # in nm. TODO:read from imspector!
+    
     # D = 5.04 # in mm. TODO: doublecheck what this should be!
     
     threshold_value = filters.threshold_otsu(img)
@@ -85,9 +85,6 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776):
     
     
     print(b,a)
-    # b=147
-    # a=89
-    # print(get_D(a=0.5, dx=25)) #0.01776 for both
     dx = (np.shape(img)[0]-1)/2-a
     dy = (np.shape(img)[1]-1)/2-b
     # print('dx: {}   dy: {}'.format(dx, dy))
@@ -209,7 +206,7 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
     # plt.show()
     return zern
 
-def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2):
+def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=False):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -231,9 +228,14 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2):
             10 = [3,3],     20 = [5,3],
     """
    # NOTE: starting with the 4th order, bc we set the first three to zero.
-    orders = [[2,-2], [2,0], [2,2],
-            [3,-3], [3,-1], [3,1],[3,3],
-            [4,-4], [4,-2], [4,0], [4,2], [4,4]]
+    if defocus:
+        orders = [[2,-2], [2,0], [2,2],
+                [3,-3], [3,-1], [3,1],[3,3],
+                [4,-4], [4,-2], [4,0], [4,2], [4,4]]
+    else:
+        orders = [[2,-2], [2,2], # no defocus
+                [3,-3], [3,-1], [3,1],[3,3],
+                [4,-4], [4,-2], [4,0], [4,2], [4,4]]
     # sanity checks
     assert(len(coeffs) == len(orders)) # should both be 12
     assert(isinstance(i, float) for i in coeffs)
@@ -251,11 +253,14 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2):
     return zern
 
 
-def gen_sted_psf(res=64, offset=False,  multi=False):
+def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    coeffs = gen_coeffs()
+    if defocus:
+        coeffs = gen_coeffs(num=12)
+    else:
+        coeffs = gen_coeffs(num=11)
     
     if offset:
         offset_label = gen_offset()
