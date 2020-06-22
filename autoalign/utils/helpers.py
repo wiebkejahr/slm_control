@@ -64,7 +64,7 @@ def correct_tip_tilt(img, lambd=0.775, f=1.8, D=0.052):
     b, a = center_of_mass(img)
     dx = 31.5-a
     dy = 31.5-b
-    # print('dx: {}   dy: {}'.format(dx, dy))
+    print('dx: {}   dy: {}'.format(dx, dy))
     xtilt = (np.pi*dx)/(lambd*f)*D/2
     ytilt = (np.pi*dy)/(lambd*f)*D/2
     print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))

@@ -43,10 +43,10 @@ def test(model, input_image, model_store_path):
     with torch.no_grad():
         # adds 3rd color channel dim and batch dim 
         # NOTE: THIS IS ONLY FOR 1D
-        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
         # print(np.max(input_image), np.min(input_image))
-        image = torch.from_numpy(input_image).unsqueeze(0)
+        # image = torch.from_numpy(input_image).unsqueeze(0)
         
         outputs = model(image)
     coeffs = outputs.numpy().squeeze()
@@ -66,7 +66,7 @@ def test(model, input_image, model_store_path):
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
-    model = my_models.MultiNet()
+    model = my_models.Net()
 
     # acquire the image from Imspector    
     # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -97,9 +97,12 @@ def abberior_multi(model_store_path):
     # print(center_of_mass(image_xy))
     
     image_xy = helpers.preprocess(image_xy)
+    # NOTE: why is the center of mass so large??
     # print(np.min(image_xy), np.max(image_xy))
     # image_xy = (image_xy-np.mean(image_xy))/np.std(image_xy)
-    print(np.min(image_xy), np.max(image_xy))
+    print(np.mean(image_xy), np.std(image_xy))
+    new = helpers.correct_tip_tilt(image_xy)
+    exit()
     # print(image_xy.shape)
     # print(center_of_mass(image_xy))
     # exit()
@@ -130,7 +133,7 @@ def abberior_multi(model_store_path):
     # print(np.max(image), np.min(image))
     # exit()
 
-    # image = image_xy
+    image = image_xy
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
     # exit()
@@ -141,11 +144,11 @@ def abberior_multi(model_store_path):
     # print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
-    # plt.figure(1)
-    # plt.imshow(image_xy, cmap='hot')
-    # plt.figure(2)
-    # plt.imshow(reconstructed, cmap='hot')
-    fig = helpers.plot_xsection_abber(image, reconstructed)
+    plt.figure(1)
+    plt.imshow(image_xy, cmap='hot')
+    plt.figure(2)
+    plt.imshow(reconstructed, cmap='hot')
+    # fig = helpers.plot_xsection_abber(image, reconstructed)
     plt.show()
     
 
