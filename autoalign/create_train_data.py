@@ -81,7 +81,13 @@ def main(args):
 
     for i in range(train_num):
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
+            # img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
+            img = get_sted_psf_tip_tilt(coeffs=[1,1])
+            plt.imshow(img, cmap='hot')
+            a, b = center_of_mass(img)
+            plt.scatter(b,a, color='b')
+            plt.show()
+            exit()
             # coeffs = np.asarray([0.0]*14)
             # coeffs[0] = 0.2
             # coeffs[1] = 0.1
