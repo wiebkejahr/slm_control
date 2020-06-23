@@ -60,6 +60,31 @@ def preprocess(image):
 def get_D(a, dx, lambd=0.775, f=1.8):
     return (a*lambd*f*2) / (np.pi*dx)
 
+
+def get_CoM(img):
+    threshold_value = filters.threshold_otsu(img)
+    labeled_foreground = (img > threshold_value).astype(int)
+    properties = regionprops(labeled_foreground, img)
+    center_of_mass = properties[0].centroid
+    print(center_of_mass)
+    b = center_of_mass[0]
+    a = center_of_mass[1]
+    return b,a
+
+def calc_defocus(img_xz, img_yz):
+    img_xz = np.squeeze(img_xz)[1:-1, 1:-1]
+    
+    b_xz, a_xz = get_CoM(img_xz)
+
+    img_yz = np.squeeze(img_yz)[1:-1, 1:-1]
+
+    b_yz, a_yz = get_CoM(img_yz)
+    
+    val = np.average([a_xz, a_yz])
+    const = 0
+    return const*val
+
+
 def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10):
     """this fn returns the coeffs of the calculated tip/tilt
     TODO:read px_size from imspector!
@@ -72,17 +97,17 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10):
     
     # D = 5.04 # in mm. TODO: doublecheck what this should be!
     
-    threshold_value = filters.threshold_otsu(img)
-    labeled_foreground = (img > threshold_value).astype(int)
-    properties = regionprops(labeled_foreground, img)
-    center_of_mass = properties[0].centroid
-    print(center_of_mass)
-    b = center_of_mass[0]
-    a = center_of_mass[1]
+    # threshold_value = filters.threshold_otsu(img)
+    # labeled_foreground = (img > threshold_value).astype(int)
+    # properties = regionprops(labeled_foreground, img)
+    # center_of_mass = properties[0].centroid
+    # print(center_of_mass)
+    # b = center_of_mass[0]
+    # a = center_of_mass[1]
     # plt.imshow(img)
     # plt.scatter(a,b, color='b')
     # plt.show()
-    
+    b, a = get_CoM(img)
     
     print(b,a)
     dx = (np.shape(img)[0]-1)/2-a
@@ -94,6 +119,25 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10):
 
     # tiptilt_mask = create_phase_tip_tilt(coeffs=[xtilt, ytilt])
     return [xtilt, ytilt]
+    # plt.figure()
+    # plt.imshow(new, cmap='hot')
+    # plt.show()
+    # # img = shift(img, (dy, dx))
+    # # b, a = center_of_mass(img)
+    # # dx = 31.5-a
+    # # dy = 31.5-b
+    # # # print('dx: {}   dy: {}'.format(dx, dy))
+    # # xtilt = (np.pi*dx)/(lambd*f)*D/2
+    # # ytilt = (np.pi*dy)/(lambd*f)*D/2
+    # # print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
+    # # return img
+    # # NOTE: don't want to shift them by the tip/tilt, want to shift them by the dx and dy, right?
+    # return xtilt, ytilt
+
+# def center(image, res=64):
+#     a, b = center_of_mass(image)
+#     # print((res-1)/2-a) # -0.020355
+#     return shift(image, ((res-1)/2-a, (res-1)/2-b), mode='constant')
 
 
 def save_params(fname):
@@ -248,7 +292,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     else:
         offset_label = np.asarray([0,0])
 
-    zern = create_phase(coeffs, res, res, offset_label, defocus=defocus)
+    zern = create_phase(coeffs, res, res, offset_label)
     
     if multi:
         plane = 'all'
