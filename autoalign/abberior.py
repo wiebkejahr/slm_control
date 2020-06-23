@@ -76,11 +76,37 @@ def correct_tip_tilt():
         exit()
     # image = helpers.preprocess(image_xy) # (64,64), values (-.5, 4)
     return helpers.calc_tip_tilt(image_xy)
+
+def correct_defocus(const=0):
+    # acquire the image from Imspector    
+    # NOTE: from Imspector, must run Tools > Run Server for this to work
+    #x = [0.0, 0.025, 0.05, 0.1, 0.0, -0.025, -0.05, -0.1, 0.0]
+    #y = [51.0953751869621, 51.38127570663089, 51.47044657188718, 52.00566108408576, 51.68171180185857, 52.28224133443203, 52.18034362082555, 52.02026189327759, 52.9484754882291 ]    
+    x = [0.1,0.0,-0.1]
+    y = [51.03816390888528, 50.59826488069055, 49.71942127100279]    
+    helpers.fit(x, y)
+    im = sp.Imspector()
+    
+    # get active measurement 
+    msr = im.active_measurement()
+    try:
+        image_xz = msr.stack('ExpControl Ch1 {13}').data()
+    except:
+        print("Cannot find 'ExpControl Ch1 {13}' window")
+        exit()
+    try:
+        image_yz = msr.stack('ExpControl Ch1 {15}').data()
+    except:
+        print("Cannot find 'ExpControl Ch1 {15}' window")
+    # image = helpers.preprocess(image_xy) # (64,64), values (-.5, 4)
+    return helpers.calc_defocus(image_xz, image_yz, const=const)
+
     
 
 def abberior_multi(model_store_path):
     # creates an instance of CNN
     
+    # model = my_models.MultiNetCentered()
     model = my_models.Net()
 
     # acquire the image from Imspector    
@@ -115,7 +141,7 @@ def abberior_multi(model_store_path):
     # NOTE: why is the center of mass so large??
     # print(np.min(image_xy), np.max(image_xy))
     # image_xy = (image_xy-np.mean(image_xy))/np.std(image_xy)
-    print(np.min(image_xy), np.max(image_xy))
+    # print(np.min(image_xy), np.max(image_xy))
     
     
     # print(image_xy.shape)
@@ -151,11 +177,12 @@ def abberior_multi(model_store_path):
     image = image_xy
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
+    print(len(coeffs))
     # exit()
     # print(coeffs)
     # coeffs = results[:-2]
     # offset = results[-2:]
-    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=True)
+    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False, defocus=True)
     # print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
