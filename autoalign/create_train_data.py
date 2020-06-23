@@ -59,12 +59,12 @@ def main(args):
     test_shape = (test_num, channel_num, res, res)
 
     # open a hdf5 file and create arrays
-    # hdf5_file = h5py.File(hdf5_path, mode='w-')
+    hdf5_file = h5py.File(hdf5_path, mode='w-')
 
-    # # create the image arrays
-    # hdf5_file.create_dataset("train_img", train_shape, np.float32)
-    # hdf5_file.create_dataset("val_img", val_shape, np.float32)
-    # hdf5_file.create_dataset("test_img", test_shape, np.float32)
+    # create the image arrays
+    hdf5_file.create_dataset("train_img", train_shape, np.float32)
+    hdf5_file.create_dataset("val_img", val_shape, np.float32)
+    hdf5_file.create_dataset("test_img", test_shape, np.float32)
     
     train_labels = []
     val_labels = []
@@ -74,98 +74,39 @@ def main(args):
         label_dim = 14
     else:
         label_dim = 12
-
-    # train_data = []
-    # val_data = []
-    # test_data = []
+    #NOTE: overriding
+    label_dim = 11
 
 
-    for i in range(train_num):
+
+    for i in tqdm(range(train_num)):
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
+            img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
             # img = get_sted_psf_tip_tilt(coeffs=[1,1])
-            print(zern_label)
-            plt.imshow(img, cmap='hot')
-            a, b = center_of_mass(img)
-            plt.scatter(b,a, color='b')
-            plt.show()
-            exit()
-            # coeffs = np.asarray([0.0]*14)
-            # coeffs[0] = 0.2
-            # coeffs[1] = 0.1
-            # coeffs[2] = 0.2
-            # coeffs[4] = 0.1
-            # img = get_sted_psf_tip_tilt(coeffs=coeffs)
-            # img = center(img)
-            # coeffs = np.asarray([0.0]*12)
-            # img = get_sted_psf(coeffs=coeffs)
-            # a,b = center_of_mass(img)
-            # print(a,b)
-            # print(31.5-a, 31.5-b)
-
-            # D = get_D(a=coeffs[1], dx=abs(31.5-a))
-            # print(D)
-            # shift_img = correct_tip_tilt(img) # 0.0001
-            print(center_of_mass(img))
-            new = correct_tip_tilt(img)
-
-            plt.figure(1)
-            plt.imshow(img, cmap='hot')
-            # plt.scatter(31.5, 31.5, color='b')
-            a,b = center_of_mass(img)
-            plt.scatter(b, a, color='r')
-            plt.figure(2)
-            plt.imshow(new, cmap='hot')
-            plt.figure(3)
-            corrected = img+new
-            plt.imshow(corrected, cmap='hot')
-            print(center_of_mass(corrected))
-            # plt.scatter(b,a, color='r')
-            # plt uses (x, y) while NumPy uses (row, column)
-            plt.show()
-            
-            exit()
-            # plt.figure(1)
-            # print(np.max(img), np.min(img))
-            # print(np.mean(img), np.std(img))
-            
-            
-            # plt.figure(2)
-            # plt.imshow(img2, cmap='hot')
-            # img3 = normalize_img(img)
-            # print(np.mean(img3), np.std(img3)) # 0.09, 0.17
-            # print(np.max(img3), np.min(img3)) # [1, 0]
-            # plt.figure(3)
-            # plt.imshow(img3, cmap='hot')
+            # print(zern_label)
+            # plt.imshow(img, cmap='hot')
+            # a, b = center_of_mass(img)
+            # plt.scatter(b,a, color='b')
             # plt.show()
-            
-            # train_data.append(center(img))
-            # plt.figure(1)
-            # plt.imshow(img)
-            # plt.show()
-            # # train_data.append(center(np.fliplr(img)))
-            # plt.figure(2)
-            # plt.imshow(center(np.fliplr(img)))
-            # plt.show()
-            # train_data.append(center(np.flipud(img)))
-            # plt.figure(3)
-            # plt.imshow(center(np.flipud(img)))
-            # plt.show()
-            # train_data.append(center(rotate(img, angle=90)))
-            # plt.figure(4)
-            # plt.imshow(center(rotate(img, angle=90)))
-            # plt.figure(5)
-            # plt.imshow(img)
-            # plt.scatter(center_of_mass(img)[0], center_of_mass(img)[1], color='r')
-            # print(center_of_mass(img)[0], center_of_mass(img)[1])
-            # plt.show()
-            
             # exit()
-            # for j in range(3):
-            #     train_labels.append(zern_label)
-            # print(np.max(img), np.min(img))
-            # a = center_of_mass(img)
-            # print(a)
+            # # coeffs = np.asarray([0.0]*14)
+            # # coeffs[0] = 0.2
+            # # coeffs[1] = 0.1
+            # # coeffs[2] = 0.2
+            # # coeffs[4] = 0.1
+            # # img = get_sted_psf_tip_tilt(coeffs=coeffs)
+            # # img = center(img)
+            # # coeffs = np.asarray([0.0]*12)
+            # # img = get_sted_psf(coeffs=coeffs)
+            # # a,b = center_of_mass(img)
+            # # print(a,b)
+            # # print(31.5-a, 31.5-b)
+
+            # # D = get_D(a=coeffs[1], dx=abs(31.5-a))
+            # # print(D)
+            # # shift_img = correct_tip_tilt(img) # 0.0001
+            # print(center_of_mass(img))
+            # new = correct_tip_tilt(img)
             
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
@@ -186,14 +127,8 @@ def main(args):
     
     for i in tqdm(range(val_num)):
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
-            # val_data.append(center(img))
-            # val_data.append(center(np.fliplr(img)))
-            # val_data.append(center(np.flipud(img)))
-            # val_data.append(center(rotate(img, angle=90)))
-            
-            # for j in range(3):
-            #     val_labels.append(zern_label)
+            img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
+
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
@@ -214,15 +149,8 @@ def main(args):
     for i in tqdm(range(test_num)):
         
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi)
-            # test_data.append(img)
-            # test_data.append(center(img))
-            # test_data.append(center(np.fliplr(img)))
-            # test_data.append(center(np.flipud(img)))
-            # test_data.append(center(rotate(img, angle=90)))
-            
-            # for j in range(3):
-            #     test_labels.append(zern_label)
+            img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
+
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
@@ -231,15 +159,11 @@ def main(args):
             test_labels.append(zern_label+offset_label)
         else:
             test_labels.append(zern_label)
-            # full.append(zern_label)
+            
   
     
         hdf5_file["test_img"][i, ...] = img[None]
-    # hdf5_file["test_img"][...] = np.expand_dims(test_data, axis=1)
-    # with open('full.txt', 'w') as f:
-    #     for i in range(len(full)):
-    #         f.write("{}\n".format(full[i]))
-    
+
     # create the label array
     hdf5_file.create_dataset("test_labels", (test_num, label_dim), np.float32)
     hdf5_file["test_labels"][...] = test_labels

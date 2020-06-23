@@ -94,25 +94,6 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10):
 
     # tiptilt_mask = create_phase_tip_tilt(coeffs=[xtilt, ytilt])
     return [xtilt, ytilt]
-    # plt.figure()
-    # plt.imshow(new, cmap='hot')
-    # plt.show()
-    # # img = shift(img, (dy, dx))
-    # # b, a = center_of_mass(img)
-    # # dx = 31.5-a
-    # # dy = 31.5-b
-    # # # print('dx: {}   dy: {}'.format(dx, dy))
-    # # xtilt = (np.pi*dx)/(lambd*f)*D/2
-    # # ytilt = (np.pi*dy)/(lambd*f)*D/2
-    # # print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
-    # # return img
-    # # NOTE: don't want to shift them by the tip/tilt, want to shift them by the dx and dy, right?
-    # return xtilt, ytilt
-
-# def center(image, res=64):
-#     a, b = center_of_mass(image)
-#     # print((res-1)/2-a) # -0.020355
-#     return shift(image, ((res-1)/2-a, (res-1)/2-b), mode='constant')
 
 
 def save_params(fname):
@@ -267,7 +248,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     else:
         offset_label = np.asarray([0,0])
 
-    zern = create_phase(coeffs, res, res, offset_label)
+    zern = create_phase(coeffs, res, res, offset_label, defocus=defocus)
     
     if multi:
         plane = 'all'

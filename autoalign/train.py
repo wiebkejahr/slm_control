@@ -194,6 +194,8 @@ def main(args):
         else:
             model = my_models.Net()
 
+    model = my_models.MultiNetCentered()
+
     print(model)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)

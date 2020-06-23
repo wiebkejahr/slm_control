@@ -139,14 +139,14 @@ class MultiNetCat(nn.Module):
         return a
 
 
-class MultiNetShift(nn.Module):
+class MultiNetCentered(nn.Module):
     """
     A simple CNN based on AlexNet
     Architecture modified from Zhang et. al, "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
     to include a multi-channelled image
     """
     def __init__(self):
-        super(MultiNetShift, self).__init__()
+        super(MultiNetCentered, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, 5, padding=2)
         self.conv2 = nn.Conv2d(32, 32, 5, padding=2) 
         self.conv3 = nn.Conv2d(32, 64, 3, padding=1)

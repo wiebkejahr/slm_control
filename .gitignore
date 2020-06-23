@@ -152,3 +152,5 @@ autoalign/models/20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_tes
 autoalign/models/20.05.27_shift_invariant_15k_eps_15_lr_0.001_bs_64_new_model.pth
 
 # autoalign/models/20.16.06_1D_20k_eps_10_lr_0.001_bs_64_standardized_not_norm.pth
+autoalign/models/testing_no_defocus_multi_eps_15_lr_0.001_bs_64_standardized_check.pth
+autoalign/models/testing_no_defocus_multi_eps_15_lr_0.001_bs_64_standardized.pth
