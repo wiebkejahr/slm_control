@@ -18,6 +18,7 @@ from torch.utils.data import Dataset, DataLoader
 from skimage.transform import resize, rotate
 import skimage
 from scipy.ndimage.measurements import center_of_mass
+from sklearn.linear_model import LinearRegression
 
 from skimage import filters
 from skimage.measure import regionprops
@@ -60,6 +61,19 @@ def preprocess(image):
 def get_D(a, dx, lambd=0.775, f=1.8):
     return (a*lambd*f*2) / (np.pi*dx)
 
+def fit(x,y):
+    #from sklearn.linear_model import LinearRegression
+    x = np.asarray(x).reshape(-1,1)
+    model = LinearRegression().fit(x, y)
+    r_sq = model.score(x, y)
+    print('coefficient of determination:', r_sq)
+    print('intercept:', model.intercept_)
+    print('slope:', model.coef_)
+    plt.figure()
+    plt.scatter(x, y)
+    plt.plot(x, model.coef_*x+model.intercept_)
+    plt.show()
+    # return model
 
 def get_CoM(img):
     threshold_value = filters.threshold_otsu(img)
