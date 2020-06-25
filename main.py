@@ -65,6 +65,7 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/20.16.06_1D_20k_eps_15_lr_0.001_bs_64.pth"
 MODEL_STORE_PATH="autoalign/models/20.16.06_1D_20k_eps_15_lr_0.001_bs_64_standardized_not_norm.pth"
 # MODEL_STORE_PATH="autoalign/models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_standardized.pth"
+# MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_15_lr_0.001_bs_64.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -154,6 +155,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_r.update_guivalues(self.p, self.p.right)
         self.zernikes_all = np.zeros_like(self.img_l.data)
         self.phase_tiptilt = np.zeros_like(self.img_l.data)
+        self.phase_defocus = np.zeros_like(self.img_l.data)
 
         #self.objective_changed()
         # TODO WJ
@@ -173,7 +175,12 @@ class Main_Window(QtWidgets.QMainWindow):
         
         self.p.write_file(fname[0], self.current_objective, fname[1])
         
-        
+
+    def correct_defocus(self):
+        self.defocus = abberior.correct_defocus(const = 0.1)#(const=1/6.59371319)
+        self.phase_defocus = self.phase_defocus + pcalc.crop((1.)*helpers.create_phase_defocus(self.defocus, res1=1200, res2=792, radscale = self.slm_radius), [600, 396], offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+        self.recalc_images()
+
     def correct_tiptilt(self):
         self.tiptilt = abberior.correct_tip_tilt()
         self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase_tip_tilt(self.tiptilt, res1=600, res2=396, radscale = 2*self.rtiptilt)
@@ -186,9 +193,10 @@ class Main_Window(QtWidgets.QMainWindow):
         
         # NOTE: need to know from the model itself which model to use, maybe some kind of json like for
         # the obejctives, but for now, can change manually 
+        size = 2 * np.asarray(self.p.general["size_slm"])
         self.zernike = abberior.abberior_multi(MODEL_STORE_PATH)
         # this needs to be scaled by some factor that's input from the GUI
-        self.zernikes_all = self.zernikes_all + pcalc.crop((1.)*helpers.create_phase(self.zernike, res1=1200, res2=792, radscale = self.slm_radius), [600, 396])
+        self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, res1=size[0], res2=size[1], radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
         #self.zernikes_all = self.zernikes_all + (-1.)*helpers.create_phase(self.zernike, res1=600, res2=396, radscale = 4*self.slm_radius)
         plt.imshow(self.zernikes_all)
         plt.show()
@@ -234,7 +242,7 @@ class Main_Window(QtWidgets.QMainWindow):
 
         self.zernikes_all = np.zeros_like(self.img_l.data)
         self.phase_tiptilt = np.zeros_like(self.img_l.data)
-        
+        self.phase_defocus = np.zeros_like(self.img_l.data)
         
     def init_zernikes(self):
         """ Creates a dictionary containing all of the Zernike polynomials by
@@ -300,6 +308,7 @@ class Main_Window(QtWidgets.QMainWindow):
         vbox.addLayout(hbox)
         # NOTE: I WROTE THIS
         self.crea_but(hbox, self.correct_tiptilt, "Tip/Tilt")
+        self.crea_but(hbox, self.correct_defocus, "Defocus")
                     
         # doesn't do anything at the moment, could be used to set another path
         # to load the images from
@@ -609,12 +618,12 @@ class Main_Window(QtWidgets.QMainWindow):
             into the Pixmap for display. """
             
         l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
-                        self.flatfield[0], self.img_l.vort.tempscalegui.value() * self.zernikes_all, self.phase_tiptilt]), self.p.left["phasewrap"])
+                        self.flatfield[0], self.img_l.vort.tempscalegui.value() * self.zernikes_all, self.phase_tiptilt, self.phase_defocus]), self.p.left["phasewrap"])
         r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
-                        self.flatfield[1], self.img_l.vort.tempscalegui.value() * self.zernikes_all, self.phase_tiptilt]), self.p.right["phasewrap"])
+                        self.flatfield[1], self.img_l.vort.tempscalegui.value() * self.zernikes_all, self.phase_tiptilt, self.phase_defocus]), self.p.right["phasewrap"])
         
-        print(np.max(self.zernikes_all), np.max(self.img_l.data), np.max(self.img_l.aberr.data))
-
+        #print(np.max(self.zernikes_all), np.max(self.img_l.data), np.max(self.img_l.aberr.data))
+        print("sum tip tilt", np.sum(self.phase_tiptilt), "sum zern", np.sum(self.zernikes_all), "sum defoc", np.sum(self.phase_defocus))
         self.img_data = pcalc.stitch_images(l * self.p.left["slm_range"],
                                             r * self.p.right["slm_range"])
         
