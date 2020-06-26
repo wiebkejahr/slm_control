@@ -55,6 +55,9 @@ def test(model, test_loader, logdir, model_store_path):
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             
             # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
+            xtilt, ytilt = calc_tip_tilt(images.numpy().squeeze(), abberior=False)
+            print(xtilt, ytilt)
+            exit
             print(np.min(images.numpy()), np.max(images.numpy()))
             print(np.mean(images.numpy()), np.std(images.numpy()))
             # images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))

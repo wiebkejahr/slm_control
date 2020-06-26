@@ -34,9 +34,9 @@ import autoalign.utils.my_classes as my_classes
 from autoalign.utils.xysted import fluor_psf, sted_psf
 from autoalign.utils.vector_diffraction import vector_diffraction as vd
 
-# def normalize_img(img):
-#     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
-#     return (img-np.min(img))/(np.max(img)-np.min(img))
+def normalize_img(img):
+    """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
+    return (img-np.min(img))/(np.max(img)-np.min(img))
 
 def add_noise(img):
     """Adds Poisson noise to the image using skimage's built-in method. Function normalizes image before adding noise"""
@@ -125,15 +125,15 @@ def calc_defocus(img_xz, img_yz, const=0):
     return [const*val]
 
 
-def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10):
+def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10, abberior=True):
     """this fn returns the coeffs of the calculated tip/tilt
     TODO:read px_size from imspector!
     """
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
-
-    img = np.squeeze(img)[1:-1, 1:-1]
+    if abberior:
+        img = np.squeeze(img)[1:-1, 1:-1]
     
     # D = 5.04 # in mm. TODO: doublecheck what this should be!
     
