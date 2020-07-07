@@ -57,7 +57,7 @@ def test(model, test_loader, logdir, model_store_path):
             # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
             xtilt, ytilt = calc_tip_tilt(images.numpy().squeeze(), abberior=False)
             print(xtilt, ytilt)
-            exit
+            exit()
             print(np.min(images.numpy()), np.max(images.numpy()))
             print(np.mean(images.numpy()), np.std(images.numpy()))
             # images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))
@@ -128,7 +128,7 @@ def main(args):
         else:
             model = my_models.Net()
     
-    # model = my_models.Net()
+    model = my_models.MultiNetCentered()
     # print(model)
     
     # NOTE: this part needs work. determine which model to use from loading the data and checking the shape
