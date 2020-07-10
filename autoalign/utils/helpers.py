@@ -322,7 +322,7 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=T
     zern = sum(terms)
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
-    zern = zern + tiptilt
+    # zern = zern + tiptilt
     return zern
 
 

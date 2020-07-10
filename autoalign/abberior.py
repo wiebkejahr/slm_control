@@ -33,41 +33,41 @@ def test(model, input_image, model_store_path):
     # load the model weights from training
     checkpoint = torch.load(model_store_path)
     model.load_state_dict(checkpoint['model_state_dict'])
-    
+
     # mean = 0.1083
     # std = 0.2225
-    
+
     # Test the model
     model.eval()
-    
+
     with torch.no_grad():
-        # adds 3rd color channel dim and batch dim 
+        # adds 3rd color channel dim and batch dim
         # NOTE: THIS IS ONLY FOR 1D
-        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
         # print(np.max(input_image), np.min(input_image))
-        # image = torch.from_numpy(input_image).unsqueeze(0)
-        
+        image = torch.from_numpy(input_image).unsqueeze(0)
+
         outputs = model(image)
     coeffs = outputs.numpy().squeeze()
-   
+
     # # corrected = normalize_img(input_image) + normalize_img(get_psf(-coeffs))
     # # plt.figure()
     # # plt.imshow(corrected)
     # # plt.show()
 
-   
+
     # # print("\n\n correlation coeff is: {} \n\n".format(np.corrcoef(donut.flat, corrected.flat)[0][1]))
     # # return coeffs, np.corrcoef(donut.flat, corrected.flat)[0][1], corrected
     return coeffs
-    
+
 def correct_tip_tilt():
-    
-    # acquire the image from Imspector    
+
+    # acquire the image from Imspector
     # NOTE: from Imspector, must run Tools > Run Server for this to work
     im = sp.Imspector()
-    
-    # get active measurement 
+
+    # get active measurement
     msr = im.active_measurement()
     try:
         image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
@@ -78,16 +78,16 @@ def correct_tip_tilt():
     return helpers.calc_tip_tilt(image_xy)
 
 def correct_defocus(const=0):
-    # acquire the image from Imspector    
+    # acquire the image from Imspector
     # NOTE: from Imspector, must run Tools > Run Server for this to work
     #x = [0.0, 0.025, 0.05, 0.1, 0.0, -0.025, -0.05, -0.1, 0.0]
-    #y = [51.0953751869621, 51.38127570663089, 51.47044657188718, 52.00566108408576, 51.68171180185857, 52.28224133443203, 52.18034362082555, 52.02026189327759, 52.9484754882291 ]    
+    #y = [51.0953751869621, 51.38127570663089, 51.47044657188718, 52.00566108408576, 51.68171180185857, 52.28224133443203, 52.18034362082555, 52.02026189327759, 52.9484754882291 ]
     x = [0.1,0.0,-0.1]
-    y = [51.03816390888528, 50.59826488069055, 49.71942127100279]    
+    y = [51.03816390888528, 50.59826488069055, 49.71942127100279]
     helpers.fit(x, y)
     im = sp.Imspector()
-    
-    # get active measurement 
+
+    # get active measurement
     msr = im.active_measurement()
     try:
         image_xz = msr.stack('ExpControl Ch1 {13}').data()
@@ -101,22 +101,22 @@ def correct_defocus(const=0):
     # image = helpers.preprocess(image_xy) # (64,64), values (-.5, 4)
     return helpers.calc_defocus(image_xz, image_yz, const=const)
 
-    
+
 
 def abberior_multi(model_store_path):
     # creates an instance of CNN
-    
-    # model = my_models.MultiNetCentered()
-    model = my_models.Net()
 
-    # acquire the image from Imspector    
+    model = my_models.MultiNetCentered()
+    # model = my_models.Net()
+
+    # acquire the image from Imspector
     # NOTE: from Imspector, must run Tools > Run Server for this to work
     im = sp.Imspector()
-    
+
     # print Imspector host and version
     # print('Connected to Imspector {} on {}'.format(im.version(), im.host()))
 
-    # get active measurement 
+    # get active measurement
     msr = im.active_measurement()
     try:
         image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
@@ -136,14 +136,14 @@ def abberior_multi(model_store_path):
 
     # print(image_xy.shape)
     # print(center_of_mass(image_xy))
-    
+
     image_xy = helpers.preprocess(image_xy)
     # NOTE: why is the center of mass so large??
     # print(np.min(image_xy), np.max(image_xy))
     # image_xy = (image_xy-np.mean(image_xy))/np.std(image_xy)
     # print(np.min(image_xy), np.max(image_xy))
-    
-    
+
+
     # print(image_xy.shape)
     # print(center_of_mass(image_xy))
     # exit()
@@ -157,24 +157,24 @@ def abberior_multi(model_store_path):
     # plt.figure()
     # plt.imshow(image_xz, aspect="equal")
     # plt.show()
-    
+
     image_yz = helpers.preprocess(image_yz)
     #image_yz = np.fliplr(imgage_yz)
-    
+
     # plt.figure()
     # plt.imshow(image_yz, aspect="equal")
     # plt.show()
     # ##################
-    image = np.stack((image_xy,image_xz, image_yz), axis=0)    
+    image = np.stack((image_xy,image_xz, image_yz), axis=0)
     # image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
     # fig = helpers.plot_xsection(image)
     # plt.show()
-    
+
     # exit()
     # print(np.max(image), np.min(image))
     # exit()
 
-    image = image_xy
+    # image = image_xy
     # # coeffs, _, image = test(model, image, model_store_path)
     coeffs = test(model, image, model_store_path)
     print(len(coeffs))
@@ -182,7 +182,7 @@ def abberior_multi(model_store_path):
     # print(coeffs)
     # coeffs = results[:-2]
     # offset = results[-2:]
-    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False, defocus=True)
+    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False, defocus=False)
     # print(np.max(reconstructed), np.min(reconstructed))
     # fig1 = helpers.plot_xsection(reconstructed)
     # plt.show()
@@ -195,7 +195,7 @@ def abberior_multi(model_store_path):
 
     return coeffs
 
-        
+
 
     # print(coeffs)
     # a dictionary of correction terms to be passed to SLM control

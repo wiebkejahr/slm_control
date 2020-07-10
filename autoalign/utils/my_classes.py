@@ -15,7 +15,7 @@ from torch.utils import data
 import torch
 from torchvision import transforms
 
-import utils.helpers as helpers
+# import utils.helpers as helpers
 
 
 class PSFDataset(data.Dataset):
@@ -85,16 +85,16 @@ class Normalize(object):
         return {'image': image,
                 'label': label}
 
-class Center(object):
-    """Given a synthetic data point, it corrects for the observed 
-    tip & tilt and passes back a corrected image."""
+# class Center(object):
+#     """Given a synthetic data point, it corrects for the observed 
+#     tip & tilt and passes back a corrected image."""
 
-    def __call__(self, sample):
-        image, label = sample['image'].numpy(), sample['label'].numpy().squeeze()
-        image = helpers.center(image[0], label)
+#     def __call__(self, sample):
+#         image, label = sample['image'].numpy(), sample['label'].numpy().squeeze()
+#         image = helpers.center(image[0], label)
     
-        return {'image': torch.from_numpy(image),
-                'label': torch.from_numpy(label)}
+#         return {'image': torch.from_numpy(image),
+#                 'label': torch.from_numpy(label)}
 
 
 
