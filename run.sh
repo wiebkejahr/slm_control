@@ -55,7 +55,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 LR=0.001 # learning rate
 NUM_EPOCHS=15
 BATCH_SIZE=64
-MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}"
+MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_precentered"
 # MODEL_NAME="20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_SECOND"
 # don't touch these
 MODEL_STORE_PATH="${MODEL_DIR}/${MODEL_NAME}.pth"
@@ -77,11 +77,11 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --logdir              path to logging dir for optional tensorboard visualization
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
-# if [ ! -f ${MODEL_STORE_PATH} ]; then
-# python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --multi #--warm_start ${CHECKPOINT_DIR}
-# else
-# echo "Model already exists"
-# fi
+if [ ! -f ${MODEL_STORE_PATH} ]; then
+python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --multi #--warm_start ${CHECKPOINT_DIR}
+else
+echo "Model already exists"
+fi
 ####################### 3. EVALUATE ################################
 # To see all options, run 'python evaluate.py --help'. Output copied below.
 #
@@ -94,6 +94,6 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
+# python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
 
 # ./utils/tensorboard.sh

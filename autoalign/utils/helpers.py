@@ -81,7 +81,6 @@ def get_CoM(img):
     labeled_foreground = (img > threshold_value).astype(int)
     properties = regionprops(labeled_foreground, img)
     center_of_mass = properties[0].centroid
-    print(center_of_mass)
     b = center_of_mass[0]
     a = center_of_mass[1]
     return b,a
@@ -134,50 +133,24 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10, abberior=True
     # potentially switched bc of np vs plt coordinate system
     if abberior:
         img = np.squeeze(img)[1:-1, 1:-1]
-    
-    # D = 5.04 # in mm. TODO: doublecheck what this should be!
-    
-    # threshold_value = filters.threshold_otsu(img)
-    # labeled_foreground = (img > threshold_value).astype(int)
-    # properties = regionprops(labeled_foreground, img)
-    # center_of_mass = properties[0].centroid
-    # print(center_of_mass)
-    # b = center_of_mass[0]
-    # a = center_of_mass[1]
-    # plt.imshow(img)
-    # plt.scatter(a,b, color='b')
-    # plt.show()
+
     b, a = get_CoM(img)
+    # print('center of mass: {}, {}'.format(b, a))
     
-    print(b,a)
     dx = (np.shape(img)[0]-1)/2-a
     dy = (np.shape(img)[1]-1)/2-b
     # print('dx: {}   dy: {}'.format(dx, dy))
     xtilt = (np.pi*dx*px_size)/(lambd*f)*D/2
     ytilt = -(np.pi*dy*px_size)/(lambd*f)*D/2
-    print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
 
-    # tiptilt_mask = create_phase_tip_tilt(coeffs=[xtilt, ytilt])
     return [xtilt, ytilt]
-    # plt.figure()
-    # plt.imshow(new, cmap='hot')
-    # plt.show()
-    # # img = shift(img, (dy, dx))
-    # # b, a = center_of_mass(img)
-    # # dx = 31.5-a
-    # # dy = 31.5-b
-    # # # print('dx: {}   dy: {}'.format(dx, dy))
-    # # xtilt = (np.pi*dx)/(lambd*f)*D/2
-    # # ytilt = (np.pi*dy)/(lambd*f)*D/2
-    # # print('x-tilt: {}  y-tilt: {}'.format(xtilt, ytilt))
-    # # return img
-    # # NOTE: don't want to shift them by the tip/tilt, want to shift them by the dx and dy, right?
-    # return xtilt, ytilt
 
-# def center(image, res=64):
-#     a, b = center_of_mass(image)
-#     # print((res-1)/2-a) # -0.020355
-#     return shift(image, ((res-1)/2-a, (res-1)/2-b), mode='constant')
+
+def center(xy, label, res=64, multi=True):
+    xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
+    tiptilt = create_phase_tip_tilt([xtilt, ytilt])
+    corrected = get_sted_psf(coeffs=label, multi=True, tiptilt = tiptilt)
+    return corrected
 
 
 def save_params(fname):
@@ -254,7 +227,7 @@ def create_phase_defocus(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
    # NOTE: starting with the 4th order, bc we set the first three to zero.
     orders = [[2,0]] #defocus
     # sanity checks
-    assert(len(coeffs) == len(orders)) # should both be 14
+    assert(len(coeffs) == len(orders)) # should both be 1
     assert(isinstance(i, float) for i in coeffs)
 
     size=np.asarray([res1, res2]) # NOTE: used to be res+1
@@ -289,7 +262,7 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
     orders = [[1,-1], #Y-tilt
             [1,1]] # X-tilt
     # sanity checks
-    assert(len(coeffs) == len(orders)) # should both be 14
+    assert(len(coeffs) == len(orders)) # should both be 2
     assert(isinstance(i, float) for i in coeffs)
 
     size=np.asarray([res1, res2]) # NOTE: used to be res+1
@@ -305,7 +278,7 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
     # plt.show()
     return zern
 
-def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=True):
+def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=True, tiptilt = []):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -326,8 +299,6 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=T
             9 = [3,1],      19 = [5,1],
             10 = [3,3],     20 = [5,3],
     """
-    print(len(coeffs))
-   # NOTE: starting with the 4th order, bc we set the first three to zero.
     if defocus:
         orders = [[2,-2], [2,0], [2,2],
                 [3,-3], [3,-1], [3,1],[3,3],
@@ -336,12 +307,12 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=T
         orders = [[2,-2], [2,2], # no defocus
                 [3,-3], [3,-1], [3,1],[3,3],
                 [4,-4], [4,-2], [4,0], [4,2], [4,4]]
-    # sanity checks
-    print(len(orders))
-    assert(len(coeffs) == len(orders)) # should both be 12
-    assert(isinstance(i, float) for i in coeffs)
 
-    size=np.asarray([res1, res2]) # NOTE: used to be res+1
+    # sanity checks
+    assert(len(coeffs) == len(orders)) # should both be 12
+
+
+    size=np.asarray([res1, res2]) 
     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
     
@@ -351,6 +322,7 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=T
     zern = sum(terms)
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
+    zern = zern + tiptilt
     return zern
 
 
@@ -381,13 +353,13 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     # img = normalize_img(img)
     return img, coeffs, offset_label
 
-def get_sted_psf_tip_tilt(res=64, coeffs=np.asarray([0.0]*14), offset_label=[0,0],  multi=False):
+def get_sted_psf_tip_tilt(res=64, coeffs=np.asarray([0.0]*14), offset_label=[0,0],  multi=False, defocus = False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF
     
     #returns image with mean of 0 and std of 1.
     """
-    zern = create_phase_tip_tilt(coeffs, res,res, offset_label)
+    zern = create_phase_tip_tilt(coeffs, res,res, offset_label, defocus=defocus)
     
     if multi:
         plane = 'all'
@@ -399,11 +371,11 @@ def get_sted_psf_tip_tilt(res=64, coeffs=np.asarray([0.0]*14), offset_label=[0,0
     
     return img
 
-def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False, defocus=False):
+def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False, defocus=False, tiptilt=None):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    zern = create_phase(coeffs, res,res, offset_label, defocus=defocus)
+    zern = create_phase(coeffs, res,res, offset_label, defocus=defocus, tiptilt=tiptilt)
     
     if multi:
         plane = 'all'
@@ -470,7 +442,7 @@ def get_stats(data_path, batch_size, mode='train'):
 
 def plot_xsection(img3d, name=''):
     fig = plt.figure()
-    plt.colorbar()
+    # plt.colorbar()
     ax1 = fig.add_subplot(1,3,1)
     ax1.set_title('xy')
     ax1.imshow(img3d[0], cmap='hot')

@@ -55,58 +55,50 @@ def test(model, test_loader, logdir, model_store_path):
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             
             # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
-            xtilt, ytilt = calc_tip_tilt(images.numpy().squeeze(), abberior=False)
-            print(xtilt, ytilt)
-            exit()
-            print(np.min(images.numpy()), np.max(images.numpy()))
-            print(np.mean(images.numpy()), np.std(images.numpy()))
-            # images = torch.from_numpy(np.stack([normalize_img(i) for i in images.numpy()], axis=0))
-            # print(np.max(images.numpy()), np.min(images.numpy()))
-            # example for syntax
-            # img2 = np.stack([add_noise(i) for i in img], axis=0)
-            
-            # Get model outputs (the predicted Zernike coefficients)
-            # outputs = model(images[:,0].unsqueeze(1), 
-            #                 images[:,1].unsqueeze(1),
-            #                 images[:,2].unsqueeze(1))
-            # print(images.size())
-            outputs = model(images)
-            preds = outputs.numpy().squeeze()
+            plt.figure(1)
+            xy = images.numpy().squeeze()[0]
+            plt.imshow(xy)
+            com1 = get_CoM(xy)
+            plt.scatter(com1[0], com1[1], c='r')
+            # xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
+            # # plt.scatter(31.5+ xtilt, 31.5+ytilt, c='r')
+            # # plt.show()
+            # tiptilt = create_phase_tip_tilt([xtilt, ytilt])
+            # # print(len(labels.numpy()))
+            # # exit()
+            # corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=True, tiptilt = tiptilt)
+            corrected = center(xy, labels.numpy().squeeze())
+            calc_tip_tilt(corrected[0], abberior=False)
+            plt.figure(2)
+            plt.imshow(corrected[0])
+            com2 = get_CoM(corrected[0])
+            plt.scatter(com2[0], com2[1], c='r')
 
-            # zern = preds[:-2]
-            # offset = preds[-2:]
-            # zern = preds
-
-            # offset=[0,0]
-            reconstructed = get_sted_psf(coeffs=preds, multi=True)
-            print(np.min(reconstructed), np.max(reconstructed))
-            print(np.mean(reconstructed), np.std(reconstructed))
-            # print(labels.numpy().squeeze())
-            # print(preds)
-            
-            remaining = labels.numpy().squeeze() - preds
-            # print(remaining)
-            # exit()
-            # print(remaining)
-            # remaining_zern = remaining[:-2]
-            # remaining_offsets = remaining[-2:]
-            # original = images.numpy().squeeze()
-            # print(np.max(original), np.min(original))
-            # print(np.max(reconstructed), np.min(reconstructed))
-            # # corrected = normalize_img(original - reconstructed)
-            corrected = get_sted_psf(coeffs=remaining, multi=True)
-            # plt.figure(1)
-            # plt.imshow(images.numpy().squeeze(), cmap='hot')
-            # plt.title('original')
-            # plt.figure(2)
-            # plt.imshow(reconstructed, cmap='hot')
-            # plt.title('reconstructed')
-            # plt.figure(3)
-            # plt.imshow(corrected, cmap='hot')
-            # plt.title('corrected')
-
-            fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
+            # plot_xsection(corrected, name='new')
+            # plt.figure(4)
+            # plot_xsection(images.numpy().squeeze(), name = 'old')
             plt.show()
+            # exit()
+            
+            ################
+            # outputs = model(images)
+            # preds = outputs.numpy().squeeze()
+
+            # reconstructed = get_sted_psf(coeffs=preds, multi=True)
+            # print(np.min(reconstructed), np.max(reconstructed))
+            # print(np.mean(reconstructed), np.std(reconstructed))
+
+            
+            # remaining = labels.numpy().squeeze() - preds
+
+
+            # corrected = get_sted_psf(coeffs=remaining, multi=True)
+
+
+            # fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
+            # plt.show()
+
+            ###########
             
 
 

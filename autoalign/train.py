@@ -49,16 +49,40 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # print(i)
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
             # if GPU is available, this allows the computation to happen there
-            # ex = images.numpy()
+
             # NOTE: here's where you normalize it. 
             # print(images.numpy().shape)
             # print(np.min(images.numpy()[0]), np.max(images.numpy()[0]))
             # print(np.mean(images.numpy()[0]), np.std(images.numpy()[0]))
-            # exit()
+
             # NOTE: this normalizes all the incoming images to be between 0 and 1
             # ideally, you have a dataset where that's already done, but this is a hack
-
+            
             # images = torch.from_numpy(np.stack([helpers.normalize_img(i) for i in images.numpy()], axis=0))
+           
+            # NOTE: this is the tip/tilt correction before training
+            # images = torch.from_numpy(np.stack([helpers.center(i, j) for \
+            #     i, j in (images.numpy(), labels.numpy().squeeze())], axis=0))
+            # plt.figure(1)
+            # xy = images.numpy().squeeze()[5][0]
+            # com1 = helpers.get_CoM(xy)
+            # plt.imshow(xy)
+            # plt.scatter(com1[0], com1[1], c='r')
+
+            # plt.figure(2)
+            # fixed = helpers.center(xy, labels.numpy().squeeze()[5])[0]
+            # com2 = helpers.get_CoM(fixed)
+            # plt.imshow(fixed)
+            # plt.scatter(com2[0], com2[1], c='r')
+            # plt.show()
+            # thing = helpers.center(images.numpy().squeeze()[0][0], np.asarray([0.1,0.1,0.1,0,0,0,0,0,0,0,0]))
+
+            # thing = np.stack([helpers.center(i[0], i[1]) for i in zip(images.numpy(), labels.numpy().squeeze())], axis=0)
+            # plt.figure(2)
+            # plt.imshow(thing[0][0])
+            # plt.show()
+            # exit()
+            # images = torch.from_numpy(thing)
             
             
             # print('min: {}      max: {}'.format(np.min(images.numpy()[0]), np.max(images.numpy()[0])))
@@ -164,14 +188,14 @@ def main(args):
     
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=transforms.Compose([
         my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std)]))
+        my_classes.Normalize(mean=mean, std=std), my_classes.Center()]))
     val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
         my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std)]))
+        my_classes.Normalize(mean=mean, std=std), my_classes.Center()]))
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
-    # NOTE: my dumb butt had this as train_dataset for a LONG time
+
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
 
@@ -179,7 +203,6 @@ def main(args):
     dataset_sizes = {'train': len(train_dataset), 'val': len(val_dataset)}
     for i, j in dataset_sizes.items():
         print(i, j)
-    # exit()
     print('is CUDA available? {}'.format(torch.cuda.is_available()))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     ################################## running ###################################
@@ -196,7 +219,7 @@ def main(args):
 
     model = my_models.MultiNetCentered()
 
-    print(model)
+    # print(model)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
