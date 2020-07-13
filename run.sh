@@ -23,7 +23,7 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=2 # will do 90/10 train/validation split
 TEST_NUM=0 # number of additional test samples to create
-NAME="20.07.12_no_defocus_1D_centered"
+NAME="20.07.12_no_defocus_1D_centered_TEST"
 # NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
@@ -45,7 +45,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 #   --mode {fluor,sted,z-sted} which mode of data to create
 
 if [ ! -f ${DATASET} ]; then
-python3 ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --multi --mode 'sted'
+python3 ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted'
 else
 echo "Dataset already exists"
 fi
