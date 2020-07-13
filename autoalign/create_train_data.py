@@ -59,12 +59,12 @@ def main(args):
     test_shape = (test_num, channel_num, res, res)
 
     # open a hdf5 file and create arrays
-    hdf5_file = h5py.File(hdf5_path, mode='w-')
+    # hdf5_file = h5py.File(hdf5_path, mode='w-')
 
-    # create the image arrays
-    hdf5_file.create_dataset("train_img", train_shape, np.float32)
-    hdf5_file.create_dataset("val_img", val_shape, np.float32)
-    hdf5_file.create_dataset("test_img", test_shape, np.float32)
+    # # create the image arrays
+    # hdf5_file.create_dataset("train_img", train_shape, np.float32)
+    # hdf5_file.create_dataset("val_img", val_shape, np.float32)
+    # hdf5_file.create_dataset("test_img", test_shape, np.float32)
     
     train_labels = []
     val_labels = []
@@ -77,11 +77,23 @@ def main(args):
     #NOTE: overriding
     label_dim = 11
 
-
-
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
+            plt.figure(1)
+            plt.imshow(img[0])
+            # img = normalize_img(img)
+            x,y = get_CoM(img[0])
+            print(x, y)
+            plt.scatter(x,y, c='r')
+            plt.figure(2)
+            img2 = center(img[0], zern_label, multi=True)
+            a, b = get_CoM(img2[0])
+            plt.imshow(img2[0])
+            print(a,b)
+            plt.scatter(a, b, color='r')
+            # plt.show()
+            exit()
             # img = get_sted_psf_tip_tilt(coeffs=[1,1])
             # print(zern_label)
             # plt.imshow(img, cmap='hot')

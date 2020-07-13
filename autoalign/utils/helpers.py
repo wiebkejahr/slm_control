@@ -86,42 +86,20 @@ def get_CoM(img):
     return b,a
 
 
-def fit(x,y):
-    #from sklearn.linear_model import LinearRegression
-    x = np.asarray(x).reshape(-1,1)
-    model = LinearRegression().fit(x, y)
-    r_sq = model.score(x, y)
-    print('coefficient of determination:', r_sq)
-    print('intercept:', model.intercept_)
-    print('slope:', model.coef_)
-    plt.figure()
-    plt.scatter(x, y)
-    plt.plot(x, model.coef_*x+model.intercept_)
-    plt.show()
-    return model
-
-
-def calc_defocus(img_xz, img_yz, const=0):
-    img_xz = np.squeeze(img_xz)[1:-1, 1:-1]
+# def calc_defocus(img_xz, img_yz, const=0):
+#     img_xz = np.squeeze(img_xz)[1:-1, 1:-1]
     
-    b_xz, a_xz = get_CoM(img_xz)
+#     b_xz, a_xz = get_CoM(img_xz)
 
-    img_yz = np.squeeze(img_yz)[1:-1, 1:-1]
+#     img_yz = np.squeeze(img_yz)[1:-1, 1:-1]
 
-    b_yz, a_yz = get_CoM(img_yz)
+#     b_yz, a_yz = get_CoM(img_yz)
     
-    val = (np.shape(img_xz)[1]-1)/2 - np.average([a_xz, a_yz])
-    # plt.figure()
-    # plt.subplot(121)
-    # plt.imshow(img_xz)
-    # plt.scatter(a_xz,b_xz, color='b')
-    # plt.subplot(122)
-    # plt.imshow(img_yz)
-    # plt.scatter(a_yz,b_yz, color='b')
-    # plt.show()
-    print("defocus",val)
-    # const = 0
-    return [const*val]
+#     val = (np.shape(img_xz)[1]-1)/2 - np.average([a_xz, a_yz])
+
+#     print("defocus",val)
+#     # const = 0
+#     return [const*val]
 
 
 def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10, abberior=True):
@@ -131,14 +109,16 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10, abberior=True
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
+
+    x_shape, y_shape = np.shape(img)    
     if abberior:
         img = np.squeeze(img)[1:-1, 1:-1]
 
     b, a = get_CoM(img)
     # print('center of mass: {}, {}'.format(b, a))
     
-    dx = (np.shape(img)[0]-1)/2-a
-    dy = (np.shape(img)[1]-1)/2-b
+    dx = (x_shape-1)/2-a
+    dy = (y_shape-1)/2-b
     # print('dx: {}   dy: {}'.format(dx, dy))
     xtilt = (np.pi*dx*px_size)/(lambd*f)*D/2
     ytilt = -(np.pi*dy*px_size)/(lambd*f)*D/2
@@ -149,45 +129,8 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10, abberior=True
 def center(xy, label, res=64, multi=True):
     xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
     tiptilt = create_phase_tip_tilt([xtilt, ytilt])
-    corrected = get_sted_psf(coeffs=label, multi=True, tiptilt = tiptilt)
+    corrected = get_sted_psf(coeffs=label, multi=multi, tiptilt=tiptilt)
     return corrected
-
-
-def save_params(fname):
-    """Given an output file name and a resolution which defaults to 64, this fn creates a .txt file formatted as a json, 
-    containing the optical parameters for the sted and excitation beams for our Abberior system as well as numerical parameters for the 
-    simulation. This output file is loaded in xysted.py when simulating a sted beam or a fluorescence psf and passed as inputs to the 
-    vector_diffraction fn in vector_diffraction.py"""
-    optical_params_sted = {
-        "n" : 1.518,
-        "NA" : 1.4,
-        "f" : 1.8, # in mm
-        "transmittance" : 0.74, # for olympus 100x oil, check nikon
-        "lambda" : 775, # in nm
-        "P_laser" : 250e-3, # in mW
-        "rep_rate" : 40e6, # in MHz
-        "pulse_length" : 700e-12, # in ps
-        "obj_ba" : 5.04, # in mm
-        "offset" : [0,0] # in mm
-        }
-
-    optical_params_gauss = {
-        "n" : 1.518,
-        "NA" : 1.4,
-        "f" : 1.8, # in mm
-        "transmittance" : 0.84, # for olympus 100x oil, check nikon
-        "lambda" : 640, # in nm
-        "P_laser" : 0.125e-3, # in mW
-        "rep_rate" : 40e6, # in MHz
-        "pulse_length" : 100e-12, # in ps
-        "obj_ba" : 5.04, # in mm
-        "offset" : [0,0] # in mm
-        }
-
-    data = {"optical_params_sted": optical_params_sted, "optical_params_gauss": optical_params_gauss}
-
-    with open(fname, 'w') as outfile:
-        json.dump(data, outfile)
 
 def gen_offset():
     """A function to generate an offset [x, y] to displace the STED psf. Returns an 1d array of 2 ints"""
@@ -322,7 +265,9 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=T
     zern = sum(terms)
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
-    # zern = zern + tiptilt
+    # NOTE: This causes an error when tiptilt is not given
+    if len(tiptilt) > 0:
+        zern = zern + tiptilt
     return zern
 
 
@@ -353,23 +298,23 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     # img = normalize_img(img)
     return img, coeffs, offset_label
 
-def get_sted_psf_tip_tilt(res=64, coeffs=np.asarray([0.0]*14), offset_label=[0,0],  multi=False, defocus = False):
-    """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
-    If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF
+# def get_sted_psf_tip_tilt(res=64, coeffs=np.asarray([0.0]*14), offset_label=[0,0],  multi=False, defocus = False):
+#     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
+#     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF
     
-    #returns image with mean of 0 and std of 1.
-    """
-    zern = create_phase_tip_tilt(coeffs, res,res, offset_label, defocus=defocus)
+#     #returns image with mean of 0 and std of 1.
+#     """
+#     zern = create_phase_tip_tilt(coeffs, res,res, offset_label, defocus=defocus)
     
-    if multi:
-        plane = 'all'
-    else:
-        plane = 'xy'
-    img = sted_psf(zern, res, offset=offset_label, plane=plane)
-    # img = center(img)
-    # img = (img - np.mean(img) / np.std(img)
+#     if multi:
+#         plane = 'all'
+#     else:
+#         plane = 'xy'
+#     img = sted_psf(zern, res, offset=offset_label, plane=plane)
+#     # img = center(img)
+#     # img = (img - np.mean(img) / np.std(img)
     
-    return img
+#     return img
 
 def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False, defocus=False, tiptilt=None):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
@@ -381,10 +326,12 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
         plane = 'all'
     else:
         plane = 'xy'
+
+    
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
     # img = (img - np.mean(img)) / np.std(img)
     # img = normalize_img(img)
-
+    
     return img
 
 def gen_fluor_psf(res=64, offset=False, multi=False):

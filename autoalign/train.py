@@ -97,10 +97,11 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # exit()
             images = images.to(device)
             labels = labels.to(device)
-            
+            # print(images.shape)
+            # exit()
             # Run the forward pass
             outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
-
+            exit()
             # no activation function on the final layer means that outputs is the weight of the final layer
             loss = criterion(outputs, labels) # MSE
             # sum of averages for each coeff position
@@ -188,10 +189,10 @@ def main(args):
     
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=transforms.Compose([
         my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std), my_classes.Center()]))
+        my_classes.Normalize(mean=mean, std=std)]))#, my_classes.Center()]))
     val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
         my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std), my_classes.Center()]))
+        my_classes.Normalize(mean=mean, std=std)]))#, my_classes.Center()]))
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
@@ -217,7 +218,9 @@ def main(args):
         else:
             model = my_models.Net()
 
-    model = my_models.MultiNetCentered()
+    # model = my_models.MultiNetCentered()
+
+    model = my_models.MultiNetCat()
 
     # print(model)
 

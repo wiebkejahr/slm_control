@@ -100,10 +100,16 @@ class MultiNetCat(nn.Module):
         
         self.fc1 = nn.Linear(8 * 8 * 96, 512)  # 64 channels, final img size 3x8x8
         self.fc2 = nn.Linear(512, 512)
-        self.fc3 = nn.Linear(512, 12)
+        self.fc3 = nn.Linear(512, 11) #NOTE; this used to be 12
 
-    def forward(self, x, y, z):
-        
+    def forward(self, img):
+        x = img[:, 0]
+        y = img[:, 1]
+        z = img[:, 2]
+        # print(img.shape)
+        # print(x.shape)
+        # print(y.shape)
+        # exit()
         x = x.float()
         x = F.dropout(F.max_pool2d(F.relu(self.conv1(x)), (2, 2)), p=0.1)
         x = F.dropout(F.max_pool2d(F.relu(self.conv2(x)), (2, 2)), p=0.1)
