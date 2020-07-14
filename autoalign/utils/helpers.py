@@ -105,11 +105,13 @@ def get_CoM(img):
 def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10, abberior=True):
     """this fn returns the coeffs of the calculated tip/tilt
     TODO:read px_size from imspector!
+    TODO:read params from params file (read D from params and divide by 3)
     """
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
-
+    D = 5.04/3/1000
+    # D is the diameter of beam on slm, 1.776 mm, (5.04/3 = 1.68)
     x_shape, y_shape = np.shape(img)    
     if abberior:
         img = np.squeeze(img)[1:-1, 1:-1]
@@ -221,7 +223,7 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
     # plt.show()
     return zern
 
-def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=True, tiptilt = []):
+def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=True, tiptilt = np.zeros((64, 64)), correction = np.zeros((64, 64))):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -266,8 +268,13 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=T
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
     # NOTE: This causes an error when tiptilt is not given
-    if len(tiptilt) > 0:
-        zern = zern + tiptilt
+    
+    zern = zern + tiptilt
+    # zern = zern + correction
+    plt.figure()
+    plt.imshow(zern)
+    plt.colorbar()
+    # plt.show()
     return zern
 
 
@@ -298,29 +305,11 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     # img = normalize_img(img)
     return img, coeffs, offset_label
 
-# def get_sted_psf_tip_tilt(res=64, coeffs=np.asarray([0.0]*14), offset_label=[0,0],  multi=False, defocus = False):
-#     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
-#     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF
-    
-#     #returns image with mean of 0 and std of 1.
-#     """
-#     zern = create_phase_tip_tilt(coeffs, res,res, offset_label, defocus=defocus)
-    
-#     if multi:
-#         plane = 'all'
-#     else:
-#         plane = 'xy'
-#     img = sted_psf(zern, res, offset=offset_label, plane=plane)
-#     # img = center(img)
-#     # img = (img - np.mean(img) / np.std(img)
-    
-#     return img
-
-def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False, defocus=False, tiptilt=None):
+def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False, defocus=False, tiptilt=np.zeros((64, 64)), correction=np.zeros((64, 64))):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    zern = create_phase(coeffs, res,res, offset_label, defocus=defocus, tiptilt=tiptilt)
+    zern = create_phase(coeffs, res,res, offset_label, defocus=defocus, tiptilt=tiptilt, correction=correction)
     
     if multi:
         plane = 'all'
@@ -329,8 +318,7 @@ def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi
 
     
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
-    # img = (img - np.mean(img)) / np.std(img)
-    # img = normalize_img(img)
+
     
     return img
 

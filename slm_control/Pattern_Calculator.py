@@ -144,7 +144,6 @@ def create_zernike(size, order, amp = 1, radscale=1):
     elif order[1] >= 0:
         zernike = zernike_coeff(rho, order) * np.cos(order[1] * phi)
 
-    #TODO:
     # division by 2 would be needed to make it compatible with the amplitudes
     # at the Abberior. Do we want that? Or do we want to be consistent?
     return zernike * amp #/2

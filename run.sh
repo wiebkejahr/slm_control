@@ -23,7 +23,8 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=2 # will do 90/10 train/validation split
 TEST_NUM=0 # number of additional test samples to create
-NAME="20.07.12_no_defocus_1D_centered_TEST"
+# NAME="20.06.22_no_defocus_multi_20k"
+NAME="TEST"
 # NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
@@ -54,7 +55,7 @@ fi
 # HYPERPARAMETERS 
 LR=0.001 # learning rate
 NUM_EPOCHS=15
-BATCH_SIZE=64
+BATCH_SIZE=32
 MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_concat"
 # MODEL_NAME="20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_SECOND"
 # don't touch these
@@ -94,6 +95,6 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-# python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
+# python3 ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
 
 # ./utils/tensorboard.sh

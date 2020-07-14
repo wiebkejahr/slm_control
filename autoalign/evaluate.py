@@ -55,48 +55,69 @@ def test(model, test_loader, logdir, model_store_path):
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
             
             # NOTE: goal here is to normalize the input image and see if the prediction goes to trash
-            plt.figure(1)
-            xy = images.numpy().squeeze()[0]
-            plt.imshow(xy)
-            com1 = get_CoM(xy)
-            plt.scatter(com1[0], com1[1], c='r')
-            # xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
-            # # plt.scatter(31.5+ xtilt, 31.5+ytilt, c='r')
-            # # plt.show()
-            # tiptilt = create_phase_tip_tilt([xtilt, ytilt])
-            # # print(len(labels.numpy()))
-            # # exit()
-            # corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=True, tiptilt = tiptilt)
-            corrected = center(xy, labels.numpy().squeeze())
-            calc_tip_tilt(corrected[0], abberior=False)
-            plt.figure(2)
-            plt.imshow(corrected[0])
-            com2 = get_CoM(corrected[0])
-            plt.scatter(com2[0], com2[1], c='r')
+            # plt.figure(1)
+            # xy = images.numpy().squeeze()[0]
+            # plt.imshow(xy)
+            # com1 = get_CoM(xy)
+            # plt.scatter(com1[0], com1[1], c='r')
+            # # xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
+            # # # plt.scatter(31.5+ xtilt, 31.5+ytilt, c='r')
+            # # # plt.show()
+            # # tiptilt = create_phase_tip_tilt([xtilt, ytilt])
+            # # # print(len(labels.numpy()))
+            # # # exit()
+            # # corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=True, tiptilt = tiptilt)
+            # corrected = center(xy, labels.numpy().squeeze())
+            # calc_tip_tilt(corrected[0], abberior=False)
+            # plt.figure(2)
+            # plt.imshow(corrected[0])
+            # com2 = get_CoM(corrected[0])
+            # plt.scatter(com2[0], com2[1], c='r')
 
-            # plot_xsection(corrected, name='new')
-            # plt.figure(4)
-            # plot_xsection(images.numpy().squeeze(), name = 'old')
-            plt.show()
+            # # plot_xsection(corrected, name='new')
+            # # plt.figure(4)
+            # # plot_xsection(images.numpy().squeeze(), name = 'old')
+            # plt.show()
             # exit()
             
             ################
-            # outputs = model(images)
-            # preds = outputs.numpy().squeeze()
+            outputs = model(images)
+            preds = outputs.numpy().squeeze()
+            # print(labels.numpy().squeeze())
+            # print(preds)
+            # # exit()
 
-            # reconstructed = get_sted_psf(coeffs=preds, multi=True)
+            reconstructed = get_sted_psf(coeffs=preds, multi=True)
             # print(np.min(reconstructed), np.max(reconstructed))
             # print(np.mean(reconstructed), np.std(reconstructed))
-
-            
-            # remaining = labels.numpy().squeeze() - preds
-
-
-            # corrected = get_sted_psf(coeffs=remaining, multi=True)
-
-
-            # fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
+            correction = create_phase(coeffs=(-1.)*preds, defocus=False)
+            print(np.mean(correction), np.std(correction))
+            # this is correction via phasemask
+            corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=True, correction=correction)
+            # plt.figure(1)
+            # plt.imshow(correction)
+            # plt.colorbar()
+            # # plt.show()
+            # plt.figure(2)
+            # test = create_phase(coeffs=labels.numpy().squeeze(), defocus=False)
+            # plt.imshow((-1.)*test)
+            # print(np.mean(test), np.std(test))
+            # plt.colorbar()
             # plt.show()
+
+            # exit()
+            
+            # old way
+            remaining = labels.numpy().squeeze() - preds
+            
+
+            corrected_old = get_sted_psf(coeffs=remaining, multi=True)
+
+            plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
+            
+            plot_xsection(corrected_old, name='old way')
+            # fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
+            plt.show()
 
             ###########
             
@@ -120,8 +141,10 @@ def main(args):
         else:
             model = my_models.Net()
     
-    model = my_models.MultiNetCentered()
+    # model = my_models.MultiNetCentered()
+    model = my_models.MultiNetCat()
     # print(model)
+
     
     # NOTE: this part needs work. determine which model to use from loading the data and checking the shape
     # multi = args.multi   

@@ -93,19 +93,15 @@ class MultiNetCat(nn.Module):
         self.conv3 = nn.Conv2d(96, 96, 3, padding=1)
         self.conv4 = nn.Conv2d(96, 96, 3, padding=1)
         self.conv5 = nn.Conv2d(96, 96, 3, padding=1)
-        
-        # self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
-        # self.conv4 = nn.Conv2d(64, 64, 3, padding=1)
-        # self.conv5 = nn.Conv2d(64, 64, 3, padding=1)
-        
+
         self.fc1 = nn.Linear(8 * 8 * 96, 512)  # 64 channels, final img size 3x8x8
         self.fc2 = nn.Linear(512, 512)
         self.fc3 = nn.Linear(512, 11) #NOTE; this used to be 12
 
     def forward(self, img):
-        x = img[:, 0]
-        y = img[:, 1]
-        z = img[:, 2]
+        x = img[:, 0].unsqueeze(1) # adding dim of 0 after batch dim
+        y = img[:, 1].unsqueeze(1)
+        z = img[:, 2].unsqueeze(1)
         # print(img.shape)
         # print(x.shape)
         # print(y.shape)
