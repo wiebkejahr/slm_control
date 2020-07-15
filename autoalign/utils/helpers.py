@@ -95,25 +95,34 @@ def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, px_size=10, abberio
     ####### xz ########
     x_shape, y_shape = np.shape(img_xz)
     b, a = get_CoM(img_xz)
-    dz_xz = (x_shape-1)/2-a
-    dx_xz = (y_shape-1)/2-b
-
-    d_obj = D/3/1000 # scaling
+    dx_xz = (x_shape-1)/2-a
+    dz_xz = (y_shape-1)/2-b
+    print(a,b,dx_xz,dz_xz)
+    #d_obj = D/3/1000 # scaling
     #dz1 = -(f/d_obj)^2*8/np.sqrt(3)*lambd*dy
+    plt.figure()
+    plt.subplot(121)
+    plt.imshow(img_xz)
+    plt.scatter(a,b)
 
     ######## yz #########
     x_shape, y_shape = np.shape(img_yz)
     b, a = get_CoM(img_yz)
-    dz_yz = (x_shape-1)/2-a
-    dy_yz = (y_shape-1)/2-b
+    dy_yz = (x_shape-1)/2-a
+    dz_yz = (y_shape-1)/2-b
+    print(a,b,dy_yz,dz_yz)
+    plt.subplot(122)
+    plt.imshow(img_yz)
+    plt.scatter(a,b)
+    plt.show()
 
     dz = np.average([dz_xz, dz_yz])*px_size
-    d_obj = D/3/1000 # scaling
-    print(dz, f, d_obj, lambd)
+    #d_obj = D/3/1000 # scaling
+    print(dz, f, D, lambd)
 
     # exit()
     
-    defocus = dz/(-(f/d_obj)**2 *8 * np.sqrt(3)*lambd*1e3)
+    defocus = dz/((f/D)**2 *8 * np.sqrt(3)*lambd*1e3)/2
     # dz = -(f/d_obj)^2*8/sqrt(3)*lambd*coeff
     print("defocus",dz, defocus)
     return(defocus)
