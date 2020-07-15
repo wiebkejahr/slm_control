@@ -123,6 +123,9 @@ def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, px_size=10, abberio
     # exit()
     
     defocus = dz/((f/D)**2 *8 * np.sqrt(3)*lambd*1e3)/2
+    #TODO: freak factor of two? check derivation again
+    # check aperture radius or diameter
+    
     # dz = -(f/d_obj)^2*8/sqrt(3)*lambd*coeff
     print("defocus",dz, defocus)
     return(defocus)
