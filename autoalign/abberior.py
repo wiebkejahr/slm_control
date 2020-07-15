@@ -77,14 +77,14 @@ def correct_tip_tilt():
     # image = helpers.preprocess(image_xy) # (64,64), values (-.5, 4)
     return helpers.calc_tip_tilt(image_xy)
 
-def correct_defocus(const=0):
+def correct_defocus():
     # acquire the image from Imspector
     # NOTE: from Imspector, must run Tools > Run Server for this to work
     #x = [0.0, 0.025, 0.05, 0.1, 0.0, -0.025, -0.05, -0.1, 0.0]
     #y = [51.0953751869621, 51.38127570663089, 51.47044657188718, 52.00566108408576, 51.68171180185857, 52.28224133443203, 52.18034362082555, 52.02026189327759, 52.9484754882291 ]
-    x = [0.1,0.0,-0.1]
-    y = [51.03816390888528, 50.59826488069055, 49.71942127100279]
-    helpers.fit(x, y)
+    # x = [0.1,0.0,-0.1]
+    # y = [51.03816390888528, 50.59826488069055, 49.71942127100279]
+    # helpers.fit(x, y)
     im = sp.Imspector()
 
     # get active measurement
@@ -99,7 +99,7 @@ def correct_defocus(const=0):
     except:
         print("Cannot find 'ExpControl Ch1 {15}' window")
     # image = helpers.preprocess(image_xy) # (64,64), values (-.5, 4)
-    return helpers.calc_defocus(image_xz, image_yz, const=const)
+    return helpers.calc_defocus(image_xz, image_yz)
 
 
 

@@ -178,7 +178,7 @@ class Main_Window(QtWidgets.QMainWindow):
         
 
     def correct_defocus(self):
-        self.defocus = abberior.correct_defocus(const = 0.1)#(const=1/6.59371319)
+        self.defocus = abberior.correct_defocus()#(const=1/6.59371319)
         self.phase_defocus = self.phase_defocus + pcalc.crop((1.)*helpers.create_phase_defocus(self.defocus, res1=1200, res2=792, radscale = self.slm_radius), [600, 396], offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
         self.recalc_images()
 

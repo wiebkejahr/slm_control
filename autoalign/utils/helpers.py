@@ -86,34 +86,55 @@ def get_CoM(img):
     return b,a
 
 
-# def calc_defocus(img_xz, img_yz, const=0):
+def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, abberior=True):
+    
+    if abberior:
+        img_xz = np.squeeze(img_xz)[1:-1, 1:-1]
+        img_yz = np.squeeze(img_yz)[1:-1, 1:-1]
+    
+    ####### xz ########
+    x_shape, y_shape = np.shape(img_xz)
+    b, a = get_CoM(img_xz)
+    dx = (x_shape-1)/2-a
+    dy = (y_shape-1)/2-b
+
+    d_obj = D/3/1000 # scaling
+    dz1 = -(f/d_obj)^2*8/sqrt(3)*lambd*dy
+
+    ######## yz #########
+    x_shape, y_shape = np.shape(img_yz)
+    b, a = get_CoM(img_yz)
+    dx = (x_shape-1)/2-a
+    dy = (y_shape-1)/2-b
+
+    d_obj = D/3/1000 # scaling
+    dz2 = -(f/d_obj)^2*8/sqrt(3)*lambd*dy
+    # dz = -(f/d_obj)^2*8/sqrt(3)*lambd*coeff
+    return np.average([dz1, dz2])
 #     img_xz = np.squeeze(img_xz)[1:-1, 1:-1]
-    
 #     b_xz, a_xz = get_CoM(img_xz)
-
 #     img_yz = np.squeeze(img_yz)[1:-1, 1:-1]
-
 #     b_yz, a_yz = get_CoM(img_yz)
-    
 #     val = (np.shape(img_xz)[1]-1)/2 - np.average([a_xz, a_yz])
-
 #     print("defocus",val)
 #     # const = 0
 #     return [const*val]
 
 
-def calc_tip_tilt(img, lambd=0.775, f=1.8, D=0.001776, px_size=10, abberior=True):
+def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
     """this fn returns the coeffs of the calculated tip/tilt
     TODO:read px_size from imspector!
     """
+    # During testing, D was 0.001776
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
 
-    x_shape, y_shape = np.shape(img)    
+    D = D/3/1000 # scaling, =~0.00168
+       
     if abberior:
         img = np.squeeze(img)[1:-1, 1:-1]
-
+    x_shape, y_shape = np.shape(img) 
     b, a = get_CoM(img)
     # print('center of mass: {}, {}'.format(b, a))
     
@@ -187,6 +208,7 @@ def create_phase_defocus(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
     return zern
 
 
+
 def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
     """
     Zernike polynomial orders = 
@@ -221,7 +243,7 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
     # plt.show()
     return zern
 
-def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=True, tiptilt = []):
+def create_phase(coeffs, num=np.arange(2,16), res1=64, res2=64, offset=[0,0], radscale = 2, corrections = []):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -242,32 +264,41 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=T
             9 = [3,1],      19 = [5,1],
             10 = [3,3],     20 = [5,3],
     """
-    if defocus:
-        orders = [[2,-2], [2,0], [2,2],
-                [3,-3], [3,-1], [3,1],[3,3],
-                [4,-4], [4,-2], [4,0], [4,2], [4,4]]
-    else:
-        orders = [[2,-2], [2,2], # no defocus
-                [3,-3], [3,-1], [3,1],[3,3],
-                [4,-4], [4,-2], [4,0], [4,2], [4,4]]
+    
+    orders = [[1,-1],[1,1],[2,0], # tip, tilt, defocus
+            [2,-2],[2,2],
+            [3,-3],[3,-1],[3,1],[3,3], 
+            [4,-4],[4,-2],[4,0],[4,2],[4,4]]
+    
+    # if defocus:
+    #     orders = [[2,-2], [2,0], [2,2],
+    #             [3,-3], [3,-1], [3,1],[3,3],
+    #             [4,-4], [4,-2], [4,0], [4,2], [4,4]]
+    # else:
+    #     orders = [[2,-2], [2,2], # no defocus
+    #             [3,-3], [3,-1], [3,1],[3,3],
+    #             [4,-4], [4,-2], [4,0], [4,2], [4,4]]
 
     # sanity checks
-    assert(len(coeffs) == len(orders)) # should both be 12
-
-
+    # assert(len(coeffs) == len(orders)) # should both be 12
+    assert(len(coeffs)) == len(num)
     size=np.asarray([res1, res2]) 
     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
     
     # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
     # terms = [coeff*PC.crop(PC.create_zernike(size*2, order), size, offset) for coeff, order in list(zip(coeffs, orders))] 
-    terms = [PC.create_zernike(size, order, amp = coeff, radscale=radscale) for coeff, order in list(zip(coeffs, orders))]  
+    # terms = [PC.create_zernike(size, order, amp = coeff, radscale=radscale) for coeff, order in list(zip(coeffs, orders))] 
+    # NOTE: this is changed so I can call any subset of the full orders with another list called num
+    terms = [PC.create_zernike(size, orders[i], amp = coeff, radscale=radscale) for coeff, i in list(zip(coeffs, num))] 
+
     zern = sum(terms)
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
-    # NOTE: This causes an error when tiptilt is not given
-    if len(tiptilt) > 0:
-        zern = zern + tiptilt
+
+    for i in range(len(corrections)):
+        zern += i # assuming each term in corrections array is an array the size of zern
+        
     return zern
 
 
