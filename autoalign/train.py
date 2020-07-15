@@ -101,7 +101,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # exit()
             # Run the forward pass
             outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
-            exit()
+        
             # no activation function on the final layer means that outputs is the weight of the final layer
             loss = criterion(outputs, labels) # MSE
             # sum of averages for each coeff position
@@ -219,8 +219,9 @@ def main(args):
             model = my_models.Net()
 
     # model = my_models.MultiNetCentered()
+    model = my_models.NetCentered()
 
-    model = my_models.MultiNetCat()
+    # model = my_models.MultiNetCat()
 
     # print(model)
 

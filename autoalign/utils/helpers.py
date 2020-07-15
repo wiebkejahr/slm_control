@@ -221,7 +221,7 @@ def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
     # plt.show()
     return zern
 
-def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=True, tiptilt = []):
+def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=True, tiptilt = [], correction=[]):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -266,8 +266,9 @@ def create_phase(coeffs, res1=64, res2=64, offset=[0,0], radscale = 2, defocus=T
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
     # NOTE: This causes an error when tiptilt is not given
-    if len(tiptilt) > 0:
-        zern = zern + tiptilt
+    # if len(tiptilt) > 0:
+    #     zern = zern + tiptilt
+    zern = zern + correction
     return zern
 
 
@@ -316,11 +317,11 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     
 #     return img
 
-def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False, defocus=False, tiptilt=None):
+def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False, defocus=False, tiptilt=None, correction=None):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    zern = create_phase(coeffs, res,res, offset_label, defocus=defocus, tiptilt=tiptilt)
+    zern = create_phase(coeffs, res,res, offset_label, defocus=defocus, tiptilt=tiptilt, correction=correction)
     
     if multi:
         plane = 'all'
