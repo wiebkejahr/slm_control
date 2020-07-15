@@ -149,7 +149,8 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
 
 def center(xy, label, res=64, multi=True):
     xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
-    tiptilt = create_phase_tip_tilt([xtilt, ytilt])
+    tiptilt = create_phase(coeffs=[xtilt, ytilt], num=[0,1])
+    # tiptilt = create_phase_tip_tilt([xtilt, ytilt])
     corrected = get_sted_psf(coeffs=label, multi=multi, tiptilt=tiptilt)
     return corrected
 
@@ -174,76 +175,74 @@ def gen_coeffs(num=12):
     c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
     return c
 
-def create_phase_defocus(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
-    """
-    Zernike polynomial orders = 
-            1 = [[0,0],     11 = [4,-4],    21 = [5,5],
-            2 = [1,-1],     12 = [4,-2],    22 = [6,-6],
-            3 = [1,1],      13 = [4,0],     23 = [6,-4],
-            4 = [2,-2],     14 = [4,2],     24 = [6,-2],
-            5 = [2,0],      15 = [4,4],     25 = [6,0],
-            6 = [2,2],      16 = [5,-5],    26 = [6,2],
-            7 = [3,-3],     17 = [5,-3],    27 = [6,4],
-            8 = [3,-1],     18 = [5,-1],    28 = [6,6]] 
-            9 = [3,1],      19 = [5,1],
-            10 = [3,3],     20 = [5,3],
-    """
-   # NOTE: starting with the 4th order, bc we set the first three to zero.
-    orders = [[2,0]] #defocus
-    # sanity checks
-    assert(len(coeffs) == len(orders)) # should both be 1
-    assert(isinstance(i, float) for i in coeffs)
+# def create_phase_defocus(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
+#     """
+#     Zernike polynomial orders = 
+#             1 = [[0,0],     11 = [4,-4],    21 = [5,5],
+#             2 = [1,-1],     12 = [4,-2],    22 = [6,-6],
+#             3 = [1,1],      13 = [4,0],     23 = [6,-4],
+#             4 = [2,-2],     14 = [4,2],     24 = [6,-2],
+#             5 = [2,0],      15 = [4,4],     25 = [6,0],
+#             6 = [2,2],      16 = [5,-5],    26 = [6,2],
+#             7 = [3,-3],     17 = [5,-3],    27 = [6,4],
+#             8 = [3,-1],     18 = [5,-1],    28 = [6,6]] 
+#             9 = [3,1],      19 = [5,1],
+#             10 = [3,3],     20 = [5,3],
+#     """
+#    # NOTE: starting with the 4th order, bc we set the first three to zero.
+#     orders = [[2,0]] #defocus
+#     # sanity checks
+#     assert(len(coeffs) == len(orders)) # should both be 1
+#     assert(isinstance(i, float) for i in coeffs)
 
-    size=np.asarray([res1, res2]) # NOTE: used to be res+1
-    # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
-    # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
+#     size=np.asarray([res1, res2]) # NOTE: used to be res+1
+#     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
+#     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
     
-    # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
-    terms = [coeff*PC.create_zernike(size, order, radscale=radscale) for coeff, order in list(zip(coeffs, orders))]  
-    zern = sum(terms)
-    # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
-    # zern represents the collective abberations that will be added to an ideal donut.
-    # plt.imshow(zern)
-    # plt.show()
-    return zern
+#     # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
+#     terms = [coeff*PC.create_zernike(size, order, radscale=radscale) for coeff, order in list(zip(coeffs, orders))]  
+#     zern = sum(terms)
+#     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
+#     # zern represents the collective abberations that will be added to an ideal donut.
+#     # plt.imshow(zern)
+#     # plt.show()
+#     return zern
 
+# def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
+#     """
+#     Zernike polynomial orders = 
+#             1 = [[0,0],     11 = [4,-4],    21 = [5,5],
+#             2 = [1,-1],     12 = [4,-2],    22 = [6,-6],
+#             3 = [1,1],      13 = [4,0],     23 = [6,-4],
+#             4 = [2,-2],     14 = [4,2],     24 = [6,-2],
+#             5 = [2,0],      15 = [4,4],     25 = [6,0],
+#             6 = [2,2],      16 = [5,-5],    26 = [6,2],
+#             7 = [3,-3],     17 = [5,-3],    27 = [6,4],
+#             8 = [3,-1],     18 = [5,-1],    28 = [6,6]] 
+#             9 = [3,1],      19 = [5,1],
+#             10 = [3,3],     20 = [5,3],
+#     """
+#    # NOTE: starting with the 4th order, bc we set the first three to zero.
+#     orders = [[1,-1], #Y-tilt
+#             [1,1]] # X-tilt
+#     # sanity checks
+#     assert(len(coeffs) == len(orders)) # should both be 2
+#     assert(isinstance(i, float) for i in coeffs)
 
-
-def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
-    """
-    Zernike polynomial orders = 
-            1 = [[0,0],     11 = [4,-4],    21 = [5,5],
-            2 = [1,-1],     12 = [4,-2],    22 = [6,-6],
-            3 = [1,1],      13 = [4,0],     23 = [6,-4],
-            4 = [2,-2],     14 = [4,2],     24 = [6,-2],
-            5 = [2,0],      15 = [4,4],     25 = [6,0],
-            6 = [2,2],      16 = [5,-5],    26 = [6,2],
-            7 = [3,-3],     17 = [5,-3],    27 = [6,4],
-            8 = [3,-1],     18 = [5,-1],    28 = [6,6]] 
-            9 = [3,1],      19 = [5,1],
-            10 = [3,3],     20 = [5,3],
-    """
-   # NOTE: starting with the 4th order, bc we set the first three to zero.
-    orders = [[1,-1], #Y-tilt
-            [1,1]] # X-tilt
-    # sanity checks
-    assert(len(coeffs) == len(orders)) # should both be 2
-    assert(isinstance(i, float) for i in coeffs)
-
-    size=np.asarray([res1, res2]) # NOTE: used to be res+1
-    # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
-    # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
+#     size=np.asarray([res1, res2]) # NOTE: used to be res+1
+#     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
+#     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
     
-    # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
-    terms = [coeff*PC.create_zernike(size, order, radscale=radscale) for coeff, order in list(zip(coeffs, orders))]  
-    zern = sum(terms)
-    # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
-    # zern represents the collective abberations that will be added to an ideal donut.
-    # plt.imshow(zern)
-    # plt.show()
-    return zern
+#     # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
+#     terms = [coeff*PC.create_zernike(size, order, radscale=radscale) for coeff, order in list(zip(coeffs, orders))]  
+#     zern = sum(terms)
+#     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
+#     # zern represents the collective abberations that will be added to an ideal donut.
+#     # plt.imshow(zern)
+#     # plt.show()
+#     return zern
 
-def create_phase(coeffs, num=np.arange(2,16), res1=64, res2=64, offset=[0,0], radscale = 2, corrections = []):
+def create_phase(coeffs, num=np.arange(2,14), res1=64, res2=64, offset=[0,0], radscale = 2, corrections = []):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -264,7 +263,7 @@ def create_phase(coeffs, num=np.arange(2,16), res1=64, res2=64, offset=[0,0], ra
             9 = [3,1],      19 = [5,1],
             10 = [3,3],     20 = [5,3],
     """
-    
+    # default is defocus included but not tip/tilt
     orders = [[1,-1],[1,1],[2,0], # tip, tilt, defocus
             [2,-2],[2,2],
             [3,-3],[3,-1],[3,1],[3,3], 
@@ -308,15 +307,17 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
 
     if defocus:
         coeffs = gen_coeffs(num=12)
+        nums = np.arange(2, 14)
     else:
         coeffs = gen_coeffs(num=11)
+        nums = np.arange(3, 14)
     
     if offset:
         offset_label = gen_offset()
     else:
         offset_label = np.asarray([0,0])
 
-    zern = create_phase(coeffs, res, res, offset_label, defocus=defocus)
+    zern = create_phase(coeffs, num=nums, res1=res, res2=res, offset=offset_label)
     
     if multi:
         plane = 'all'
@@ -347,11 +348,15 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     
 #     return img
 
-def get_sted_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0],  multi=False, defocus=False, tiptilt=None):
+def get_sted_psf(coeffs=np.asarray([0.0]*12), res=64, offset_label=[0,0], multi=False, defocus=False, tiptilt=np.zeros((64,64))):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    zern = create_phase(coeffs, res,res, offset_label, defocus=defocus, tiptilt=tiptilt)
+    if defocus:
+        nums = np.arange(2, 14)
+    else:
+        nums = np.arange(3, 14)
+    zern = create_phase(coeffs=coeffs, num=nums, res1=res, res2=res, offset=offset_label, corrections=[tiptilt])
     
     if multi:
         plane = 'all'

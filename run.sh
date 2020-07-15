@@ -23,7 +23,7 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=2 # will do 90/10 train/validation split
 TEST_NUM=0 # number of additional test samples to create
-NAME="20.07.12_no_defocus_1D_centered_TEST"
+NAME="20.07.12_no_defocus_1D_centered_TEST2"
 # NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
