@@ -23,7 +23,7 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=2 # will do 90/10 train/validation split
 TEST_NUM=0 # number of additional test samples to create
-NAME="20.07.12_no_defocus_1D_centered_TEST2"
+NAME="20.06.22_no_defocus_multi_20k"
 # NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
@@ -53,7 +53,7 @@ fi
 ######################### 2. TRAIN ##################################
 # HYPERPARAMETERS 
 LR=0.001 # learning rate
-NUM_EPOCHS=15
+NUM_EPOCHS=5
 BATCH_SIZE=64
 MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_concat"
 # MODEL_NAME="20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_SECOND"
@@ -77,11 +77,11 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --logdir              path to logging dir for optional tensorboard visualization
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
-# if [ ! -f ${MODEL_STORE_PATH} ]; then
-# python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --multi #--warm_start ${CHECKPOINT_DIR}
-# else
-# echo "Model already exists"
-# fi
+if [ ! -f ${MODEL_STORE_PATH} ]; then
+python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --multi #--warm_start ${CHECKPOINT_DIR}
+else
+echo "Model already exists"
+fi
 ####################### 3. EVALUATE ################################
 # To see all options, run 'python evaluate.py --help'. Output copied below.
 #

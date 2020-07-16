@@ -101,7 +101,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # exit()
             # Run the forward pass
             outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
-            exit()
+            # exit()
             # no activation function on the final layer means that outputs is the weight of the final layer
             loss = criterion(outputs, labels) # MSE
             # sum of averages for each coeff position
