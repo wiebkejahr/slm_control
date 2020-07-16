@@ -46,9 +46,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
 
         # TRAINING LOOP
         for i, (images, labels) in enumerate(data_loaders['train']):
-            # print(i)
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
-            # if GPU is available, this allows the computation to happen there
 
             # NOTE: here's where you normalize it. 
             # print(images.numpy().shape)
@@ -57,51 +55,20 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
 
             # NOTE: this normalizes all the incoming images to be between 0 and 1
             # ideally, you have a dataset where that's already done, but this is a hack
-            
             # images = torch.from_numpy(np.stack([helpers.normalize_img(i) for i in images.numpy()], axis=0))
            
             # NOTE: this is the tip/tilt correction before training
             # images = torch.from_numpy(np.stack([helpers.center(i, j) for \
             #     i, j in (images.numpy(), labels.numpy().squeeze())], axis=0))
-            # plt.figure(1)
-            # xy = images.numpy().squeeze()[5][0]
-            # com1 = helpers.get_CoM(xy)
-            # plt.imshow(xy)
-            # plt.scatter(com1[0], com1[1], c='r')
-
-            # plt.figure(2)
-            # fixed = helpers.center(xy, labels.numpy().squeeze()[5])[0]
-            # com2 = helpers.get_CoM(fixed)
-            # plt.imshow(fixed)
-            # plt.scatter(com2[0], com2[1], c='r')
-            # plt.show()
-            # thing = helpers.center(images.numpy().squeeze()[0][0], np.asarray([0.1,0.1,0.1,0,0,0,0,0,0,0,0]))
-
-            # thing = np.stack([helpers.center(i[0], i[1]) for i in zip(images.numpy(), labels.numpy().squeeze())], axis=0)
-            # plt.figure(2)
-            # plt.imshow(thing[0][0])
-            # plt.show()
-            # exit()
-            # images = torch.from_numpy(thing)
             
-            
-            # print('min: {}      max: {}'.format(np.min(images.numpy()[0]), np.max(images.numpy()[0])))
-            # print('mean: {}     std: {}'.format(np.mean(images.numpy()[0]), np.std(images.numpy()[0])))
-            # exit()
-            # print(images.size())
-            # print(images.numpy().shape) # (64,1,64,64)
-            # centers the images before training. 
-            # images_np = np.stack([helpers.center(i, 64) for i in images.numpy().squeeze()], axis=0)
-            # images = torch.from_numpy(images_np).unsqueeze(1)
-            # print(images.size())
-            # exit()
+            # if GPU is available, this allows the computation to happen there
             images = images.to(device)
             labels = labels.to(device)
             # print(images.shape)
             # exit()
             # Run the forward pass
             outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
-        
+            # exit()
             # no activation function on the final layer means that outputs is the weight of the final layer
             loss = criterion(outputs, labels) # MSE
             # sum of averages for each coeff position
@@ -189,10 +156,10 @@ def main(args):
     
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=transforms.Compose([
         my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std)]))#, my_classes.Center()]))
+        my_classes.Normalize(mean=mean, std=std)]))
     val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
         my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std)]))#, my_classes.Center()]))
+        my_classes.Normalize(mean=mean, std=std)]))
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
@@ -219,9 +186,10 @@ def main(args):
             model = my_models.Net()
 
     # model = my_models.MultiNetCentered()
+    
+    # NOTE: overriding
     model = my_models.NetCentered()
-
-    # model = my_models.MultiNetCat()
+    model = my_models.MultiNetCat()
 
     # print(model)
 

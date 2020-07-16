@@ -60,7 +60,7 @@ MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}"
 # don't touch these
 MODEL_STORE_PATH="${MODEL_DIR}/${MODEL_NAME}.pth"
 LOGDIR=${LOG_DIR}/${MODEL_NAME}
-# CHECKPOINT_DIR="${MODEL_DIR}/20.16.06_1D_20k_eps_15_lr_0.001_bs_64_standardized_not_norm.pth"
+CHECKPOINT_DIR="${MODEL_DIR}/20.06.22_no_defocus_multi_20k_eps_5_lr_0.001_bs_64_concat.pth"
 
 # To see all options, run 'python train.py --help'. Output copied below.
 #

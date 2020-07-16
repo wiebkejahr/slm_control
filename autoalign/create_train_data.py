@@ -79,13 +79,23 @@ def main(args):
 
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
+            
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
-            plt.figure()
+            plt.figure(1)
             plt.imshow(img)
+            a, b = get_CoM(img)
+            print(a,b)
+            plt.scatter(a,b, color='r')
+            img = center(img, zern_label, multi=args.multi)
+            plt.figure(2)
+            plt.imshow(img)
+            x, y = get_CoM(img)
+            print(x,y)
+            plt.scatter(x,y, color='r')
             plt.show()
             exit()
-            img = center(img, zern_label, multi=args.multi)
-     
+
+
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         # save the label and image
