@@ -86,7 +86,7 @@ def get_CoM(img):
     return b,a
 
 
-def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, abberior=True):
+def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
     
     if abberior:
         img_xz = np.squeeze(img_xz)[1:-1, 1:-1]
@@ -95,22 +95,41 @@ def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, abberior=True):
     ####### xz ########
     x_shape, y_shape = np.shape(img_xz)
     b, a = get_CoM(img_xz)
-    dx = (x_shape-1)/2-a
-    dy = (y_shape-1)/2-b
-
-    d_obj = D/3/1000 # scaling
-    dz1 = -(f/d_obj)^2*8/sqrt(3)*lambd*dy
+    dx_xz = (x_shape-1)/2-a
+    dz_xz = (y_shape-1)/2-b
+    print(a,b,dx_xz,dz_xz)
+    #d_obj = D/3/1000 # scaling
+    #dz1 = -(f/d_obj)^2*8/np.sqrt(3)*lambd*dy
+    plt.figure()
+    plt.subplot(121)
+    plt.imshow(img_xz)
+    plt.scatter(a,b)
 
     ######## yz #########
     x_shape, y_shape = np.shape(img_yz)
     b, a = get_CoM(img_yz)
-    dx = (x_shape-1)/2-a
-    dy = (y_shape-1)/2-b
+    dy_yz = (x_shape-1)/2-a
+    dz_yz = (y_shape-1)/2-b
+    print(a,b,dy_yz,dz_yz)
+    plt.subplot(122)
+    plt.imshow(img_yz)
+    plt.scatter(a,b)
+    plt.show()
 
-    d_obj = D/3/1000 # scaling
-    dz2 = -(f/d_obj)^2*8/sqrt(3)*lambd*dy
+    dz = np.average([dz_xz, dz_yz])*px_size
+    #d_obj = D/3/1000 # scaling
+    print(dz, f, D, lambd)
+
+    # exit()
+    
+    defocus = dz/((f/D)**2 *8 * np.sqrt(3)*lambd*1e3)/2
+    #TODO: freak factor of two? check derivation again
+    # check aperture radius or diameter
+    
     # dz = -(f/d_obj)^2*8/sqrt(3)*lambd*coeff
-    return np.average([dz1, dz2])
+    print("defocus",dz, defocus)
+    return(defocus)
+    #return np.average([dz1, dz2])
 #     img_xz = np.squeeze(img_xz)[1:-1, 1:-1]
 #     b_xz, a_xz = get_CoM(img_xz)
 #     img_yz = np.squeeze(img_yz)[1:-1, 1:-1]
