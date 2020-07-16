@@ -80,7 +80,10 @@ def main(args):
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
             
+            
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
+            corr_coeff(img)
+            exit()
             plt.figure(1)
             plt.imshow(img)
             a, b = get_CoM(img)
