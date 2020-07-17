@@ -24,6 +24,11 @@ import sys, os
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 from PyQt5.QtGui import QPixmap, QImage
+try:
+    import specpy as sp
+except:
+    print("Specpy not installed!")
+    pass
 
 import numpy as np
 import matplotlib as mpl
@@ -177,7 +182,7 @@ class Main_Window(QtWidgets.QMainWindow):
         
         self.p.write_file(fname[0], self.current_objective, fname[1])
         
-
+    # NOTE: I wrote these fns
     def correct_defocus(self):
         self.defocus = abberior.correct_defocus()#(const=1/6.59371319)
         # self.phase_defocus = self.phase_defocus + pcalc.crop((1.)*helpers.create_phase_defocus(self.defocus, res1=1200, res2=792, radscale = self.slm_radius), [600, 396], offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
@@ -190,27 +195,49 @@ class Main_Window(QtWidgets.QMainWindow):
         self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
         self.recalc_images()
     
-    # NOTE: I WROTE THIS
+    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None):
+        size = 2 * np.asarray(self.p.general["size_slm"])
+        self.zernike = abberior.abberior_multi(MODEL_STORE_PATH, image)
+        self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
+                radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+        self.recalc_images()
+        new_img = abberior.get_image()
+        correlation = helpers.corr_coeff(new_img)
+        print('correlation coeff is: {}'.format(correlation))
+        
+        return self.zernike, new_img, correlation
+    
     def auto_align(self, model_store_path=MODEL_STORE_PATH):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
+        image = abberior.get_image()
+        zern, img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
         
+        # ITERATIVE LOOP #
+        so_far = -1
+        while corr > so_far:
+            new_zern, new_img, new_corr = self.corrective_loop(MODEL_STORE_PATH, img)
+            if new_corr > corr:
+                so_far = corr
+                corr = new_corr
+                print('new corr: {}, old corr: {}'.format(corr, so_far))
+                self.zern = new_corr
+            else:
+                print('final correlation: {}'.format(corr))
+                break
+
         # NOTE: need to know from the model itself which model to use, maybe some kind of json like for
         # the obejctives, but for now, can change manually 
-        size = 2 * np.asarray(self.p.general["size_slm"])
-        self.zernike = abberior.abberior_multi(MODEL_STORE_PATH)
-        # this needs to be scaled by some factor that's input from the GUI
-        print(self.zernike)
-        self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
-                radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
-        #self.zernikes_all = self.zernikes_all + (-1.)*helpers.create_phase(self.zernike, res1=600, res2=396, radscale = 4*self.slm_radius)
-        # plt.imshow(self.zernikes_all)
-        # plt.show()
-        # print(self.zernike)
+        # size = 2 * np.asarray(self.p.general["size_slm"])
+        #######################################
+        # self.zernike = abberior.abberior_multi(MODEL_STORE_PATH, image)
+        # self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
+        #         radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+        # self.recalc_images()
+        #######################################
 
-        self.recalc_images()
-        
-        
+    # NOTE: end of my fns
+     
     def init_images(self):
         """ Called upon startup of the program. Initizialises the variables
             containing the left and right halves of the SLM. """
@@ -271,7 +298,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.main_frame = QtWidgets.QWidget()  
         vbox = QtWidgets.QVBoxLayout()     
 
-        # Quit, objective diameter and autoaling buttons
+        # Quit, objective diameter and autoalign buttons
         hbox = QtWidgets.QHBoxLayout()
         self.crea_but(hbox, self._quit, "Quit")
         self.rad_but = QtWidgets.QDoubleSpinBox()

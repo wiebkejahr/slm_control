@@ -50,25 +50,8 @@ def test(model, input_image, model_store_path):
 
         outputs = model(image)
         coeffs = outputs.numpy().squeeze()
-        correlation = helpers.corr_coeff(helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
-            corrections=[helpers.create_phase(coeffs=(-1.)*coeffs)]))
-
-        # ITERATIVE LOOP #
-        so_far = -1
-        while correlation > so_far:
-            # while it is not optimized, if it comes accross a higher correlation, work down and switch out preds
-            new_coeffs = model(image).numpy().squeeze()
-            new_corrected = helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
-                corrections=[helpers.create_phase(coeffs=(-1.)*new_coeffs)])
-            new_correlation = helpers.corr_coeff(new_corrected)
-            if new_correlation > correlation:
-                so_far = correlation
-                correlation = new_correlation
-                print('new corr: {}, old corr: {}'.format(correlation, so_far))
-                coeffs = new_coeffs
-            else:
-                print('final correlation: {}'.format(correlation))
-                break
+        # correlation = helpers.corr_coeff(helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
+        #     corrections=[helpers.create_phase(coeffs=(-1.)*coeffs)]))
 
     return coeffs
 
@@ -113,20 +96,9 @@ def correct_defocus():
     return helpers.calc_defocus(image_xz, image_yz)
 
 
-
-def abberior_multi(model_store_path):
-    
-    # creates an instance of CNN
-    # model = my_models.MultiNetCentered()
-    model = my_models.NetCentered()
-
-    # acquire the image from Imspector
-    # NOTE: from Imspector, must run Tools > Run Server for this to work
+def get_image(xy=True):
+    # create Imspector object
     im = sp.Imspector()
-
-    # print Imspector host and version
-    # print('Connected to Imspector {} on {}'.format(im.version(), im.host()))
-
     # get active measurement
     msr = im.active_measurement()
     try:
@@ -144,7 +116,6 @@ def abberior_multi(model_store_path):
     except:
         print("Cannot find 'ExpControl Ch1 {15}' window")
         exit()
-
     # takes off black edge, resizes to (64, 64) and standardizes
     image_xy = helpers.preprocess(image_xy) 
     
@@ -155,18 +126,79 @@ def abberior_multi(model_store_path):
     # ##################
     image = np.stack((image_xy,image_xz, image_yz), axis=0)
 
-    # NOTE: this is a hack for 1D for now
-    image = image_xy
+    # NOTE: this is a hack to make it 1D for now
+    if xy:
+        image = image_xy
+    return image
+
+def abberior_multi(model_store_path, image):
+    
+    # creates an instance of CNN
+    # model = my_models.MultiNetCentered()
+    model = my_models.NetCentered()
+
+    # # acquire the image from Imspector
+    # # NOTE: from Imspector, must run Tools > Run Server for this to work
+    # im = sp.Imspector()
+
+    # # print Imspector host and version
+    # # print('Connected to Imspector {} on {}'.format(im.version(), im.host()))
+
+    # # get active measurement
+    # msr = im.active_measurement()
+    # try:
+    #     image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+    # except:
+    #     print("Cannot find 'ExpControl Ch1 {1}' window")
+    #     exit()
+    # try:
+    #     image_xz = msr.stack('ExpControl Ch1 {13}').data()
+    # except:
+    #     print("Cannot find 'ExpControl Ch1 {13}' window")
+    #     exit()
+    # try:
+    #     image_yz = msr.stack('ExpControl Ch1 {15}').data()
+    # except:
+    #     print("Cannot find 'ExpControl Ch1 {15}' window")
+    #     exit()
+
+    # # takes off black edge, resizes to (64, 64) and standardizes
+    # image_xy = helpers.preprocess(image_xy) 
+    
+    # image_xz = helpers.preprocess(image_xz)
+
+    # image_yz = helpers.preprocess(image_yz)
+
+    # # ##################
+    # image = np.stack((image_xy,image_xz, image_yz), axis=0)
+
+    # # NOTE: this is a hack to make it 1D for now
+    # image = image_xy
 
     # gets preds
     coeffs = test(model, image, model_store_path)
     # 
+    # # ITERATIVE LOOP #
+    # so_far = -1
+    # while correlation > so_far:
+    #     # while it is not optimized, if it comes accross a higher correlation, work down and switch out preds
+    #     new_coeffs = model(image).numpy().squeeze()
+    #     new_corrected = helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
+    #         corrections=[helpers.create_phase(coeffs=(-1.)*new_coeffs)])
+    #     new_correlation = helpers.corr_coeff(new_corrected)
+    #     if new_correlation > correlation:
+    #         so_far = correlation
+    #         correlation = new_correlation
+    #         print('new corr: {}, old corr: {}'.format(correlation, so_far))
+    #         coeffs = new_coeffs
+    #     else:
+    #         print('final correlation: {}'.format(correlation))
+    #         break
 
-    
 
 
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False, defocus=False)
-    helpers.plot_xsection_abber(image)
+    # helpers.plot_xsection_abber(image)
     # old = 0
     # new = 0
     # while new >= old:
@@ -186,10 +218,9 @@ def abberior_multi(model_store_path):
     #     new = helpers.corr_coeff(reconstructed)
     #     print(new)
 
-
-
     
-    # fig = helpers.plot_xsection_abber(image, reconstructed)
+    fig = helpers.plot_xsection_abber(image, reconstructed)
+    plt.show()
     
 
     return coeffs
