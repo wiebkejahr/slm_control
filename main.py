@@ -211,17 +211,17 @@ class Main_Window(QtWidgets.QMainWindow):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
         image = abberior.get_image()
-        zern, img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
+        _, new_img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
         
         # ITERATIVE LOOP #
         so_far = -1
         while corr > so_far:
-            new_zern, new_img, new_corr = self.corrective_loop(MODEL_STORE_PATH, img)
+            zern, new_img, new_corr = self.corrective_loop(MODEL_STORE_PATH, new_img)
             if new_corr > corr:
                 so_far = corr
                 corr = new_corr
                 print('new corr: {}, old corr: {}'.format(corr, so_far))
-                self.zern = new_corr
+                self.zern = zern
             else:
                 print('final correlation: {}'.format(corr))
                 break
