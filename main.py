@@ -204,35 +204,12 @@ class Main_Window(QtWidgets.QMainWindow):
         self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
                 radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
         #self.zernikes_all = self.zernikes_all + (-1.)*helpers.create_phase(self.zernike, res1=600, res2=396, radscale = 4*self.slm_radius)
-        plt.imshow(self.zernikes_all)
-        plt.show()
-        print(self.zernike)
-        # plt.figure()
         # plt.imshow(self.zernikes_all)
         # plt.show()
-
-        # # NOTE: self.p exists bc load_params() is called during creation of mainframe
-        # # this is setting each value to its current value plus the correction
-        # self.p.left["astig"] = [x+y for x,y in zip(self.p.left["astig"], self.zernike["astig"])]
-        # self.p.left["coma"] = [x+y for x,y in zip(self.p.left["coma"], self.zernike["coma"])]
-        # self.p.left["sphere"] = [x+y for x,y in zip(self.p.left["sphere"], self.zernike["sphere"])]
-        # self.p.left["trefoil"] = [x+y for x,y in zip(self.p.left["trefoil"], self.zernike["trefoil"])]
-
-        # self.p.right["astig"] = [x+y for x,y in zip(self.p.right["astig"], self.zernike["astig"])]
-        # self.p.right["coma"] = [x+y for x,y in zip(self.p.right["coma"], self.zernike["coma"])]
-        # self.p.right["sphere"] = [x+y for x,y in zip(self.p.right["sphere"], self.zernike["sphere"])]
-        # self.p.right["trefoil"] = [x+y for x,y in zip(self.p.right["trefoil"], self.zernike["trefoil"])]
-        
-
-        # # this update_combvalues function has to retrieve the current GUI values and add on your dict vals
-        # self.img_l.update_guivalues(self.p, self.p.left)
-        # self.img_r.update_guivalues(self.p, self.p.right)
-        # #self.objective_changed()
-        # #self.split_image(self.splt_img_state.checkState())
-        # #self.single_correction(self.sngl_corr_state.checkState())
-        # #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
+        # print(self.zernike)
 
         self.recalc_images()
+        
         
     def init_images(self):
         """ Called upon startup of the program. Initizialises the variables

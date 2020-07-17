@@ -49,16 +49,27 @@ def test(model, input_image, model_store_path):
         # image = torch.from_numpy(input_image).unsqueeze(0)
 
         outputs = model(image)
-    coeffs = outputs.numpy().squeeze()
+        coeffs = outputs.numpy().squeeze()
+        correlation = helpers.corr_coeff(helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
+            corrections=[helpers.create_phase(coeffs=(-1.)*coeffs)]))
 
-    # # corrected = normalize_img(input_image) + normalize_img(get_psf(-coeffs))
-    # # plt.figure()
-    # # plt.imshow(corrected)
-    # # plt.show()
+        # ITERATIVE LOOP #
+        so_far = -1
+        while correlation > so_far:
+            # while it is not optimized, if it comes accross a higher correlation, work down and switch out preds
+            new_coeffs = model(image).numpy().squeeze()
+            new_corrected = helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
+                corrections=[helpers.create_phase(coeffs=(-1.)*new_coeffs)])
+            new_correlation = helpers.corr_coeff(new_corrected)
+            if new_correlation > correlation:
+                so_far = correlation
+                correlation = new_correlation
+                print('new corr: {}, old corr: {}'.format(correlation, so_far))
+                coeffs = new_coeffs
+            else:
+                print('final correlation: {}'.format(correlation))
+                break
 
-
-    # # print("\n\n correlation coeff is: {} \n\n".format(np.corrcoef(donut.flat, corrected.flat)[0][1]))
-    # # return coeffs, np.corrcoef(donut.flat, corrected.flat)[0][1], corrected
     return coeffs
 
 def correct_tip_tilt():
@@ -104,8 +115,8 @@ def correct_defocus():
 
 
 def abberior_multi(model_store_path):
+    
     # creates an instance of CNN
-
     # model = my_models.MultiNetCentered()
     model = my_models.NetCentered()
 
@@ -134,64 +145,52 @@ def abberior_multi(model_store_path):
         print("Cannot find 'ExpControl Ch1 {15}' window")
         exit()
 
-    # print(image_xy.shape)
-    # print(center_of_mass(image_xy))
-
-    image_xy = helpers.preprocess(image_xy)
-    # NOTE: why is the center of mass so large??
-    # print(np.min(image_xy), np.max(image_xy))
-    # image_xy = (image_xy-np.mean(image_xy))/np.std(image_xy)
-    # print(np.min(image_xy), np.max(image_xy))
-
-
-    # print(image_xy.shape)
-    # print(center_of_mass(image_xy))
-    # exit()
-    # plt.figure()
-    # plt.imshow(image_xy)
-    # plt.show()
-    # exit()
-    # NOTE: going to 1D for now
+    # takes off black edge, resizes to (64, 64) and standardizes
+    image_xy = helpers.preprocess(image_xy) 
+    
     image_xz = helpers.preprocess(image_xz)
-    #image_xz = np.fliplr(rotate(image_xz, -90))
-    # plt.figure()
-    # plt.imshow(image_xz, aspect="equal")
-    # plt.show()
 
     image_yz = helpers.preprocess(image_yz)
-    #image_yz = np.fliplr(imgage_yz)
 
-    # plt.figure()
-    # plt.imshow(image_yz, aspect="equal")
-    # plt.show()
     # ##################
     image = np.stack((image_xy,image_xz, image_yz), axis=0)
-    # image = np.stack((np.squeeze(image_xy), np.squeeze(image_xz), np.squeeze(image_yz)), axis=0)
-    # fig = helpers.plot_xsection(image)
-    # plt.show()
 
-    # exit()
-    # print(np.max(image), np.min(image))
-    # exit()
-
+    # NOTE: this is a hack for 1D for now
     image = image_xy
-    # # coeffs, _, image = test(model, image, model_store_path)
+
+    # gets preds
     coeffs = test(model, image, model_store_path)
-    print(len(coeffs))
-    # exit()
-    # print(coeffs)
-    # coeffs = results[:-2]
-    # offset = results[-2:]
+    # 
+
+    
+
+
     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False, defocus=False)
-    # print(np.max(reconstructed), np.min(reconstructed))
-    # fig1 = helpers.plot_xsection(reconstructed)
-    # plt.show()
-    plt.figure(1)
-    plt.imshow(image_xy, cmap='hot')
-    plt.figure(2)
-    plt.imshow(reconstructed, cmap='hot')
+    helpers.plot_xsection_abber(image)
+    # old = 0
+    # new = 0
+    # while new >= old:
+    #     # gets preds
+    #     coeffs = test(model, image, model_store_path)
+    #     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False, defocus=False)
+    #     # plots it
+    #     plt.figure(1)
+    #     plt.imshow(image_xy, cmap='hot')
+    #     plt.figure(2)
+    #     plt.imshow(reconstructed, cmap='hot')
+    #     plt.show()
+        
+    #     # reassign lower threshold to be current correlation
+    #     old = new
+    #     # get new correlation coeff
+    #     new = helpers.corr_coeff(reconstructed)
+    #     print(new)
+
+
+
+    
     # fig = helpers.plot_xsection_abber(image, reconstructed)
-    plt.show()
+    
 
     return coeffs
 

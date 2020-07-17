@@ -129,15 +129,6 @@ def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, px_size=10, abberio
     # dz = -(f/d_obj)^2*8/sqrt(3)*lambd*coeff
     print("defocus",dz, defocus)
     return(defocus)
-    #return np.average([dz1, dz2])
-#     img_xz = np.squeeze(img_xz)[1:-1, 1:-1]
-#     b_xz, a_xz = get_CoM(img_xz)
-#     img_yz = np.squeeze(img_yz)[1:-1, 1:-1]
-#     b_yz, a_yz = get_CoM(img_yz)
-#     val = (np.shape(img_xz)[1]-1)/2 - np.average([a_xz, a_yz])
-#     print("defocus",val)
-#     # const = 0
-#     return [const*val]
 
 
 def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
@@ -196,84 +187,14 @@ def gen_coeffs(num=12):
     return c
 
 
-def corr_coeff(img1, img2=None, ideal=True):
+def corr_coeff(img1, img2=None, ideal=True, multi=False):
     if ideal:
-        img2 = get_sted_psf()
-    plt.figure()
-    plt.imshow(img)
-    plt.show()
+        img2 = get_sted_psf(multi=multi)
 
-    return np.corrcoef(img1.flat, img2.flat)
+    return np.corrcoef(img1.flat, img2.flat)[0,1]
 
 
-# def create_phase_defocus(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
-#     """
-#     Zernike polynomial orders = 
-#             1 = [[0,0],     11 = [4,-4],    21 = [5,5],
-#             2 = [1,-1],     12 = [4,-2],    22 = [6,-6],
-#             3 = [1,1],      13 = [4,0],     23 = [6,-4],
-#             4 = [2,-2],     14 = [4,2],     24 = [6,-2],
-#             5 = [2,0],      15 = [4,4],     25 = [6,0],
-#             6 = [2,2],      16 = [5,-5],    26 = [6,2],
-#             7 = [3,-3],     17 = [5,-3],    27 = [6,4],
-#             8 = [3,-1],     18 = [5,-1],    28 = [6,6]] 
-#             9 = [3,1],      19 = [5,1],
-#             10 = [3,3],     20 = [5,3],
-#     """
-#    # NOTE: starting with the 4th order, bc we set the first three to zero.
-#     orders = [[2,0]] #defocus
-#     # sanity checks
-#     assert(len(coeffs) == len(orders)) # should both be 1
-#     assert(isinstance(i, float) for i in coeffs)
-
-#     size=np.asarray([res1, res2]) # NOTE: used to be res+1
-#     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
-#     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
-    
-#     # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
-#     terms = [coeff*PC.create_zernike(size, order, radscale=radscale) for coeff, order in list(zip(coeffs, orders))]  
-#     zern = sum(terms)
-#     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
-#     # zern represents the collective abberations that will be added to an ideal donut.
-#     # plt.imshow(zern)
-#     # plt.show()
-#     return zern
-
-# def create_phase_tip_tilt(coeffs, res1=64, res2=64, offset=[0,0], radscale=1):
-#     """
-#     Zernike polynomial orders = 
-#             1 = [[0,0],     11 = [4,-4],    21 = [5,5],
-#             2 = [1,-1],     12 = [4,-2],    22 = [6,-6],
-#             3 = [1,1],      13 = [4,0],     23 = [6,-4],
-#             4 = [2,-2],     14 = [4,2],     24 = [6,-2],
-#             5 = [2,0],      15 = [4,4],     25 = [6,0],
-#             6 = [2,2],      16 = [5,-5],    26 = [6,2],
-#             7 = [3,-3],     17 = [5,-3],    27 = [6,4],
-#             8 = [3,-1],     18 = [5,-1],    28 = [6,6]] 
-#             9 = [3,1],      19 = [5,1],
-#             10 = [3,3],     20 = [5,3],
-#     """
-#    # NOTE: starting with the 4th order, bc we set the first three to zero.
-#     orders = [[1,-1], #Y-tilt
-#             [1,1]] # X-tilt
-#     # sanity checks
-#     assert(len(coeffs) == len(orders)) # should both be 2
-#     assert(isinstance(i, float) for i in coeffs)
-
-#     size=np.asarray([res1, res2]) # NOTE: used to be res+1
-#     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
-#     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
-    
-    # NOTE: changed order to reflect new ordering of args """def crop(full, size, offset = [0,0]):"""
-    terms = [coeff*PC.create_zernike(size, order, radscale=radscale) for coeff, order in list(zip(coeffs, orders))]  
-    zern = sum(terms)
-    # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
-    # zern represents the collective abberations that will be added to an ideal donut.
-    # plt.imshow(zern)
-    # plt.show()
-    return zern
-
-def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res2=64, offset=[0,0], radscale = 2, corrections = np.zeros((64, 64))):
+def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res2=64, offset=[0,0], radscale = 2, corrections = []):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -316,13 +237,11 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
     # NOTE: This causes an error when tiptilt is not given
-    
+    for i in range(len(corrections)):
+        zern += corrections[i]
     # zern = zern + tiptilt
-    zern = zern + corrections
-    plt.figure()
-    plt.imshow(zern)
-    plt.colorbar()
-    # plt.show()
+    # zern = zern + corrections[0]
+
     return zern
 
 
@@ -355,7 +274,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     # img = normalize_img(img)
     return img, coeffs, offset_label
 
-def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi=False, defocus=False, tiptilt=np.zeros((64, 64))):
+def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi=False, defocus=False, corrections=[]):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
@@ -364,7 +283,7 @@ def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi
     else:
         nums = np.arange(3, 14)
     
-    zern = create_phase(coeffs=coeffs,num=nums, res1=res,res2=res, offset=offset_label, corrections=[tiptilt])
+    zern = create_phase(coeffs=coeffs,num=nums, res1=res,res2=res, offset=offset_label, corrections=corrections)
     
     if multi:
         plane = 'all'
@@ -520,6 +439,7 @@ def plot_xsection_abber(img1, img2):
     return fig
 
 if __name__ == "__main__":
+    pass
 # TODO: redirect to the original now that it's in the same repo
 #########################################################################################
 #
