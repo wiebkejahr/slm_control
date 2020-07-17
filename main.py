@@ -72,8 +72,8 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_standardized.pth"
 # MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_15_lr_0.001_bs_64_precentered.pth"
-MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_5_lr_0.001_bs_64_concat.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64.pth"
+MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_5_lr_0.001_bs_64_concat.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -203,8 +203,9 @@ class Main_Window(QtWidgets.QMainWindow):
                 radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
         self.recalc_images()
         self.correct_tiptilt()
-        new_img = abberior.get_image()
-        correlation = helpers.corr_coeff(new_img)
+        self.correct_defocus()
+        new_img = abberior.get_image(multi=True)
+        correlation = np.round(helpers.corr_coeff(new_img, multi=True), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
         
         return self.zernike, new_img, correlation
@@ -219,12 +220,12 @@ class Main_Window(QtWidgets.QMainWindow):
         size = 2 * np.asarray(self.p.general["size_slm"])
         
         self.correct_tiptilt()
+        self.correct_defocus()
         so_far = -1
-        corr = 0
+        corr = 0                                                             
         preds = np.zeros(11)
-        while corr > so_far:
-            
-            image = abberior.get_image()
+        while corr >= so_far:
+            image = abberior.get_image(multi=True)                                                   
             preds, image, new_corr = self.corrective_loop(MODEL_STORE_PATH, image)
             if new_corr > corr:
                 so_far = corr
@@ -239,6 +240,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 break
         self.recalc_images()
         self.correct_tiptilt()
+        self.correct_defocus()
 
 
 

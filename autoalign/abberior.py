@@ -44,10 +44,10 @@ def test(model, input_image, model_store_path):
     with torch.no_grad():
         # adds 3rd color channel dim and batch dim
         # NOTE: THIS IS ONLY FOR 1D
-        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
         # print(np.max(input_image), np.min(input_image))
-        # image = torch.from_numpy(input_image).unsqueeze(0)
+        image = torch.from_numpy(input_image).unsqueeze(0)
 
         outputs = model(image)
         coeffs = outputs.numpy().squeeze()
@@ -97,16 +97,16 @@ def correct_defocus():
     return helpers.calc_defocus(image_xz, image_yz)
 
 
-def get_image(xy=True):
+def get_image(multi=False):
     # create Imspector object
     im = sp.Imspector()
     # get active measurement
-    # msr = im.active_measurement()
-    # try:
-    #     image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    # except:
-    #     print("Cannot find 'ExpControl Ch1 {1}' window")
-    #     exit()
+    msr = im.active_measurement()
+    try:
+        image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+    except:
+        print("Cannot find 'ExpControl Ch1 {1}' window")
+        exit()
     # try:
     #     image_xz = msr.stack('ExpControl Ch1 {13}').data()
     # except:
@@ -118,42 +118,54 @@ def get_image(xy=True):
     #     print("Cannot find 'ExpControl Ch1 {15}' window")
     #     exit()
 
-    print(im.measurement_names())
-    x = im.measurement(im.measurement_names()[0])
-    print(x.configuration_names())
-    im.activate(x)
-    x.configuration('xy2d')
-    im.start(x)
-
-    time.sleep(3)
-    # image_xy = im.start(x)
-    im.pause(x)
-    image_xy = x.stack('ExpControl Ch1 {1}').data()   
+    image = helpers.preprocess(image_xy)
     
     #image_xz = im.measurement('ExpControl Ch1 {13}')
     #image_yz = im.measurement('ExpControl Ch1 {15}')
+    if multi:
+        x = im.measurement(im.measurement_names()[0])
+        im.activate(x)
+        #########
+        x.activate(x.configuration('xy2d'))
+        im.start(x)
+        time.sleep(3)
+        im.pause(x)
+        image_xy = x.stack('ExpControl Ch1 {1}').data()
+        image_xy = helpers.preprocess(image_xy) # takes off black edge, resizes to (64, 64) and standardizes
+        time.sleep(0.5)
 
-    # takes off black edge, resizes to (64, 64) and standardizes
-    image_xy = helpers.preprocess(image_xy) 
+        x.activate(x.configuration('xz2d'))
+        im.start(x)
+        time.sleep(3)
+        im.pause(x)
+        image_xz = x.stack('ExpControl Ch1 {13}').data()
+        image_xz = helpers.preprocess(image_xz)
+        time.sleep(0.5)
+
+        x.activate(x.configuration('yz2d'))
+        im.start(x)
+        time.sleep(3)
+        im.pause(x)
+        image_yz = x.stack('ExpControl Ch1 {15}').data()
+        image_yz = helpers.preprocess(image_yz)
+        image = np.stack((image_xy,image_xz, image_yz), axis=0)
+        time.sleep(0.5)
+        # print(image.shape)
+        helpers.plot_xsection(image)
+        plt.show()
+
     
-    # image_xz = helpers.preprocess(image_xz)
-
-    # image_yz = helpers.preprocess(image_yz)
-
-    # # ##################
-    # image = np.stack((image_xy,image_xz, image_yz), axis=0)
-
     # NOTE: this is a hack to make it 1D for now
-    if xy:
-        image = image_xy
+    # if xy:
+    #     image = image_xy
     return image
 
 def abberior_multi(model_store_path, image):
     
     # creates an instance of CNN
     # model = my_models.MultiNetCentered()
-    model = my_models.NetCentered()
-
+    # model = my_models.NetCentered()
+    model = my_models.MultiNetCat()
     # # acquire the image from Imspector
     # # NOTE: from Imspector, must run Tools > Run Server for this to work
     # im = sp.Imspector()
@@ -236,7 +248,7 @@ def abberior_multi(model_store_path, image):
     #     print(new)
     plt.figure(1)
     plt.subplot(121)
-    plt.imshow(image, cmap='hot')
+    plt.imshow(image[0], cmap='hot')
     plt.subplot(122)
     plt.imshow(reconstructed, cmap='hot')
     plt.show()

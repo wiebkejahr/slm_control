@@ -99,7 +99,10 @@ class MultiNetCat(nn.Module):
         self.fc3 = nn.Linear(512, 11) #NOTE; this used to be 12
 
     def forward(self, img):
+        
         x = img[:, 0].unsqueeze(1) # adding dim of 0 after batch dim
+        # print(x.shape)
+        # print(img[:,1].shape)
         y = img[:, 1].unsqueeze(1)
         z = img[:, 2].unsqueeze(1)
         # print(img.shape)

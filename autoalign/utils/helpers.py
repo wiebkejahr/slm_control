@@ -97,28 +97,28 @@ def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, px_size=10, abberio
     b, a = get_CoM(img_xz)
     dx_xz = (x_shape-1)/2-a
     dz_xz = (y_shape-1)/2-b
-    print(a,b,dx_xz,dz_xz)
+    # print(a,b,dx_xz,dz_xz)
     #d_obj = D/3/1000 # scaling
     #dz1 = -(f/d_obj)^2*8/np.sqrt(3)*lambd*dy
-    plt.figure()
-    plt.subplot(121)
-    plt.imshow(img_xz)
-    plt.scatter(a,b)
+    # plt.figure()
+    # plt.subplot(121)
+    # plt.imshow(img_xz)
+    # plt.scatter(a,b)
 
     ######## yz #########
     x_shape, y_shape = np.shape(img_yz)
     b, a = get_CoM(img_yz)
     dy_yz = (x_shape-1)/2-a
     dz_yz = (y_shape-1)/2-b
-    print(a,b,dy_yz,dz_yz)
-    plt.subplot(122)
-    plt.imshow(img_yz)
-    plt.scatter(a,b)
-    plt.show()
+    # print(a,b,dy_yz,dz_yz)
+    # plt.subplot(122)
+    # plt.imshow(img_yz)
+    # plt.scatter(a,b)
+    # plt.show()
 
     dz = np.average([dz_xz, dz_yz])*px_size
     #d_obj = D/3/1000 # scaling
-    print(dz, f, D, lambd)
+    # print(dz, f, D, lambd)
 
     # exit()
     
@@ -191,12 +191,12 @@ def corr_coeff(img1, img2=None, ideal=True, multi=False):
     if ideal:
         img2 = get_sted_psf(multi=multi)
 
-    plt.figure()
-    plt.subplot(121)
-    plt.imshow(img1)
-    plt.subplot(122)
-    plt.imshow(img2)
-    plt.show()
+    # plt.figure()
+    # plt.subplot(121)
+    # plt.imshow(img1)
+    # plt.subplot(122)
+    # plt.imshow(img2)
+    # plt.show()
 
     return np.corrcoef(img1.flat, img2.flat)[0,1]
 
