@@ -191,6 +191,13 @@ def corr_coeff(img1, img2=None, ideal=True, multi=False):
     if ideal:
         img2 = get_sted_psf(multi=multi)
 
+    plt.figure()
+    plt.subplot(121)
+    plt.imshow(img1)
+    plt.subplot(122)
+    plt.imshow(img2)
+    plt.show()
+
     return np.corrcoef(img1.flat, img2.flat)[0,1]
 
 

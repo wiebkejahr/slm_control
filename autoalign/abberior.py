@@ -21,6 +21,7 @@ except:
     print("Specpy not installed!")
     pass
 import sys
+import time
 sys.path.insert(1, 'autoalign/')
 sys.path.insert(1, 'parameters/')
 import utils.helpers as helpers
@@ -100,31 +101,47 @@ def get_image(xy=True):
     # create Imspector object
     im = sp.Imspector()
     # get active measurement
-    msr = im.active_measurement()
-    try:
-        image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    except:
-        print("Cannot find 'ExpControl Ch1 {1}' window")
-        exit()
-    try:
-        image_xz = msr.stack('ExpControl Ch1 {13}').data()
-    except:
-        print("Cannot find 'ExpControl Ch1 {13}' window")
-        exit()
-    try:
-        image_yz = msr.stack('ExpControl Ch1 {15}').data()
-    except:
-        print("Cannot find 'ExpControl Ch1 {15}' window")
-        exit()
+    # msr = im.active_measurement()
+    # try:
+    #     image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+    # except:
+    #     print("Cannot find 'ExpControl Ch1 {1}' window")
+    #     exit()
+    # try:
+    #     image_xz = msr.stack('ExpControl Ch1 {13}').data()
+    # except:
+    #     print("Cannot find 'ExpControl Ch1 {13}' window")
+    #     exit()
+    # try:
+    #     image_yz = msr.stack('ExpControl Ch1 {15}').data()
+    # except:
+    #     print("Cannot find 'ExpControl Ch1 {15}' window")
+    #     exit()
+
+    print(im.measurement_names())
+    x = im.measurement(im.measurement_names()[0])
+    print(x.configuration_names())
+    im.activate(x)
+    x.configuration('xy2d')
+    im.start(x)
+
+    time.sleep(3)
+    # image_xy = im.start(x)
+    im.pause(x)
+    image_xy = x.stack('ExpControl Ch1 {1}').data()   
+    
+    #image_xz = im.measurement('ExpControl Ch1 {13}')
+    #image_yz = im.measurement('ExpControl Ch1 {15}')
+
     # takes off black edge, resizes to (64, 64) and standardizes
     image_xy = helpers.preprocess(image_xy) 
     
-    image_xz = helpers.preprocess(image_xz)
+    # image_xz = helpers.preprocess(image_xz)
 
-    image_yz = helpers.preprocess(image_yz)
+    # image_yz = helpers.preprocess(image_yz)
 
-    # ##################
-    image = np.stack((image_xy,image_xz, image_yz), axis=0)
+    # # ##################
+    # image = np.stack((image_xy,image_xz, image_yz), axis=0)
 
     # NOTE: this is a hack to make it 1D for now
     if xy:
@@ -217,10 +234,15 @@ def abberior_multi(model_store_path, image):
     #     # get new correlation coeff
     #     new = helpers.corr_coeff(reconstructed)
     #     print(new)
-
-    
-    fig = helpers.plot_xsection_abber(image, reconstructed)
+    plt.figure(1)
+    plt.subplot(121)
+    plt.imshow(image, cmap='hot')
+    plt.subplot(122)
+    plt.imshow(reconstructed, cmap='hot')
     plt.show()
+    
+    # fig = helpers.plot_xsection_abber(image, reconstructed)
+    # plt.show()
     
 
     return coeffs

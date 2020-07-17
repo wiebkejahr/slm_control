@@ -73,6 +73,7 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_15_lr_0.001_bs_64_precentered.pth"
 MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_5_lr_0.001_bs_64_concat.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -201,6 +202,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
                 radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
         self.recalc_images()
+        self.correct_tiptilt()
         new_img = abberior.get_image()
         correlation = helpers.corr_coeff(new_img)
         print('correlation coeff is: {}'.format(correlation))
@@ -210,21 +212,35 @@ class Main_Window(QtWidgets.QMainWindow):
     def auto_align(self, model_store_path=MODEL_STORE_PATH):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
-        image = abberior.get_image()
-        _, new_img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
-        
+        # self.correct_tiptilt()
+        # image = abberior.get_image()
+        # _, new_img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
         # ITERATIVE LOOP #
+        size = 2 * np.asarray(self.p.general["size_slm"])
+        
+        self.correct_tiptilt()
         so_far = -1
+        corr = 0
+        preds = np.zeros(11)
         while corr > so_far:
-            zern, new_img, new_corr = self.corrective_loop(MODEL_STORE_PATH, new_img)
+            
+            image = abberior.get_image()
+            preds, image, new_corr = self.corrective_loop(MODEL_STORE_PATH, image)
             if new_corr > corr:
                 so_far = corr
                 corr = new_corr
                 print('new corr: {}, old corr: {}'.format(corr, so_far))
-                self.zern = zern
+                # self.zernike = preds_new
             else:
                 print('final correlation: {}'.format(corr))
+                self.zernikes_all = self.zernikes_all - pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
+                    radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+                #self.zernike = preds
                 break
+        self.recalc_images()
+        self.correct_tiptilt()
+
+
 
         # NOTE: need to know from the model itself which model to use, maybe some kind of json like for
         # the obejctives, but for now, can change manually 
