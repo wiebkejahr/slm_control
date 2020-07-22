@@ -8,6 +8,7 @@ Created on: Thursday, 28th November 2019 10:54:30 am
 import random
 import json
 import random
+from numpy.random import normal
 from math import factorial as mfac
 
 # third party imports
@@ -38,7 +39,7 @@ def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
     return (img-np.min(img))/(np.max(img)-np.min(img))
 
-def add_noise(img):
+def add_noise_old(img):
     """Adds Poisson noise to the image using skimage's built-in method. Function normalizes image before adding noise"""
     # return img + np.random.poisson(img)
     return skimage.util.random_noise(normalize_img(img), mode='gaussian', seed=None, clip=True, var=0.0001)
@@ -49,6 +50,20 @@ def add_noise(img):
 #     tol  is tolerance."""
 #     mask = img>tol
 #     return img[np.ix_(mask.any(1),mask.any(0))]
+
+# NOTE: fn contributed by Julia Lyudchik
+# TODO: tune optional argument values to match the look we're going for
+def add_noise(image, bgnoise_amount=1, poiss_amount=150):
+    # print(image.shape) # (3, 64, 64)
+    # x0, y0 = image.shape
+    _, x0,y0 = image.shape
+    #Background noise
+    Nb = np.random.normal(0, 0.001, [x0,y0])
+    final_Nb = image + Nb*bgnoise_amount
+    final_Nb = (final_Nb-np.amin(final_Nb))/(np.amax(final_Nb) - np.amin(final_Nb))
+    #Poisson noise
+    final_poiss = np.random.poisson(final_Nb / np.amax(final_Nb) * poiss_amount) / poiss_amount * np.amax(final_Nb)
+    return final_poiss
 
 
 def preprocess(image):
@@ -140,7 +155,7 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
-
+    assert(len(img.shape) == 2)
     D = D/3/1000 # scaling, =~0.00168
        
     if abberior:
@@ -159,16 +174,19 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
 
 
 def center(xy, label, res=64, multi=True):
+    """Returns the correction phasemask to counteract tiptilt present in given image"""
     xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
     tiptilt = create_phase(coeffs=[xtilt, ytilt], num=[0,1])
-    # tiptilt = create_phase_tip_tilt([xtilt, ytilt])
-    corrected = get_sted_psf(coeffs=label, multi=multi, tiptilt=tiptilt)
-    return corrected
+    # corrected = get_sted_psf(coeffs=label, multi=multi, corrections=tiptilt)
+    return tiptilt
+    # return corrected
 
 def gen_offset():
-    """A function to generate an offset [x, y] to displace the STED psf. Returns an 1d array of 2 ints"""
-    x = round(random.uniform(-0.2, 0.2), 3)
-    y = round(random.uniform(-0.2, 0.2), 3)
+    """A function to generate an offset [x, y] to displace the STED psf. 
+    Returns an 1d array of 2 ints"""
+    x, y = np.random.normal(0,0.1, 2)
+    x = np.round(x, 3)
+    y = np.round(y, 3)
     return [x,y]
 
 def gen_coeffs(num=12):
@@ -183,7 +201,8 @@ def gen_coeffs(num=12):
     # c[3:6] = [random.uniform(-1.4, 1.4) for i in c[3:6]]
     # c[6:10] = [random.uniform(-0.8, 0.8) for i in c[6:10]]
     # c[10:] = [random.uniform(-0.6, 0.6) for i in c[10:]]
-    c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
+    c = [round(np.random.normal(0,0.1), 3) for i in c]
+    # c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
     return c
 
 
@@ -191,17 +210,10 @@ def corr_coeff(img1, img2=None, ideal=True, multi=False):
     if ideal:
         img2 = get_sted_psf(multi=multi)
 
-    # plt.figure()
-    # plt.subplot(121)
-    # plt.imshow(img1)
-    # plt.subplot(122)
-    # plt.imshow(img2)
-    # plt.show()
-
     return np.corrcoef(img1.flat, img2.flat)[0,1]
 
 
-def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res2=64, offset=[0,0], radscale = 2, corrections = []):
+def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res2=64, radscale = 2, corrections = []):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -230,7 +242,7 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res
     
     # sanity checks
     # assert(len(coeffs) == len(orders)) # should both be 12
-    assert(len(coeffs)) == len(num)
+    assert(len(coeffs) == len(num))
     size=np.asarray([res1, res2]) 
     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
@@ -244,8 +256,10 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
     # NOTE: This causes an error when tiptilt is not given
-    for i in range(len(corrections)):
-        zern += corrections[i]
+    if len(corrections) > 0 :
+        zern += corrections
+    # for i in range(len(corrections)):
+    #     zern += corrections[i]
     # zern = zern + tiptilt
     # zern = zern + corrections[0]
 
@@ -268,7 +282,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     else:
         offset_label = np.asarray([0,0])
 
-    zern = create_phase(coeffs, num=nums, res1=res, res2=res, offset=offset_label)
+    zern = create_phase(coeffs, num=nums, res1=res, res2=res)
     
     if multi:
         plane = 'all'
@@ -290,16 +304,15 @@ def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi
     else:
         nums = np.arange(3, 14)
     
-    zern = create_phase(coeffs=coeffs,num=nums, res1=res,res2=res, offset=offset_label, corrections=corrections)
+    zern = create_phase(coeffs=coeffs,num=nums, res1=res,res2=res, corrections=corrections)
     
     if multi:
         plane = 'all'
     else:
         plane = 'xy'
 
-    
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
-
+    # img = add_noise(img)
     
     return img
 
@@ -335,16 +348,21 @@ def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], multi
     img = fluor_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
     return img
 
-
+# modified from a stack overflow answer
 def get_stats(data_path, batch_size, mode='train'):
     """ Finding Dataset Stats for Normalization before Training."""
     dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, \
-        transform=my_classes.ToTensor())
+        transform=my_classes.ToTensor(), modify=False)
     loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     mean = 0.
     std = 0.
     nb_samples = 0.
-    for images, _ in loader:
+    for _, sample_batched in enumerate(loader):
+        # print(i_batch, sample_batched['image'].size(),
+        sample_batched['label'].size()
+        # exit()
+        #   for images, _ in loader:
+        images = sample_batched['image']
         batch_samples = images.size(0)
         images = images.view(batch_samples, images.size(1), -1)
         mean += images.mean(2).sum(0)
@@ -355,6 +373,16 @@ def get_stats(data_path, batch_size, mode='train'):
     std /= nb_samples
     print('mean is: {}  |   std is: {}'.format(mean, std))
     return mean, std
+
+def modify(data_path, mode='train'):
+    """fn to modify a dataset once thru instead of during training"""
+    tsfms = transforms.Compose([my_classes.Modify(offset=False, noise=True, center=True),\
+         my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
+    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, \
+        transform=tsfms)
+    
+
+    return dataset
 
 def plot_xsection(img3d, name=''):
     fig = plt.figure()
@@ -446,7 +474,9 @@ def plot_xsection_abber(img1, img2):
     return fig
 
 if __name__ == "__main__":
-    pass
+    for i in range(10):
+        print(gen_offset())
+    
 # TODO: redirect to the original now that it's in the same repo
 #########################################################################################
 #

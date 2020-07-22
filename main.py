@@ -231,16 +231,16 @@ class Main_Window(QtWidgets.QMainWindow):
                 so_far = corr
                 corr = new_corr
                 print('new corr: {}, old corr: {}'.format(corr, so_far))
-                # self.zernike = preds_new
             else:
                 print('final correlation: {}'.format(corr))
+                # REMOVING the last phase corrections from the SLM
                 self.zernikes_all = self.zernikes_all - pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
                     radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
-                #self.zernike = preds
                 break
         self.recalc_images()
-        self.correct_tiptilt()
-        self.correct_defocus()
+        # not needed?
+        # self.correct_tiptilt()
+        # self.correct_defocus()
 
 
 

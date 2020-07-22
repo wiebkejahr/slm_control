@@ -59,12 +59,12 @@ def main(args):
     test_shape = (test_num, channel_num, res, res)
 
     # open a hdf5 file and create arrays
-    # hdf5_file = h5py.File(hdf5_path, mode='w-')
+    hdf5_file = h5py.File(hdf5_path, mode='w-')
 
-    # # create the image arrays
-    # hdf5_file.create_dataset("train_img", train_shape, np.float32)
-    # hdf5_file.create_dataset("val_img", val_shape, np.float32)
-    # hdf5_file.create_dataset("test_img", test_shape, np.float32)
+    # create the image arrays
+    hdf5_file.create_dataset("train_img", train_shape, np.float32)
+    hdf5_file.create_dataset("val_img", val_shape, np.float32)
+    hdf5_file.create_dataset("test_img", test_shape, np.float32)
     
     train_labels = []
     val_labels = []
@@ -79,22 +79,27 @@ def main(args):
 
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
+            # img = get_sted_psf()
+            # plt.figure()
+            # plt.imshow(img, cmap='hot')
+            # plt.show()
+            # exit()
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
-            print(corr_coeff(img))
-            exit()
-            plt.figure(1)
-            plt.imshow(img)
-            a, b = get_CoM(img)
-            print(a,b)
-            plt.scatter(a,b, color='r')
-            img = center(img, zern_label, multi=args.multi)
-            plt.figure(2)
-            plt.imshow(img)
-            x, y = get_CoM(img)
-            print(x,y)
-            plt.scatter(x,y, color='r')
-            plt.show()
-            exit()
+            # print(corr_coeff(img))
+            # exit()
+            # plt.figure(1)
+            # plt.imshow(img)
+            # a, b = get_CoM(img)
+            # print(a,b)
+            # plt.scatter(a,b, color='r')
+            # img = center(img, zern_label, multi=args.multi)
+            # plt.figure(2)
+            # plt.imshow(img)
+            # x, y = get_CoM(img)
+            # print(x,y)
+            # plt.scatter(x,y, color='r')
+            # plt.show()
+            # exit()
 
 
         elif args.mode == 'fluor':
@@ -116,7 +121,7 @@ def main(args):
     for i in tqdm(range(val_num)):
         if args.mode == 'sted':
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
-            img = center(img, zern_label, multi=args.multi)
+            # img = center(img, zern_label, multi=args.multi)
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
@@ -138,7 +143,7 @@ def main(args):
         
         if args.mode == 'sted':
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
-            img = center(img, zern_label, multi=args.multi)
+            # img = center(img, zern_label, multi=args.multi)
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         

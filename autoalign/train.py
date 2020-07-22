@@ -45,30 +45,18 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         val_loss = 0.0
 
         # TRAINING LOOP
-        for i, (images, labels) in enumerate(data_loaders['train']):
+        for i, sample in enumerate(data_loaders['train']):
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
-
-            # NOTE: here's where you normalize it. 
-            # print(images.numpy().shape)
-            # print(np.min(images.numpy()[0]), np.max(images.numpy()[0]))
-            # print(np.mean(images.numpy()[0]), np.std(images.numpy()[0]))
-
-            # NOTE: this normalizes all the incoming images to be between 0 and 1
-            # ideally, you have a dataset where that's already done, but this is a hack
-            # images = torch.from_numpy(np.stack([helpers.normalize_img(i) for i in images.numpy()], axis=0))
-           
-            # NOTE: this is the tip/tilt correction before training
-            # images = torch.from_numpy(np.stack([helpers.center(i, j) for \
-            #     i, j in (images.numpy(), labels.numpy().squeeze())], axis=0))
+            images = sample['image']
+            labels = sample['label']
             
             # if GPU is available, this allows the computation to happen there
             images = images.to(device)
             labels = labels.to(device)
-            # print(images.shape)
-            # exit()
+
             # Run the forward pass
             outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
-            # exit()
+     
             # no activation function on the final layer means that outputs is the weight of the final layer
             loss = criterion(outputs, labels) # MSE
             # sum of averages for each coeff position
@@ -83,7 +71,6 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # statistics
             running_loss += loss.item() # loss.item() is the loss over a single batch
         
-
             total_step= len(data_loaders['train']) 
             update_num = 5
             if (i + 1) % update_num == 0: # will log to tensorboard after `update_num` batches, roughly
@@ -104,7 +91,11 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         
         # VALIDATION LOOP   
         model.eval()
-        for i, (images, labels) in enumerate(data_loaders['val']):
+        for i, sample in enumerate(data_loaders['val']):
+            
+            images = sample['image']
+            labels = sample['label']
+
             images = images.to(device)
             labels = labels.to(device)
 
@@ -144,29 +135,46 @@ def main(args):
     model_store_path = args.model_store_path
     logdir = args.logdir
     warm_start = args.warm_start
-    
+
 
     mean, std = helpers.get_stats(data_path, batch_size)
+    # exit()
     # Norm = my_classes.MyNormalize(mean=mean, std=std)
-
     # this is for reproducibility, it renders the model deterministic
     seed = 0
     np.random.seed(seed)
     torch.manual_seed(seed)
     
-    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=transforms.Compose([
-        my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std)]))
-    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
-        my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std)]))
+    # tsfms = transforms.Compose([my_classes.Center(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(), my_classes.ToTensor()])
+    # tsfms = transforms.Compose([my_classes.Noise(), my_classes.Center(), my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
+    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
+    
+    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
+    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
+    # exit()
+    # val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
+    #     my_classes.ToTensor(), 
+    #     my_classes.Normalize(mean=mean, std=std)]))
+    # for i in range(len(train_dataset)):
+    #     sample = train_dataset[i]
+    #     # print(i)
+    #     # plt.figure()
+    #     # plt.imshow(sample['image'])
+    #     helpers.plot_xsection(sample['image'])
+    #     # com1 = helpers.get_CoM(sample['image'][0])
+    #     plt.show()
+    #     print('{}: CoM: {}'.format(i, helpers.get_CoM(sample['image'].numpy()[0])))
+
+    #     if i == 0:
+    #         break
+    # exit()
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
 
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
-
+    
     data_loaders = {'train': train_loader, 'val': val_loader}
     dataset_sizes = {'train': len(train_dataset), 'val': len(val_dataset)}
     for i, j in dataset_sizes.items():
@@ -174,22 +182,25 @@ def main(args):
     print('is CUDA available? {}'.format(torch.cuda.is_available()))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     ################################## running ###################################
+    
+    # TODO: the above method of modifying the dataset after creation also gives a streamlined
+    # way of choosing the model based on the features. For now just override, as below
     if args.multi:
         if args.offset:
             model = my_models.MultiOffsetNet()
         else:
-            model = my_models.MultiNet()
+            model = my_models.MultiNet11()
     else:
         if args.offset:
             model = my_models.OffsetNet()
         else:
-            model = my_models.Net()
+            model = my_models.Net11()
 
     # model = my_models.MultiNetCentered()
     
     # NOTE: overriding
-    model = my_models.NetCentered()
-    model = my_models.MultiNetCat()
+    model = my_models.MultiNet11()
+    # model = my_models.MultiNetCat()
 
     # print(model)
 
@@ -201,7 +212,7 @@ def main(args):
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     
-    
+    print('beginning training loop')
     # train the model
     train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path)
 

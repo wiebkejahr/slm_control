@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class Net(nn.Module):
+class Net12(nn.Module):
     """
     A simple CNN based on AlexNet
     Architecture followed from Zhang et. al, 
@@ -45,7 +45,7 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
-class MultiNet(nn.Module):
+class MultiNet12(nn.Module):
     """
     A simple CNN based on AlexNet
     Architecture modified from Zhang et. al, "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
@@ -80,14 +80,14 @@ class MultiNet(nn.Module):
         x = self.fc3(x)
         return x
 
-class MultiNetCat(nn.Module):
+class MultiNetCat11(nn.Module):
     """
     A simple CNN based on AlexNet
     Architecture modified from Zhang et. al, "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
     to include a multi-channelled image
     """
     def __init__(self):
-        super(MultiNetCat, self).__init__()
+        super(MultiNetCat11, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, 5, padding=2)
         self.conv2 = nn.Conv2d(32, 32, 5, padding=2) 
         self.conv3 = nn.Conv2d(96, 96, 3, padding=1)
@@ -144,14 +144,14 @@ class MultiNetCat(nn.Module):
         return a
 
 
-class MultiNetCentered(nn.Module):
+class MultiNet11(nn.Module):
     """
     A simple CNN based on AlexNet
     Architecture modified from Zhang et. al, "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
     to include a multi-channelled image
     """
     def __init__(self):
-        super(MultiNetCentered, self).__init__()
+        super(MultiNet11, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, 5, padding=2)
         self.conv2 = nn.Conv2d(32, 32, 5, padding=2) 
         self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
@@ -179,14 +179,14 @@ class MultiNetCentered(nn.Module):
         x = self.fc3(x)
         return x
 
-class NetCentered(nn.Module):
+class Net11(nn.Module):
     """
     A simple CNN based on AlexNet
     Architecture modified from Zhang et. al, "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
     to include a multi-channelled image
     """
     def __init__(self):
-        super(NetCentered, self).__init__()
+        super(Net11, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, 5, padding=2)
         self.conv2 = nn.Conv2d(32, 32, 5, padding=2) 
         self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
