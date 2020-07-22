@@ -154,3 +154,5 @@ autoalign/models/20.05.27_shift_invariant_15k_eps_15_lr_0.001_bs_64_new_model.pt
 # autoalign/models/20.16.06_1D_20k_eps_10_lr_0.001_bs_64_standardized_not_norm.pth
 autoalign/models/testing_no_defocus_multi_eps_15_lr_0.001_bs_64_standardized_check.pth
 autoalign/models/testing_no_defocus_multi_eps_15_lr_0.001_bs_64_standardized.pth
+autoalign/models/20.07.22_multi_modify_test_new_eps_15_lr_0.001_bs_64_noise_centered_2.pth
+autoalign/models/20.07.22_multi_modify_test_5_eps_15_lr_0.001_bs_64_noise_centered_2.pth

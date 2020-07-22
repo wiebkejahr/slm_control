@@ -24,7 +24,7 @@ LOG_DIR=$OUTPUT_DIR/runs
 NUM_POINTS=5 # will do 90/10 train/validation split
 TEST_NUM=1 # number of additional test samples to create
 # NAME="20.06.22_no_defocus_multi_20k"
-NAME="20.07.22_multi_modify_test_5"
+NAME="20.07.22_multi_modify_test_new"
 # NAME='20.05.04_noise_20k_local' # for
 # NAME="20.05.19_normalize_test" # make this as descriptive as possible
 # don't touch this
@@ -56,7 +56,7 @@ fi
 LR=0.001 # learning rate
 NUM_EPOCHS=15
 BATCH_SIZE=64
-MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_noise_centered"
+MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_noise_centered_2"
 # MODEL_NAME="20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_SECOND"
 # don't touch these
 MODEL_STORE_PATH="${MODEL_DIR}/${MODEL_NAME}.pth"

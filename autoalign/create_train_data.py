@@ -85,6 +85,8 @@ def main(args):
             # plt.show()
             # exit()
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
+            tiptilt = center(img[0])
+            img = get_sted_psf(coeffs=zern_label, multi=args.multi, corrections=tiptilt)
             # print(corr_coeff(img))
             # exit()
             # plt.figure(1)
@@ -121,6 +123,11 @@ def main(args):
     for i in tqdm(range(val_num)):
         if args.mode == 'sted':
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
+            print(get_CoM(img[0]))
+            tiptilt = center(img[0])
+            img = get_sted_psf(coeffs=zern_label, multi=args.multi, corrections=tiptilt)
+            print(get_CoM(img[0]))
+            print('\n')
             # img = center(img, zern_label, multi=args.multi)
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
@@ -143,7 +150,8 @@ def main(args):
         
         if args.mode == 'sted':
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
-            # img = center(img, zern_label, multi=args.multi)
+            tiptilt = center(img[0])
+            img = get_sted_psf(coeffs=zern_label, multi=args.multi, corrections=tiptilt)
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
@@ -153,8 +161,7 @@ def main(args):
         else:
             test_labels.append(zern_label)
             
-  
-    
+
         hdf5_file["test_img"][i, ...] = img[None]
 
     # create the label array

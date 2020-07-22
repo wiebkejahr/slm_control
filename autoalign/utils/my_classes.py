@@ -51,7 +51,7 @@ class PSFDataset(data.Dataset):
             self.new_images = np.zeros_like(self.images)
             self.new_labels = np.zeros_like(self.labels)
             for i in range(len(self.images)): # to 1800
-                # print(i)
+                print(i)
                 # print(helpers.get_CoM(self.images[i][0]))
                 # helpers.plot_xsection(self.images[i])
                 # plt.show()
@@ -108,11 +108,11 @@ class Modify(object):
             tiptilt = []
         
         # calculcating new psf with offset label and tiptilt correction
-        new_img = helpers.get_sted_psf(coeffs=label, offset_label=off,\
-                 multi=True, corrections=tiptilt)
+        # new_img = helpers.get_sted_psf(coeffs=label, offset_label=off,\
+        #          multi=True, corrections=tiptilt)
 
         # adding noise back on top
-        new_img = helpers.add_noise(new_img, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss)
+        new_img = helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss)
         
         if self.offset:
             label = np.append(label, off)
