@@ -85,23 +85,9 @@ def main(args):
             # plt.show()
             # exit()
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
-            tiptilt = center(img)
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
-            # print(corr_coeff(img))
-            # exit()
-            # plt.figure(1)
-            # plt.imshow(img)
-            # a, b = get_CoM(img)
-            # print(a,b)
-            # plt.scatter(a,b, color='r')
-            # img = center(img, zern_label, multi=args.multi)
-            # plt.figure(2)
-            # plt.imshow(img)
-            # x, y = get_CoM(img)
-            # print(x,y)
-            # plt.scatter(x,y, color='r')
-            # plt.show()
-            # exit()
+            # tiptilt = center(img)
+            # img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
+
 
 
         elif args.mode == 'fluor':
@@ -124,11 +110,9 @@ def main(args):
         if args.mode == 'sted':
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
             # print(get_CoM(img[0]))
-            tiptilt = center(img)
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
-            # print(get_CoM(img[0]))
-            # print('\n')
-            # img = center(img, zern_label, multi=args.multi)
+            # tiptilt = center(img)
+            # img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
+
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
@@ -150,8 +134,8 @@ def main(args):
         
         if args.mode == 'sted':
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
-            tiptilt = center(img)
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
+            # tiptilt = center(img)
+            # img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
         
         
         elif args.mode == 'fluor':
