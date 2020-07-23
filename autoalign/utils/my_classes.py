@@ -21,7 +21,7 @@ import utils.helpers as helpers
 class PSFDataset(data.Dataset):
     """ Point Spread Function h5py Dataset. """
 
-    def __init__(self, hdf5_path, mode, transform=None, modify=True, offset=False, noise=True, bgnoise=2, poiss=350, center=True):
+    def __init__(self, hdf5_path, mode, transform=None, modify=False, offset=False, noise=True, bgnoise=2, poiss=350, center=False):
         """
         Args:
             hdf5_path (str): Path to the hdf5 file 
@@ -83,7 +83,7 @@ class PSFDataset(data.Dataset):
 
 class Modify(object):
 
-    def __init__(self, offset=False, noise=True, bgnoise=2, poiss=350, center=True):
+    def __init__(self, offset=False, noise=True, bgnoise=1, poiss=350, center=False):
         self.offset=offset
         self.center=center
         self.noise=noise
@@ -167,7 +167,7 @@ class Make1D(object):
 
 class Noise(object):
     """Given a bgnoise and poisson_noise with constructor call, it adds noise to the input."""
-    def __init__(self, bgnoise=1, poiss=250):
+    def __init__(self, bgnoise=1, poiss=1000):
         self.bgnoise = bgnoise
         self.poiss = poiss
 

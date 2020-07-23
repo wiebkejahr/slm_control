@@ -216,13 +216,13 @@ class Net11(nn.Module):
 
     
 
-class OffsetNet(nn.Module):
+class OffsetNet13(nn.Module):
     """
     A simple CNN based on AlexNet
     Architecture followed exactly from Zhang et. al, "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
     """
     def __init__(self):
-        super(OffsetNet, self).__init__()
+        super(OffsetNet13, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2)
         self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
@@ -233,7 +233,7 @@ class OffsetNet(nn.Module):
         self.fc2 = nn.Linear(512, 512)
         
 
-        self.fc3 = nn.Linear(512, 14)
+        self.fc3 = nn.Linear(512, 13)
 
     def forward(self, x):
         
