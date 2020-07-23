@@ -54,9 +54,10 @@ def add_noise_old(img):
 # NOTE: fn contributed by Julia Lyudchik
 # TODO: tune optional argument values to match the look we're going for
 def add_noise(image, bgnoise_amount=1, poiss_amount=150):
-    # print(image.shape) # (3, 64, 64)
+    # print(image.squeeze().shape) # (3, 64, 64)
+    
     # x0, y0 = image.shape
-    _, x0,y0 = image.shape
+    _, x0,y0 = image.shape # this is either (3, 64, 64) or (1, 64, 64)
     #Background noise
     Nb = np.random.normal(0, 0.001, [x0,y0])
     final_Nb = image + Nb*bgnoise_amount

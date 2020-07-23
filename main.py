@@ -38,6 +38,7 @@ from PIL import Image
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+import scipy.ndimage.shift 
 
 # local packages
 import slm_control.Pattern_Calculator as pcalc
@@ -193,14 +194,22 @@ class Main_Window(QtWidgets.QMainWindow):
     def correct_tiptilt(self):
         self.tiptilt = abberior.correct_tip_tilt()
         # self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase_tip_tilt(self.tiptilt, res1=600, res2=396, radscale = 2*self.rtiptilt)
+        # self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
         self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
         self.recalc_images()
     
-    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None):
+    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False):
         size = 2 * np.asarray(self.p.general["size_slm"])
-        self.zernike = abberior.abberior_multi(MODEL_STORE_PATH, image)
-        self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
-                radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+        if offset:
+            preds = abberior.abberior_multi(MODEL_STORE_PATH, image)
+            self.zernike = preds[:-2]
+            self.offset =preds[-2:] 
+        else:
+            self.zernike = abberior.abberior_multi(MODEL_STORE_PATH, image)
+            self.offset = [0,0]
+        # hopefully now it does offsets?
+        self.zernikes_all = self.zernikes_all + scipy.ndimage.shift(pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
+                radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]), self.offset)
         self.recalc_images()
         self.correct_tiptilt()
         self.correct_defocus()
@@ -209,7 +218,7 @@ class Main_Window(QtWidgets.QMainWindow):
         print('correlation coeff is: {}'.format(correlation))
         
         return self.zernike, new_img, correlation
-    
+
     def auto_align(self, model_store_path=MODEL_STORE_PATH):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
