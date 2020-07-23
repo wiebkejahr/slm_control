@@ -38,7 +38,8 @@ from PIL import Image
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-import scipy.ndimage.shift 
+import scipy
+import scipy.ndimage 
 
 # local packages
 import slm_control.Pattern_Calculator as pcalc
@@ -74,7 +75,11 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_15_lr_0.001_bs_64_precentered.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64.pth"
-MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_5_lr_0.001_bs_64_concat.pth"
+# MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_5_lr_0.001_bs_64_concat.pth"
+# to try on 20.07.23: two noise models and an offset model
+# MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise_poiss1000.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise.pth"
+MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -198,23 +203,34 @@ class Main_Window(QtWidgets.QMainWindow):
         self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
         self.recalc_images()
     
-    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False):
+    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False, i=0, multi=False):
         size = 2 * np.asarray(self.p.general["size_slm"])
         if offset:
-            preds = abberior.abberior_multi(MODEL_STORE_PATH, image)
+            preds = abberior.abberior_multi(MODEL_STORE_PATH, image, offset=True, i=i)
             self.zernike = preds[:-2]
-            self.offset =preds[-2:] 
+            self.offset = preds[-2:]
+            print(self.offset) 
         else:
-            self.zernike = abberior.abberior_multi(MODEL_STORE_PATH, image)
+            self.zernike = abberior.abberior_multi(MODEL_STORE_PATH, image, i=i)
             self.offset = [0,0]
         # hopefully now it does offsets?
-        self.zernikes_all = self.zernikes_all + scipy.ndimage.shift(pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
-                radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]), self.offset)
+        # TODO: why is there a factor of sqrt(2) in the radscale?! added June 19th
+        # chaning the scale factor did not improve it
+        self.img_l.off.xgui.setValue(self.img_l.off.xgui.value()+self.offset[0])
+        self.img_l.off.ygui.setValue(self.img_l.off.ygui.value()+self.offset[1])
+        print(self.offset, self.img_l.off.xgui.value, self.img_r.off.ygui.value())
+
+        self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
+                radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+        # self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
+        #         radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
         self.recalc_images()
+    
         self.correct_tiptilt()
-        self.correct_defocus()
-        new_img = abberior.get_image(multi=True)
-        correlation = np.round(helpers.corr_coeff(new_img, multi=True), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+        if multi:
+            self.correct_defocus()
+        new_img = abberior.get_image(multi=multi)
+        correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
         
         return self.zernike, new_img, correlation
@@ -226,25 +242,33 @@ class Main_Window(QtWidgets.QMainWindow):
         # image = abberior.get_image()
         # _, new_img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
         # ITERATIVE LOOP #
+        multi=False
+        offset=True
         size = 2 * np.asarray(self.p.general["size_slm"])
         
         self.correct_tiptilt()
-        self.correct_defocus()
+        if multi:
+            self.correct_defocus()
         so_far = -1
         corr = 0                                                             
         preds = np.zeros(11)
+        i = 1
         while corr >= so_far:
-            image = abberior.get_image(multi=True)                                                   
-            preds, image, new_corr = self.corrective_loop(MODEL_STORE_PATH, image)
+            image = abberior.get_image(multi=multi)                                                   
+            preds, image, new_corr = self.corrective_loop(MODEL_STORE_PATH, image, offset=True, i=i)
             if new_corr > corr:
                 so_far = corr
                 corr = new_corr
-                print('new corr: {}, old corr: {}'.format(corr, so_far))
+                print('iteration: ', i, 'new corr: {}, old corr: {}'.format(corr, so_far))
+                i = i + 1
             else:
                 print('final correlation: {}'.format(corr))
                 # REMOVING the last phase corrections from the SLM
+                # TODO: why is there a factor of sqrt(2) in the radscale?! added June 19th
+                # chaning the scale factor did not improve it
                 self.zernikes_all = self.zernikes_all - pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
                     radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+                i -= 1
                 break
         self.recalc_images()
         # not needed?
@@ -660,7 +684,7 @@ class Main_Window(QtWidgets.QMainWindow):
                         self.flatfield[1], self.img_l.vort.tempscalegui.value() * self.zernikes_all, self.phase_tiptilt, self.phase_defocus]), self.p.right["phasewrap"])
         
         #print(np.max(self.zernikes_all), np.max(self.img_l.data), np.max(self.img_l.aberr.data))
-        print("sum tip tilt", np.sum(self.phase_tiptilt), "sum zern", np.sum(self.zernikes_all), "sum defoc", np.sum(self.phase_defocus))
+        # print("sum tip tilt", np.sum(self.phase_tiptilt), "sum zern", np.sum(self.zernikes_all), "sum defoc", np.sum(self.phase_defocus))
         self.img_data = pcalc.stitch_images(l * self.p.left["slm_range"],
                                             r * self.p.right["slm_range"])
         

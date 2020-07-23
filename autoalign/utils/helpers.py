@@ -143,7 +143,7 @@ def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, px_size=10, abberio
     # check aperture radius or diameter
     
     # dz = -(f/d_obj)^2*8/sqrt(3)*lambd*coeff
-    print("defocus",dz, defocus)
+    # print("defocus",dz, defocus)
     return(defocus)
 
 
@@ -156,7 +156,8 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
-    assert(len(img.shape) == 2)
+    # assert(len(img.shape) == 2)
+    # print(img.shape)
     D = D/3/1000 # scaling, =~0.00168
        
     if abberior:
@@ -185,7 +186,7 @@ def center(xy, res=64, multi=True):
 def gen_offset():
     """A function to generate an offset [x, y] to displace the STED psf. 
     Returns an 1d array of 2 ints"""
-    x, y = np.random.normal(0,0.1, 2)
+    x, y = np.random.normal(0,0.1*5.04/2, 2)
     x = np.round(x, 3)
     y = np.round(y, 3)
     return [x,y]
