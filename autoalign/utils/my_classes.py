@@ -21,7 +21,7 @@ from torchvision import transforms
 class PSFDataset(data.Dataset):
     """ Point Spread Function h5py Dataset. """
 
-    def __init__(self, hdf5_path, mode, transform=None, modify=False, offset=False, noise=True, bgnoise=2, poiss=350, center=False):
+    def __init__(self, hdf5_path, mode, transform=None):
         """
         Args:
             hdf5_path (str): Path to the hdf5 file 
@@ -42,29 +42,6 @@ class PSFDataset(data.Dataset):
         elif mode == 'test':
             self.images = self.file['test_img']
             self.labels = self.file['test_labels']
-
-        # NOTE: MODIFICATION NEEDS TO GO HERE!!!
-        if modify:
-            # print(self.images.shape) # (18000, 3, 64, 64)
-            # print(self.labels.shape) # (18000, 11)
-            # exit()
-            self.new_images = np.zeros_like(self.images)
-            self.new_labels = np.zeros_like(self.labels)
-            for i in range(len(self.images)): # to 1800
-                print(i)
-                # print(helpers.get_CoM(self.images[i][0]))
-                # helpers.plot_xsection(self.images[i])
-                # plt.show()
-                sample = self.mod({'image': self.images[i], 'label': self.labels[i]})
-                self.new_images[i] = sample['image']
-                # helpers.plot_xsection(self.new_images[i])
-                # plt.show()
-                # print(helpers.get_CoM(self.new_images[i][0]))
-                # print('\n')
-                self.new_labels[i] = sample['label']
-                
-            self.images = self.new_images
-            self.labels = self.new_labels
 
     
     def __len__(self):

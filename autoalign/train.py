@@ -153,10 +153,10 @@ def main(args):
     
     # tsfms = transforms.Compose([my_classes.Center(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(), my_classes.ToTensor()])
     # tsfms = transforms.Compose([my_classes.Noise(), my_classes.Center(), my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
-    tsfms = transforms.Compose([my_classes.Noise(), my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
+    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
     
-    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', modify=False, transform=tsfms)
-    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', modify=False, transform=tsfms)
+    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
+    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
     # exit()
     # val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=transforms.Compose([
     #     my_classes.ToTensor(), 
@@ -203,7 +203,7 @@ def main(args):
             model = my_models.Net11()
 
     # model = my_models.MultiNetCentered()
-    
+    model = my_models.OffsetNet2()
     # NOTE: overriding
     # model = my_models.Net11()
     # model = my_models.MultiNet11()

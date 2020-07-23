@@ -53,6 +53,7 @@ def add_noise_old(img):
 
 # NOTE: fn contributed by Julia Lyudchik
 # TODO: tune optional argument values to match the look we're going for
+
 def add_noise(image, bgnoise_amount=1, poiss_amount=150):
     # print(image.squeeze().shape) # (3, 64, 64)
     
@@ -353,8 +354,7 @@ def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], multi
 # modified from a stack overflow answer
 def get_stats(data_path, batch_size, mode='train'):
     """ Finding Dataset Stats for Normalization before Training."""
-    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, \
-        transform=my_classes.ToTensor(), modify=False)
+    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, transform=my_classes.ToTensor())
     loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     mean = 0.
     std = 0.
