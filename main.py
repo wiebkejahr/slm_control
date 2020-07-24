@@ -79,7 +79,9 @@ mpl.rc('pdf', fonttype=42)
 # to try on 20.07.23: two noise models and an offset model
 # MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise_poiss1000.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise.pth"
-MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
+MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth"
+MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -205,20 +207,23 @@ class Main_Window(QtWidgets.QMainWindow):
     
     def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False, i=0, multi=False):
         size = 2 * np.asarray(self.p.general["size_slm"])
+        #TODO: code this properly
+        scale = 26.6*2
         if offset:
-            preds = abberior.abberior_multi(MODEL_STORE_PATH, image, offset=True, i=i)
-            self.zernike = preds[:-2]
-            self.offset = preds[-2:]
-            print(self.offset) 
+            self.zernike, self.offset = abberior.abberior_multi(MODEL_STORE_PATH, image, offset=offset, i=i)
+            # self.zernike = preds[:-2]
+            # self.offset = preds[-2:]
+            print('offset: {}'.format(self.offset*scale)) 
         else:
             self.zernike = abberior.abberior_multi(MODEL_STORE_PATH, image, i=i)
             self.offset = [0,0]
+
         # hopefully now it does offsets?
         # TODO: why is there a factor of sqrt(2) in the radscale?! added June 19th
         # chaning the scale factor did not improve it
-        self.img_l.off.xgui.setValue(self.img_l.off.xgui.value()+self.offset[0])
-        self.img_l.off.ygui.setValue(self.img_l.off.ygui.value()+self.offset[1])
-        print(self.offset, self.img_l.off.xgui.value, self.img_r.off.ygui.value())
+        self.img_l.off.xgui.setValue(self.img_l.off.xgui.value()+self.offset[1]*scale)
+        self.img_l.off.ygui.setValue(self.img_l.off.ygui.value()-self.offset[0]*scale)
+        # print(self.offset, self.img_l.off.xgui.value(), self.img_l.off.ygui.value())
 
         self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
                 radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
@@ -255,7 +260,7 @@ class Main_Window(QtWidgets.QMainWindow):
         i = 1
         while corr >= so_far:
             image = abberior.get_image(multi=multi)                                                   
-            preds, image, new_corr = self.corrective_loop(MODEL_STORE_PATH, image, offset=True, i=i)
+            preds, image, new_corr = self.corrective_loop(MODEL_STORE_PATH, image, offset=offset, i=i)
             if new_corr > corr:
                 so_far = corr
                 corr = new_corr
@@ -270,6 +275,9 @@ class Main_Window(QtWidgets.QMainWindow):
                     radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
                 i -= 1
                 break
+            if i >= 0:
+                break
+           
         self.recalc_images()
         # not needed?
         # self.correct_tiptilt()
