@@ -44,10 +44,10 @@ def test(model, input_image, model_store_path):
     with torch.no_grad():
         # adds 3rd color channel dim and batch dim
         # NOTE: THIS IS ONLY FOR 1D
-        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
         # print(np.max(input_image), np.min(input_image))
-        image = torch.from_numpy(input_image).unsqueeze(0)
+        # image = torch.from_numpy(input_image).unsqueeze(0)
 
         outputs = model(image)
         coeffs = outputs.numpy().squeeze()
@@ -160,12 +160,16 @@ def get_image(multi=False):
     #     image = image_xy
     return image
 
-def abberior_multi(model_store_path, image):
+def abberior_multi(model_store_path, image, offset=False, i=0):
     
     # creates an instance of CNN
     # model = my_models.MultiNetCentered()
     # model = my_models.NetCentered()
-    model = my_models.MultiNetCat()
+    # model = my_models.MultiNetCat()
+    if offset:
+        model = my_models.OffsetNet13()
+    else:
+        model = my_models.Net11()
     # # acquire the image from Imspector
     # # NOTE: from Imspector, must run Tools > Run Server for this to work
     # im = sp.Imspector()
@@ -206,6 +210,9 @@ def abberior_multi(model_store_path, image):
 
     # gets preds
     coeffs = test(model, image, model_store_path)
+    if offset:
+        zern = coeffs[:-2]
+        offset_label = coeffs[-2:]
     # 
     # # ITERATIVE LOOP #
     # so_far = -1
@@ -226,7 +233,7 @@ def abberior_multi(model_store_path, image):
 
 
 
-    reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False, defocus=False)
+    reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=False, defocus=False)
     # helpers.plot_xsection_abber(image)
     # old = 0
     # new = 0
@@ -248,7 +255,8 @@ def abberior_multi(model_store_path, image):
     #     print(new)
     plt.figure(1)
     plt.subplot(121)
-    plt.imshow(image[0], cmap='hot')
+    plt.imshow(image, cmap='hot')
+    plt.suptitle('Iteration {}'.format(i))
     plt.subplot(122)
     plt.imshow(reconstructed, cmap='hot')
     plt.show()

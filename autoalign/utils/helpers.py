@@ -56,7 +56,7 @@ def add_noise_old(img):
 def add_noise(image, bgnoise_amount=1, poiss_amount=350):
     # print(image.shape) # (3, 64, 64)
     # x0, y0 = image.shape
-    _, x0,y0 = image.shape
+    _, x0,y0 = image.shape # this is either (3, 64, 64) or (1, 64, 64)
     #Background noise
     Nb = np.random.normal(0, 0.001, [x0,y0])
     final_Nb = image + Nb*bgnoise_amount
@@ -142,7 +142,7 @@ def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, px_size=10, abberio
     # check aperture radius or diameter
     
     # dz = -(f/d_obj)^2*8/sqrt(3)*lambd*coeff
-    print("defocus",dz, defocus)
+    # print("defocus",dz, defocus)
     return(defocus)
 
 
@@ -155,7 +155,8 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
     # D is potentially 7.2 instead of 5.04, need to test it out
     # testing showed D is 0.052, which is interesting as it's neither the other two
     # potentially switched bc of np vs plt coordinate system
-    assert(len(img.shape) == 2)
+    # assert(len(img.shape) == 2)
+    # print(img.shape)
     D = D/3/1000 # scaling, =~0.00168
        
     if abberior:
@@ -184,7 +185,7 @@ def center(xy, res=64, multi=True):
 def gen_offset():
     """A function to generate an offset [x, y] to displace the STED psf. 
     Returns an 1d array of 2 ints"""
-    x, y = np.random.normal(0,0.1, 2)
+    x, y = np.random.normal(0,0.1*5.04/2, 2)
     x = np.round(x, 3)
     y = np.round(y, 3)
     return [x,y]
@@ -351,8 +352,7 @@ def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], multi
 # modified from a stack overflow answer
 def get_stats(data_path, batch_size, mode='train'):
     """ Finding Dataset Stats for Normalization before Training."""
-    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, \
-        transform=my_classes.ToTensor(), modify=False)
+    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, transform=my_classes.ToTensor())
     loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     mean = 0.
     std = 0.

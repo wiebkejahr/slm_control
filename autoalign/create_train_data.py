@@ -71,44 +71,48 @@ def main(args):
     test_labels = []
 
     if args.offset:
-        label_dim = 14
+        label_dim = 13
     else:
-        label_dim = 12
+        label_dim = 11
     #NOTE: overriding
-    label_dim = 11
+    label_dim = 2
 
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
+            
+            zern_label = np.asarray([0.0]*11)
+            offset_label = gen_offset()
+            # print(offset_label)
+            img1 = get_sted_psf(coeffs=zern_label, offset_label=offset_label)
+            # print(get_CoM(img1))
+            tiptilt = center(img1, multi=args.multi)
+            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
+    
+            # print(get_CoM(img))
+            # plt.figure()
+            # plt.subplot(121)
+            # plt.imshow(img1, cmap='hot')
+            # plt.subplot(122)
+            # plt.imshow(img, cmap='hot')
+            # plt.show()
+            # exit()
+            
             # img = get_sted_psf()
             # plt.figure()
             # plt.imshow(img, cmap='hot')
             # plt.show()
             # exit()
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
-            tiptilt = center(img[0])
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, corrections=tiptilt)
-            # print(corr_coeff(img))
-            # exit()
-            # plt.figure(1)
-            # plt.imshow(img)
-            # a, b = get_CoM(img)
-            # print(a,b)
-            # plt.scatter(a,b, color='r')
-            # img = center(img, zern_label, multi=args.multi)
-            # plt.figure(2)
-            # plt.imshow(img)
-            # x, y = get_CoM(img)
-            # print(x,y)
-            # plt.scatter(x,y, color='r')
-            # plt.show()
-            # exit()
-
+            # img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
+            # tiptilt = center(img)
+            # img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
 
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         # save the label and image
         if args.offset:
-            train_labels.append(zern_label+offset_label)
+            #NOTE: overriding
+            train_labels.append(offset_label)
+            # train_labels.append(zern_label+offset_label)
         else:
             train_labels.append(zern_label)
 
@@ -122,19 +126,24 @@ def main(args):
     
     for i in tqdm(range(val_num)):
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
-            print(get_CoM(img[0]))
-            tiptilt = center(img[0])
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, corrections=tiptilt)
-            print(get_CoM(img[0]))
-            print('\n')
-            # img = center(img, zern_label, multi=args.multi)
+            zern_label = np.asarray([0.0]*11)
+            offset_label = gen_offset()
+            # print(offset_label)
+            img = get_sted_psf(coeffs=zern_label, offset_label=offset_label)
+            # img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
+            # print(get_CoM(img[0]))
+            tiptilt = center(img, multi=args.multi)
+            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
+
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
         # save the label and image
         if args.offset:
-            val_labels.append(zern_label+offset_label)
+            #NOTE: overriding
+            val_labels.append(offset_label)
+            # val_labels.append(zern_label+offset_label)
+        
         else:
             val_labels.append(zern_label)
 
@@ -149,15 +158,24 @@ def main(args):
     for i in tqdm(range(test_num)):
         
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi, defocus=False)
-            tiptilt = center(img[0])
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, corrections=tiptilt)
+            zern_label = np.asarray([0.0]*11)
+            offset_label = gen_offset()
+            img = get_sted_psf(coeffs=zern_label, offset_label=offset_label)
+
+            # img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
+            tiptilt = center(img, multi=args.multi)
+            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
+        
+        
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
         # save the label and image
         if args.offset:
-            test_labels.append(zern_label+offset_label)
+            #NOTE: overriding
+            test_labels.append(offset_label)
+            
+            # test_labels.append(zern_label+offset_label)
         else:
             test_labels.append(zern_label)
             

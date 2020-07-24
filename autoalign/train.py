@@ -50,13 +50,19 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             images = sample['image']
             labels = sample['label']
             
+            # print(images.numpy()[0].shape)
+            # plt.figure()
+            # plt.imshow(images.numpy()[0].squeeze(), cmap='hot')
+        
+            # # # # helpers.plot_xsection(images.numpy()[0])
+            # plt.show()
+            # exit()
             # if GPU is available, this allows the computation to happen there
             images = images.to(device)
             labels = labels.to(device)
 
             # Run the forward pass
             outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
-     
             # no activation function on the final layer means that outputs is the weight of the final layer
             loss = criterion(outputs, labels) # MSE
             # sum of averages for each coeff position
@@ -72,11 +78,11 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             running_loss += loss.item() # loss.item() is the loss over a single batch
         
             total_step= len(data_loaders['train']) 
-            update_num = 5
+            update_num = 1
             if (i + 1) % update_num == 0: # will log to tensorboard after `update_num` batches, roughly
                 # ...log the running loss
                 # print('running train loss: {}'.format(running_loss))
-                train_writer.add_scalar('training loss',
+                train_writer.add_scalar('training_loss',
                             running_loss/update_num,
                             epoch * total_step + i)
                 running_loss = 0.0
@@ -109,11 +115,11 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 # statistics logging
                 val_loss += loss.item()
                 total_step= len(data_loaders['val']) # number of batches
-                update_num = 5
+                update_num = 1
                 if (i + 1) % update_num == 0:
                     # ...log the validation loss
                     # print('running val loss: {}'.format(val_loss))
-                    train_writer.add_scalar('validation loss',
+                    train_writer.add_scalar('validation_loss',
                                 val_loss/update_num,
                                 epoch * total_step + i)
                     val_loss = 0.0
@@ -147,7 +153,7 @@ def main(args):
     
     # tsfms = transforms.Compose([my_classes.Center(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(), my_classes.ToTensor()])
     # tsfms = transforms.Compose([my_classes.Noise(), my_classes.Center(), my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
-    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
+    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(bgnoise=2, poiss=500)])
     
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
     val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
@@ -192,14 +198,15 @@ def main(args):
             model = my_models.MultiNet11()
     else:
         if args.offset:
-            model = my_models.OffsetNet()
+            model = my_models.OffsetNet13()
         else:
             model = my_models.Net11()
 
     # model = my_models.MultiNetCentered()
-    
+    model = my_models.OffsetNet2()
     # NOTE: overriding
-    model = my_models.MultiNet11()
+    # model = my_models.Net11()
+    # model = my_models.MultiNet11()
     # model = my_models.MultiNetCat()
 
     # print(model)

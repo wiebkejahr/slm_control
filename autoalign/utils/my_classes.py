@@ -15,13 +15,14 @@ from torch.utils import data
 import torch
 from torchvision import transforms
 
+from utils import helpers
 # import autoalign.utils.helpers as helpers
 
 
 class PSFDataset(data.Dataset):
     """ Point Spread Function h5py Dataset. """
 
-    def __init__(self, hdf5_path, mode, transform=None, modify=True, offset=False, noise=True, bgnoise=2, poiss=350, center=True):
+    def __init__(self, hdf5_path, mode, transform=None):
         """
         Args:
             hdf5_path (str): Path to the hdf5 file 
@@ -29,7 +30,6 @@ class PSFDataset(data.Dataset):
         # Creates an h5py object from the given path
         self.file = h5py.File(hdf5_path, "r")
         self.transform = transform
-        # self.mod = Modify()
 
         # if training, loads the training and validation images and labels
         if mode =='train':
@@ -42,29 +42,6 @@ class PSFDataset(data.Dataset):
         elif mode == 'test':
             self.images = self.file['test_img']
             self.labels = self.file['test_labels']
-
-        # NOTE: MODIFICATION NEEDS TO GO HERE!!!
-        # if modify:
-        #     # print(self.images.shape) # (18000, 3, 64, 64)
-        #     # print(self.labels.shape) # (18000, 11)
-        #     # exit()
-        #     self.new_images = np.zeros_like(self.images)
-        #     self.new_labels = np.zeros_like(self.labels)
-        #     for i in range(len(self.images)): # to 1800
-        #         print(i)
-        #         # print(helpers.get_CoM(self.images[i][0]))
-        #         # helpers.plot_xsection(self.images[i])
-        #         # plt.show()
-        #         sample = self.mod({'image': self.images[i], 'label': self.labels[i]})
-        #         self.new_images[i] = sample['image']
-        #         # helpers.plot_xsection(self.new_images[i])
-        #         # plt.show()
-        #         # print(helpers.get_CoM(self.new_images[i][0]))
-        #         # print('\n')
-        #         self.new_labels[i] = sample['label']
-                
-        #     self.images = self.new_images
-        #     self.labels = self.new_labels
 
     
     def __len__(self):
@@ -79,47 +56,6 @@ class PSFDataset(data.Dataset):
         return sample
         # return {sample['image'], sample['label']}
 
-
-
-# class Modify(object):
-
-#     def __init__(self, offset=False, noise=True, bgnoise=2, poiss=350, center=True):
-#         self.offset=offset
-#         self.center=center
-#         self.noise=noise
-#         self.bgnoise=bgnoise
-#         self.poiss=poiss
-    
-#     def __call__(self, sample):
-#         image, label = sample['image'], sample['label']
-#         # print(image.shape)
-#         if self.offset:
-#             off = helpers.gen_offset()
-#         else:
-#             off = [0,0]
-
-#         if self.noise:
-#             image = helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss)
-        
-#         if self.center:
-#             # print(image[0].shape)
-#             tiptilt = helpers.center(image[0].squeeze(), label)
-#         else:
-#             tiptilt = []
-        
-#         # calculcating new psf with offset label and tiptilt correction
-#         # new_img = helpers.get_sted_psf(coeffs=label, offset_label=off,\
-#         #          multi=True, corrections=tiptilt)
-
-#         # adding noise back on top
-#         new_img = helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss)
-        
-#         if self.offset:
-#             label = np.append(label, off)
-        
-#         return {'image': new_img,
-#                 'label': label}
-        
 
 # class Offset(object):
 #     """Given a synthetic data point, it modifies both the label 
@@ -165,16 +101,16 @@ class PSFDataset(data.Dataset):
 #                 'label': label}
 
 
-# class Noise(object):
-#     """Given a bgnoise and poisson_noise with constructor call, it adds noise to the input."""
-#     def __init__(self, bgnoise=1, poiss=250):
-#         self.bgnoise = bgnoise
-#         self.poiss = poiss
+class Noise(object):
+    """Given a bgnoise and poisson_noise with constructor call, it adds noise to the input."""
+    def __init__(self, bgnoise, poiss):
+        self.bgnoise = bgnoise
+        self.poiss = poiss
 
-#     def __call__(self, sample):
-#         image, label = sample['image'], sample['label']
-#         return {'image': helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss),
-#                 'label': label}
+    def __call__(self, sample):
+        image, label = sample['image'].numpy(), sample['label'].numpy()
+        return {'image': torch.from_numpy(helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss)),
+                'label': torch.from_numpy(label)}
 
 
 class Normalize(object):
