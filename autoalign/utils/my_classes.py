@@ -15,7 +15,7 @@ from torch.utils import data
 import torch
 from torchvision import transforms
 
-# import utils.helpers as helpers
+import utils.helpers as helpers
 
 
 class PSFDataset(data.Dataset):
@@ -29,7 +29,6 @@ class PSFDataset(data.Dataset):
         # Creates an h5py object from the given path
         self.file = h5py.File(hdf5_path, "r")
         self.transform = transform
-        self.mod = Modify()
 
         # if training, loads the training and validation images and labels
         if mode =='train':
@@ -144,14 +143,14 @@ class Make1D(object):
 
 class Noise(object):
     """Given a bgnoise and poisson_noise with constructor call, it adds noise to the input."""
-    def __init__(self, bgnoise=1, poiss=1000):
+    def __init__(self, bgnoise, poiss):
         self.bgnoise = bgnoise
         self.poiss = poiss
 
     def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-        return {'image': helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss),
-                'label': label}
+        image, label = sample['image'].numpy(), sample['label'].numpy()
+        return {'image': torch.from_numpy(helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss)),
+                'label': torch.from_numpy(label)}
 
 
 class Normalize(object):
