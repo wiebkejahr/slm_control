@@ -157,10 +157,10 @@ autoalign/models/testing_no_defocus_multi_eps_15_lr_0.001_bs_64_standardized.pth
 autoalign/models/20.07.22_multi_modify_test_new_eps_15_lr_0.001_bs_64_noise_centered_2.pth
 autoalign/models/20.07.22_multi_modify_test_5_eps_15_lr_0.001_bs_64_noise_centered_2.pth
 autoalign/models/20.07.23_1D_offset_only_500_eps_15_lr_0.001_bs_64_noise.pth
-autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth
+#autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth
 autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg0poiss1000.pth
 autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg0poiss5000.pth
 autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss10000.pth
-autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth
+#autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth
 autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_poiss1000.pth
 autoalign/models/20.07.23_1D_offset_only_500_eps_15_lr_0.001_bs_64.pth
