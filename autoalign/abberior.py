@@ -170,6 +170,8 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
         model = my_models.OffsetNet13()
     else:
         model = my_models.Net11()
+    
+    model=my_models.OffsetNet2()
     # # acquire the image from Imspector
     # # NOTE: from Imspector, must run Tools > Run Server for this to work
     # im = sp.Imspector()
@@ -213,6 +215,8 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
     if offset:
         zern = coeffs[:-2]
         offset_label = coeffs[-2:]
+
+    zern = np.asarray([0.0]*11)
     # 
     # # ITERATIVE LOOP #
     # so_far = -1
@@ -231,9 +235,12 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
     #         print('final correlation: {}'.format(correlation))
     #         break
 
+    # print(zern)
+    # print(offset_label)
+    # exit()
+    # zern = np.asarray([0.0]*11)
 
-
-    reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=False, defocus=False)
+    reconstructed = helpers.get_sted_psf(offset_label=offset_label, multi=False, defocus=False)
     # helpers.plot_xsection_abber(image)
     # old = 0
     # new = 0
@@ -265,7 +272,7 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
     # plt.show()
     
 
-    return coeffs
+    return zern, offset_label
 
 
 
