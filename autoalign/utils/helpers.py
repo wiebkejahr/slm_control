@@ -53,7 +53,7 @@ def add_noise_old(img):
 
 # NOTE: fn contributed by Julia Lyudchik
 # TODO: tune optional argument values to match the look we're going for
-def add_noise(image, bgnoise_amount=1, poiss_amount=150):
+def add_noise(image, bgnoise_amount=1, poiss_amount=350):
     # print(image.shape) # (3, 64, 64)
     # x0, y0 = image.shape
     _, x0,y0 = image.shape
