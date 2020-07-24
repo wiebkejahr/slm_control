@@ -32,8 +32,12 @@ from scipy.ndimage import shift
 
 def test(model, input_image, model_store_path):
     # load the model weights from training
+    
     checkpoint = torch.load(model_store_path)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    # print(checkpoint['model_state_dict'])
+    # exit()
+
+    model.load_state_dict(state_dict=checkpoint['model_state_dict'])
 
     # mean = 0.1083
     # std = 0.2225
@@ -44,10 +48,10 @@ def test(model, input_image, model_store_path):
     with torch.no_grad():
         # adds 3rd color channel dim and batch dim
         # NOTE: THIS IS ONLY FOR 1D
-        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
         # print(np.max(input_image), np.min(input_image))
-        # image = torch.from_numpy(input_image).unsqueeze(0)
+        image = torch.from_numpy(input_image).unsqueeze(0)
 
         outputs = model(image)
         coeffs = outputs.numpy().squeeze()
@@ -171,7 +175,8 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
     else:
         model = my_models.Net11()
     
-    model=my_models.OffsetNet2()
+    model= my_models.MultiNet11()
+    # print(model)
     # # acquire the image from Imspector
     # # NOTE: from Imspector, must run Tools > Run Server for this to work
     # im = sp.Imspector()
@@ -215,8 +220,9 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
     if offset:
         zern = coeffs[:-2]
         offset_label = coeffs[-2:]
-
-    zern = np.asarray([0.0]*11)
+    else:
+        zern = coeffs
+        offset_label = [0,0]
     # 
     # # ITERATIVE LOOP #
     # so_far = -1
@@ -240,7 +246,7 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
     # exit()
     # zern = np.asarray([0.0]*11)
 
-    reconstructed = helpers.get_sted_psf(offset_label=offset_label, multi=False, defocus=False)
+    reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=False, defocus=False)
     # helpers.plot_xsection_abber(image)
     # old = 0
     # new = 0
@@ -262,7 +268,7 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
     #     print(new)
     plt.figure(1)
     plt.subplot(121)
-    plt.imshow(image, cmap='hot')
+    plt.imshow(image[0], cmap='hot')
     plt.suptitle('Iteration {}'.format(i))
     plt.subplot(122)
     plt.imshow(reconstructed, cmap='hot')

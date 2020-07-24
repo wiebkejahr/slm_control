@@ -80,8 +80,9 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise_poiss1000.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
-MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth"
-MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
+MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -215,8 +216,8 @@ class Main_Window(QtWidgets.QMainWindow):
             # self.offset = preds[-2:]
             print('offset: {}'.format(self.offset*scale)) 
         else:
-            self.zernike = abberior.abberior_multi(MODEL_STORE_PATH, image, i=i)
-            self.offset = [0,0]
+            self.zernike, self.offset = abberior.abberior_multi(MODEL_STORE_PATH, image, i=i)
+            # self.offset = [0,0]
 
         # hopefully now it does offsets?
         # TODO: why is there a factor of sqrt(2) in the radscale?! added June 19th
@@ -247,8 +248,8 @@ class Main_Window(QtWidgets.QMainWindow):
         # image = abberior.get_image()
         # _, new_img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
         # ITERATIVE LOOP #
-        multi=False
-        offset=True
+        multi=True
+        offset=False
         size = 2 * np.asarray(self.p.general["size_slm"])
         
         self.correct_tiptilt()
@@ -275,8 +276,8 @@ class Main_Window(QtWidgets.QMainWindow):
                     radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
                 i -= 1
                 break
-            if i >= 0:
-                break
+            # if i >= 0:
+            #     break
            
         self.recalc_images()
         # not needed?
