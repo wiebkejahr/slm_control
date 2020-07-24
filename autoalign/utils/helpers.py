@@ -376,15 +376,6 @@ def get_stats(data_path, batch_size, mode='train'):
     print('mean is: {}  |   std is: {}'.format(mean, std))
     return mean, std
 
-def modify(data_path, mode='train'):
-    """fn to modify a dataset once thru instead of during training"""
-    tsfms = transforms.Compose([my_classes.Modify(offset=False, noise=True, center=True),\
-         my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
-    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, \
-        transform=tsfms)
-    
-
-    return dataset
 
 def plot_xsection(img3d, name=''):
     fig = plt.figure()
