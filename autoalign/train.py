@@ -203,7 +203,7 @@ def main(args):
             model = my_models.Net11()
 
     # model = my_models.MultiNetCentered()
-    model = my_models.OffsetNet2()
+    # model = my_models.OffsetNet2()
     # NOTE: overriding
     # model = my_models.Net11()
     # model = my_models.MultiNet11()
@@ -219,7 +219,6 @@ def main(args):
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     
-    print('beginning training loop')
     # train the model
     train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path)
 
