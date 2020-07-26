@@ -21,9 +21,9 @@ MODEL_DIR=$OUTPUT_DIR/models
 LOG_DIR=$OUTPUT_DIR/runs
 
 ####################### 1. MAKE DATASET #############################
-NUM_POINTS=2000 # will do 90/10 train/validation split
+NUM_POINTS=18000 # will do 90/10 train/validation split
 TEST_NUM=20 # number of additional test samples to create
-NAME="20.07.22_multi_centered_11_dim_18k"
+NAME="20.07.26_1D_centered_offset_20k"
 # NAME="20.07.22_1D_offset_15k" # make this as descriptive as possible
 # don't touch this
 DATASET="${DATA_DIR}/${NAME}.hdf5"
@@ -44,7 +44,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 #   --mode {fluor,sted,z-sted} which mode of data to create
 
 if [ ! -f ${DATASET} ]; then
-python3 ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted'
+python ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --offset --mode 'sted'
 else
 echo "Dataset already exists"
 fi
@@ -77,7 +77,7 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
 if [ ! -f ${MODEL_STORE_PATH} ]; then
-python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} #--warm_start ${CHECKPOINT_DIR}
+python ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --offset #--warm_start ${CHECKPOINT_DIR}
 else
 echo "Model already exists"
 fi

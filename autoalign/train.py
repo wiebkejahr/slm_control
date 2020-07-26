@@ -16,7 +16,6 @@ import torch.optim as optim
 import torchvision
 import numpy as np
 import argparse as ap
-from scipy import signal
 import math
 from tqdm import tqdm
 import matplotlib.pyplot as plt
