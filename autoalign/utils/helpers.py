@@ -293,9 +293,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
         plane = 'xy'
 
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
-    # img = np.stack([add_noise(i) for i in img], axis=0)
-    # img = center(img, res)
-    # img = normalize_img(img)
+
     return img, coeffs, offset_label
 
 def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi=False, defocus=False, corrections=[]):
