@@ -83,8 +83,8 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
-MODEL_STORE_PATH="autoalign/models/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
+MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -208,20 +208,14 @@ class Main_Window(QtWidgets.QMainWindow):
         self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
         self.recalc_images()
     
-    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False, i=0, multi=False):
+    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False, multi=False, i=0):
         size = 2 * np.asarray(self.p.general["size_slm"])
         #TODO: code this properly
         scale = 26.6*2
-        # TODO: fix this unneccessary logic statement
-        if offset:
-            self.zernike, self.offset = abberior.abberior_multi(MODEL_STORE_PATH, image, offset=offset, i=i)
-            # self.zernike = preds[:-2]
-            # self.offset = preds[-2:]
-            print('offset: {}'.format(self.offset*scale)) 
-        else:
-            self.zernike, self.offset = abberior.abberior_multi(MODEL_STORE_PATH, image, i=i)
-            # self.offset = [0,0]
 
+        self.zernike, self.offset = abberior.abberior_multi(MODEL_STORE_PATH, image, offset=offset, multi=multi, i=i)
+        print('offset: {}'.format(self.offset*scale)) 
+    
         # hopefully now it does offsets?
         # TODO: why is there a factor of sqrt(2) in the radscale?! added June 19th
         # chaning the scale factor did not improve it
@@ -287,7 +281,7 @@ class Main_Window(QtWidgets.QMainWindow):
         # self.correct_tiptilt()
         # self.correct_defocus()
 
-    def automate(self, model_store_path=MODEL_STORE_PATH, multi=False, offset=False, num_its=10):
+    def automate(self, model_store_path=MODEL_STORE_PATH, multi=True, offset=False, num_its=10):
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []} 
         path = 'autoalign/data_collection/' 
@@ -295,9 +289,12 @@ class Main_Window(QtWidgets.QMainWindow):
             # 1. zeroes SLM
             self.reload_params(self.param_path)
             # get image from Abberior
-            img, conf, msr = abberior.get_image(multi=False, config=True)
+            img, conf, msr = abberior.get_image(multi=multi, config=True)
             # 2. fits CoM
-            x_shape, y_shape = np.shape(img)
+            if multi:
+                x_shape, y_shape = np.shape(img[0])
+            else:
+                x_shape, y_shape = np.shape(img)
             b, a = helpers.get_CoM(img)
             px_size = 10
             dx = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
@@ -317,6 +314,31 @@ class Main_Window(QtWidgets.QMainWindow):
             # #TODO: this should anyway be the fine offsets, not coarse
             conf.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', xPos)
             conf.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', yPos)
+
+            if multi:
+                zo = conf.parameters('IX83/stage/z/g_off')
+                if abberior:
+                    img_xz = np.squeeze(img[1])[1:-1, 1:-1]
+                    img_yz = np.squeeze(img[2])[1:-1, 1:-1]
+                
+                ####### xz ########
+                x_shape, y_shape = np.shape(img_xz)
+                b, a = get_CoM(img_xz)
+                dx_xz = (x_shape-1)/2-a
+                dz_xz = (y_shape-1)/2-b
+
+                ######## yz #########
+                x_shape, y_shape = np.shape(img_yz)
+                b, a = get_CoM(img_yz)
+                dy_yz = (x_shape-1)/2-a
+                dz_yz = (y_shape-1)/2-b
+                dz = np.average([dz_xz, dz_yz])*px_size
+
+                zPos = zo - dz
+                print("zstage", zPos, zo, dz)
+                #conf.set_parameters('ExpControl/scan/range/offsets/coarse/z/g_off', zPos)
+
+
             # 4. dials in random aberrations and sends them to SLM
             aberrs = helpers.gen_coeffs(11)
 
@@ -330,9 +352,9 @@ class Main_Window(QtWidgets.QMainWindow):
             self.correct_tiptilt()
             if multi:
                 self.correct_defocus()
-            img = abberior.get_image(multi=False)
+            img = abberior.get_image(multi=multi)
             #TODO get location of python script instead of hardcoding path
-            name = "D:/Scripts/SLM_control/" + path + str(ii) + "_aberrated.msr"
+            name = "D:/Scripts/SLM_control/" + path + str(ii) + "_multi_aberrated.msr"
             print(name, msr)
             msr.save_as(name)
             d['init_corr'].append(helpers.corr_coeff(img))
@@ -340,13 +362,13 @@ class Main_Window(QtWidgets.QMainWindow):
             self.zernike, _, corr = self.corrective_loop(model_store_path=model_store_path, offset=offset, multi=multi, image=img)
             d['preds'].append(self.zernike.tolist())
             d['corr'].append(corr)
-            name = 'D:/Scripts/SLM_control/' + path + str(ii) + "_corrected.msr"
+            name = 'D:/Scripts/SLM_control/' + path + str(ii) + "_multi_corrected.msr"
             print(name, msr)
             msr.save_as(name)
             # d['offset'].append(self.offset.tolist())
         print(d['init_corr'], '\n', d['corr'])
 
-        with open(path +'temp4_w_stage.txt', 'w') as file:
+        with open(path +'temp_multi.txt', 'w') as file:
             json.dump(d, file)
 
         # NOTE: need to know from the model itself which model to use, maybe some kind of json like for
