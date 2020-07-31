@@ -80,11 +80,12 @@ mpl.rc('pdf', fonttype=42)
 # to try on 20.07.23: two noise models and an offset model
 # MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise_poiss1000.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise.pth"
+MODEL_STORE_PATH='autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth'
 # MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
-MODEL_STORE_PATH="autoalign/models/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -287,10 +288,10 @@ class Main_Window(QtWidgets.QMainWindow):
         # self.correct_tiptilt()
         # self.correct_defocus()
 
-    def automate(self, model_store_path=MODEL_STORE_PATH, multi=False, offset=False, num_its=10):
+    def automate(self, model_store_path=MODEL_STORE_PATH, multi=False, offset=False, num_its=2):
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []} 
-        path = 'autoalign/data_collection/' 
+        path = 'D:/Data/20200731_Wiebke_Hope_Autoalign/' 
         for ii in range(num_its):
             # 1. zeroes SLM
             self.reload_params(self.param_path)
@@ -305,18 +306,32 @@ class Main_Window(QtWidgets.QMainWindow):
             # 3. centers using ImSpector
             # TODO: this is the coarse stage at the moment, need to find fine parameters
 
-            xo = conf.parameters('IX83/stage/x/g_off')
-            yo = conf.parameters('IX83/stage/y/g_off')
+            #coarse
+            #xo = conf.parameters('ExpControl/scan/range/offsets/coarse/x/g_off')
+            #yo = conf.parameters('ExpControl/scan/range/offsets/coarse/y/g_off')
+            #zo = conf.parameters('ExpControl/scan/range/offsets/coarse/z/g_off')
+            #fine
+            xo = conf.parameters('ExpControl/scan/range/x/g_off')
+            yo = conf.parameters('ExpControl/scan/range/y/g_off')
+            zo = conf.parameters('ExpControl/scan/range/z/g_off')
+            print("positions: ", xo, yo, zo)
             
             xPos = xo - dx
             yPos = yo - dy
             #xPos = xo + 1e-6
             #yPos = yo + 1e-6
-            print("stage", xo*1e3, yo*1e3, dx*1e3, dy*1e3, xPos*1e3, yPos*1e3)
             # #TODO these value changes do not update. is there a signalling update?
             # #TODO: this should anyway be the fine offsets, not coarse
-            conf.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', xPos)
-            conf.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', yPos)
+            
+            #coarse
+            #conf.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', xPos)
+            #conf.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', yPos)
+            #fine
+            #TODO:  as always, not entirely sure where the random factor of two comes from
+            conf.set_parameters('ExpControl/scan/range/x/g_off', 2*xPos)
+            conf.set_parameters('ExpControl/scan/range/y/g_off', 2*yPos)
+            #conf.set_parameters('ExpControl/scan/range/offsets/coarse/z/g_off', zPos)
+            
             # 4. dials in random aberrations and sends them to SLM
             aberrs = helpers.gen_coeffs(11)
 
@@ -332,22 +347,21 @@ class Main_Window(QtWidgets.QMainWindow):
                 self.correct_defocus()
             img = abberior.get_image(multi=False)
             #TODO get location of python script instead of hardcoding path
-            name = "D:/Scripts/SLM_control/" + path + str(ii) + "_aberrated.msr"
-            print(name, msr)
+            name = path + str(ii) + "_aberrated.msr"
             msr.save_as(name)
             d['init_corr'].append(helpers.corr_coeff(img))
             # 6. single pass
             self.zernike, _, corr = self.corrective_loop(model_store_path=model_store_path, offset=offset, multi=multi, image=img)
             d['preds'].append(self.zernike.tolist())
             d['corr'].append(corr)
-            name = 'D:/Scripts/SLM_control/' + path + str(ii) + "_corrected.msr"
-            print(name, msr)
+            name = path + str(ii) + "_corrected.msr"
             msr.save_as(name)
+            with open(path +'temp4_w_stage.txt', 'w') as file:
+                json.dump(d, file)
             # d['offset'].append(self.offset.tolist())
-        print(d['init_corr'], '\n', d['corr'])
+        print('DONE with automated loop!', '\n,', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
 
-        with open(path +'temp4_w_stage.txt', 'w') as file:
-            json.dump(d, file)
+
 
         # NOTE: need to know from the model itself which model to use, maybe some kind of json like for
         # the obejctives, but for now, can change manually 
