@@ -157,22 +157,23 @@ def get_image(multi=False, config = False):
         im.pause(x)
         image_yz = x.stack('ExpControl Ch1 {15}').data()
         image_yz = helpers.preprocess(image_yz)
-        
-        # stacking them together
         image = np.stack((image_xy,image_xz, image_yz), axis=0)
         time.sleep(0.5)
         # print(image.shape)
-        #helpers.plot_xsection(image)
-        #plt.show()
+        helpers.plot_xsection(image)
+        plt.show()
 
-
+    
+    # NOTE: this is a hack to make it 1D for now
+    # if xy:
+    #     image = image_xy
     
     if config:
         return image, configuration, msr
     else:
         return image
 
-def abberior_multi(model_store_path, image, offset=False, multi=False, i=0):
+def abberior_multi(model_store_path, image, offset=False, i=0):
     
     # creates an instance of CNN
     # model = my_models.MultiNetCentered()
@@ -226,10 +227,7 @@ def abberior_multi(model_store_path, image, offset=False, multi=False, i=0):
         if offset:
             model = my_models.OffsetNet13()
         else:
-            if multi:      
-                model = my_models.MutliNet11()
-            else:
-                model = my_models.Net11()    
+            model = my_models.Net11()    
         # gets preds
         coeffs = test(model, image, model_store_path)
         if offset:
@@ -238,7 +236,7 @@ def abberior_multi(model_store_path, image, offset=False, multi=False, i=0):
         else:
             zern = coeffs
             offset_label = [0,0]
-        reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=multi, defocus=False)
+        reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=False, defocus=False)
         corr = helpers.corr_coeff(image, reconstructed)
         if corr > best_corr:
             best_corr = corr
