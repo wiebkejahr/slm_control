@@ -54,8 +54,8 @@ def add_noise_old(img):
 # NOTE: fn contributed by Julia Lyudchik
 # TODO: tune optional argument values to match the look we're going for
 def add_noise(image, bgnoise_amount=1, poiss_amount=350):
-    # print(image.shape) # (3, 64, 64)
-    # x0, y0 = image.shape
+    """A fn to add background and poisson noise to an image, contributed by
+    Julia Lyudchik, PhD student in the Danzl Group"""
     _, x0,y0 = image.shape # this is either (3, 64, 64) or (1, 64, 64)
     #Background noise
     Nb = np.random.normal(0, 0.001, [x0,y0])
@@ -92,6 +92,11 @@ def fit(x,y):
     # return model
 
 def get_CoM(img):
+    #TODO: return offsets in nm instead of absolute positons in px
+    #    dx = (x_shape-1)/2-a
+    #    dy = (y_shape-1)/2-b
+    # then rewrite calc_tip_tilt, calc_defocus and automate accordingly
+
     threshold_value = filters.threshold_otsu(img)
     labeled_foreground = (img > threshold_value).astype(int)
     properties = regionprops(labeled_foreground, img)
@@ -102,7 +107,8 @@ def get_CoM(img):
 
 
 def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
-    
+    # TODO: read Px size from abberior
+    # pass other parameters from settings files
     if abberior:
         img_xz = np.squeeze(img_xz)[1:-1, 1:-1]
         img_yz = np.squeeze(img_yz)[1:-1, 1:-1]
@@ -190,7 +196,7 @@ def gen_offset():
     y = np.round(y, 3)
     return [x,y]
 
-def gen_coeffs(num=12):
+def gen_coeffs(num=11):
     """ Generates a random set of Zernike coefficients given piecewise constraints
     from Zhang et al's paper.
     1st-3rd: [0]   |  4th-6th: [+/- 1.4]  | 7th-10th: [+/- 0.8]  |  11th-15th: [+/- 0.6] 

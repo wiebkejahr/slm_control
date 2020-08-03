@@ -33,6 +33,7 @@ except:
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import json
 
 from PIL import Image
 
@@ -79,10 +80,12 @@ mpl.rc('pdf', fonttype=42)
 # to try on 20.07.23: two noise models and an offset model
 # MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise_poiss1000.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise.pth"
+MODEL_STORE_PATH='autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth'
 # MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
-MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -210,6 +213,7 @@ class Main_Window(QtWidgets.QMainWindow):
         size = 2 * np.asarray(self.p.general["size_slm"])
         #TODO: code this properly
         scale = 26.6*2
+        # TODO: fix this unneccessary logic statement
         if offset:
             self.zernike, self.offset = abberior.abberior_multi(MODEL_STORE_PATH, image, offset=offset, i=i)
             # self.zernike = preds[:-2]
@@ -283,6 +287,79 @@ class Main_Window(QtWidgets.QMainWindow):
         # not needed?
         # self.correct_tiptilt()
         # self.correct_defocus()
+
+    def automate(self, model_store_path=MODEL_STORE_PATH, multi=False, offset=False, num_its=2):
+        # 0. creates data structure
+        d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []} 
+        path = 'D:/Data/20200731_Wiebke_Hope_Autoalign/' 
+        for ii in range(num_its):
+            # 1. zeroes SLM
+            self.reload_params(self.param_path)
+            # get image from Abberior
+            img, conf, msr = abberior.get_image(multi=False, config=True)
+            # 2. fits CoM
+            x_shape, y_shape = np.shape(img)
+            b, a = helpers.get_CoM(img)
+            px_size = 10
+            dx = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
+            dy = ((y_shape-1)/2-b)*1e-9*px_size
+            # 3. centers using ImSpector
+            # TODO: this is the coarse stage at the moment, need to find fine parameters
+
+            #coarse
+            #xo = conf.parameters('ExpControl/scan/range/offsets/coarse/x/g_off')
+            #yo = conf.parameters('ExpControl/scan/range/offsets/coarse/y/g_off')
+            #zo = conf.parameters('ExpControl/scan/range/offsets/coarse/z/g_off')
+            #fine
+            xo = conf.parameters('ExpControl/scan/range/x/g_off')
+            yo = conf.parameters('ExpControl/scan/range/y/g_off')
+            zo = conf.parameters('ExpControl/scan/range/z/g_off')
+            print("positions: ", xo, yo, zo)
+            
+            xPos = xo - dx
+            yPos = yo - dy
+            #xPos = xo + 1e-6
+            #yPos = yo + 1e-6
+            # #TODO these value changes do not update. is there a signalling update?
+            # #TODO: this should anyway be the fine offsets, not coarse
+            
+            #coarse
+            #conf.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', xPos)
+            #conf.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', yPos)
+            #fine
+            #TODO:  as always, not entirely sure where the random factor of two comes from
+            conf.set_parameters('ExpControl/scan/range/x/g_off', 2*xPos)
+            conf.set_parameters('ExpControl/scan/range/y/g_off', 2*yPos)
+            #conf.set_parameters('ExpControl/scan/range/offsets/coarse/z/g_off', zPos)
+            
+            # 4. dials in random aberrations and sends them to SLM
+            aberrs = helpers.gen_coeffs(11)
+
+            size = 2 * np.asarray(self.p.general["size_slm"])
+            self.zernikes_all = self.zernikes_all - pcalc.crop(helpers.create_phase(aberrs, num=np.arange(3, 14), res1=size[0], res2=size[1], 
+                        radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+            
+            d['gt'].append(aberrs)
+            
+            # 5. Center using tip tilt and defocus correction
+            self.correct_tiptilt()
+            if multi:
+                self.correct_defocus()
+            img = abberior.get_image(multi=False)
+            #TODO get location of python script instead of hardcoding path
+            name = path + str(ii) + "_aberrated.msr"
+            msr.save_as(name)
+            d['init_corr'].append(helpers.corr_coeff(img))
+            # 6. single pass
+            self.zernike, _, corr = self.corrective_loop(model_store_path=model_store_path, offset=offset, multi=multi, image=img)
+            d['preds'].append(self.zernike.tolist())
+            d['corr'].append(corr)
+            name = path + str(ii) + "_corrected.msr"
+            msr.save_as(name)
+            with open(path +'temp4_w_stage.txt', 'w') as file:
+                json.dump(d, file)
+            # d['offset'].append(self.offset.tolist())
+        print('DONE with automated loop!', '\n,', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
 
 
 
@@ -378,7 +455,8 @@ class Main_Window(QtWidgets.QMainWindow):
         vbox.addLayout(hbox)
         # NOTE: I WROTE THIS
         self.crea_but(hbox, self.correct_tiptilt, "Tip/Tilt")
-        self.crea_but(hbox, self.correct_defocus, "Defocus")
+        #self.crea_but(hbox, self.correct_defocus, "Defocus")
+        self.crea_but(hbox, self.automate, "Auto-test")
                     
         # doesn't do anything at the moment, could be used to set another path
         # to load the images from

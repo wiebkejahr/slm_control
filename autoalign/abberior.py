@@ -48,10 +48,10 @@ def test(model, input_image, model_store_path):
     with torch.no_grad():
         # adds 3rd color channel dim and batch dim
         # NOTE: THIS IS ONLY FOR 1D
-        # image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
+        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
         # NOTE: THIS IS ONLY FOR 3D
         # print(np.max(input_image), np.min(input_image))
-        image = torch.from_numpy(input_image).unsqueeze(0)
+        # image = torch.from_numpy(input_image).unsqueeze(0)
 
         outputs = model(image)
         coeffs = outputs.numpy().squeeze()
@@ -101,12 +101,17 @@ def correct_defocus():
     return helpers.calc_defocus(image_xz, image_yz)
 
 
-def get_image(multi=False):
+def get_image(multi=False, config = False):
     # create Imspector object
     im = sp.Imspector()
     # get active measurement
     msr = im.active_measurement()
+    configuration = msr.active_configuration()
+
     try:
+        # im.pause(msr)
+        # time.sleep(0.5)
+        # im.start(msr)
         image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
     except:
         print("Cannot find 'ExpControl Ch1 {1}' window")
@@ -162,7 +167,11 @@ def get_image(multi=False):
     # NOTE: this is a hack to make it 1D for now
     # if xy:
     #     image = image_xy
-    return image
+    
+    if config:
+        return image, configuration, msr
+    else:
+        return image
 
 def abberior_multi(model_store_path, image, offset=False, i=0):
     
@@ -170,12 +179,9 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
     # model = my_models.MultiNetCentered()
     # model = my_models.NetCentered()
     # model = my_models.MultiNetCat()
-    if offset:
-        model = my_models.OffsetNet13()
-    else:
-        model = my_models.Net11()
     
-    model= my_models.MultiNet11()
+    
+    # model= my_models.MultiNet11()
     # print(model)
     # # acquire the image from Imspector
     # # NOTE: from Imspector, must run Tools > Run Server for this to work
@@ -214,39 +220,37 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
 
     # # NOTE: this is a hack to make it 1D for now
     # image = image_xy
+    best_coeffs = []
+    best_corr = 0
+    for _ in range(5):
 
-    # gets preds
-    coeffs = test(model, image, model_store_path)
+        if offset:
+            model = my_models.OffsetNet13()
+        else:
+            model = my_models.Net11()    
+        # gets preds
+        coeffs = test(model, image, model_store_path)
+        if offset:
+            zern = coeffs[:-2]
+            offset_label = coeffs[-2:]
+        else:
+            zern = coeffs
+            offset_label = [0,0]
+        reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=False, defocus=False)
+        corr = helpers.corr_coeff(image, reconstructed)
+        if corr > best_corr:
+            best_corr = corr
+            best_coeffs = coeffs
+
+
     if offset:
-        zern = coeffs[:-2]
-        offset_label = coeffs[-2:]
+        zern = best_coeffs[:-2]
+        offset_label = best_coeffs[-2:]
     else:
-        zern = coeffs
-        offset_label = [0,0]
-    # 
-    # # ITERATIVE LOOP #
-    # so_far = -1
-    # while correlation > so_far:
-    #     # while it is not optimized, if it comes accross a higher correlation, work down and switch out preds
-    #     new_coeffs = model(image).numpy().squeeze()
-    #     new_corrected = helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
-    #         corrections=[helpers.create_phase(coeffs=(-1.)*new_coeffs)])
-    #     new_correlation = helpers.corr_coeff(new_corrected)
-    #     if new_correlation > correlation:
-    #         so_far = correlation
-    #         correlation = new_correlation
-    #         print('new corr: {}, old corr: {}'.format(correlation, so_far))
-    #         coeffs = new_coeffs
-    #     else:
-    #         print('final correlation: {}'.format(correlation))
-    #         break
-
-    # print(zern)
-    # print(offset_label)
-    # exit()
-    # zern = np.asarray([0.0]*11)
-
-    reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=False, defocus=False)
+        zern = best_coeffs 
+        offset_label = [0,0]   
+    # so as to not break existing code
+    # TODO; make this not hideous
     # helpers.plot_xsection_abber(image)
     # old = 0
     # new = 0
@@ -266,13 +270,13 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
     #     # get new correlation coeff
     #     new = helpers.corr_coeff(reconstructed)
     #     print(new)
-    plt.figure(1)
-    plt.subplot(121)
-    plt.imshow(image[0], cmap='hot')
-    plt.suptitle('Iteration {}'.format(i))
-    plt.subplot(122)
-    plt.imshow(reconstructed, cmap='hot')
-    plt.show()
+    # plt.figure(1)
+    # plt.subplot(121)
+    # plt.imshow(image, cmap='hot')
+    # plt.suptitle('Iteration {}'.format(i))
+    # plt.subplot(122)
+    # plt.imshow(reconstructed, cmap='hot')
+    # plt.show()
     
     # fig = helpers.plot_xsection_abber(image, reconstructed)
     # plt.show()
