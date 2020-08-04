@@ -210,21 +210,13 @@ class Main_Window(QtWidgets.QMainWindow):
         self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
         self.recalc_images()
     
-    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False, i=0, multi=False):
+    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False, multi=False,  i=0):
         size = 2 * np.asarray(self.p.general["size_slm"])
         #TODO: code this properly
         scale = 26.6*2
-        # TODO: fix this unneccessary logic statement
-        if offset:
-            self.zernike, self.offset = abberior.abberior_multi(MODEL_STORE_PATH, image, offset=offset, i=i)
-            # self.zernike = preds[:-2]
-            # self.offset = preds[-2:]
-            print('offset: {}'.format(self.offset*scale)) 
-        else:
-            self.zernike, self.offset = abberior.abberior_multi(MODEL_STORE_PATH, image, i=i)
-            # self.offset = [0,0]
-
-        # hopefully now it does offsets?
+        
+        self.zernike, self.offset = abberior.abberior_test(MODEL_STORE_PATH, image, offset=offset, multi=multi, i=i)
+        
         # TODO: why is there a factor of sqrt(2) in the radscale?! added June 19th
         # chaning the scale factor did not improve it
         self.img_l.off.xgui.setValue(self.img_l.off.xgui.value()+self.offset[1]*scale)
@@ -253,8 +245,8 @@ class Main_Window(QtWidgets.QMainWindow):
         # image = abberior.get_image()
         # _, new_img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
         # ITERATIVE LOOP #
-        multi=True
-        offset=True
+        multi=False
+        offset=False
         size = 2 * np.asarray(self.p.general["size_slm"])
         
         self.correct_tiptilt()
@@ -266,7 +258,7 @@ class Main_Window(QtWidgets.QMainWindow):
         i = 1
         while corr >= so_far:
             image = abberior.get_image(multi=multi)                                                   
-            preds, image, new_corr = self.corrective_loop(MODEL_STORE_PATH, image, offset=offset, i=i)
+            preds, image, new_corr = self.corrective_loop(MODEL_STORE_PATH, image, offset=offset, multi=multi, i=i)
             if new_corr > corr:
                 so_far = corr
                 corr = new_corr
@@ -289,11 +281,15 @@ class Main_Window(QtWidgets.QMainWindow):
         # self.correct_tiptilt()
         # self.correct_defocus()
 
-    def automate(self, model_store_path=MODEL_STORE_PATH, multi=False, offset=True, num_its=800):
+    def automate(self, model_store_path=MODEL_STORE_PATH, num_its=1):
+        multi=False
+        offset=False
+        
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []} 
-        path = 'D:/Data/20200803_Wiebke_Hope_Autoalign/200803_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64/'
-        img, conf, msr = abberior.get_image(multi=False, config=True)
+        path = 'D:/Data/20200804_Wiebke_Hope_Autoalign/'
+        # NOTE: multi is meant to be hardcoded here, we only need the xy to return the config
+        img, conf, msr, stats = abberior.get_image(multi=False, config=True)
         x_init = conf.parameters('ExpControl/scan/range/x/g_off')
         y_init = conf.parameters('ExpControl/scan/range/y/g_off')
         z_init = conf.parameters('ExpControl/scan/range/z/g_off')
@@ -303,7 +299,13 @@ class Main_Window(QtWidgets.QMainWindow):
             # 1. zeroes SLM
             self.reload_params(self.param_path)
             # get image from Abberior
-            img, conf, msr = abberior.get_image(multi=multi, config=True)
+            img, conf, msr, stats = abberior.get_image(multi=multi, config=True)
+
+            #TODO: Which values are good will depend on the system & acquisition parameters. Needs to be tested
+            if stats[2] < 25:
+                print("Interrupted because no signal. Stats: ", stats)
+                break
+
             # 2. fits CoM
             x_shape, y_shape = np.shape(img)
             b, a = helpers.get_CoM(img)
