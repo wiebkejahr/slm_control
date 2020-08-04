@@ -129,11 +129,13 @@ def get_image(multi=False, config = False):
         im.pause(x)
         image_yz = x.stack('ExpControl Ch1 {15}').data()
         image_yz = helpers.preprocess(image_yz)
+
+        #TODO: stacking only works if all images have the same dimensions!
         image = np.stack((image_xy,image_xz, image_yz), axis=0)
         time.sleep(0.5)
         # print(image.shape)
-        helpers.plot_xsection(image)
-        plt.show()
+        #helpers.plot_xsection(image)
+        #plt.show()
 
     
     # NOTE: this is a hack to make it 1D for now
@@ -196,10 +198,16 @@ def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
     best_corr = 0
     for _ in range(5):
 
-        if offset:
-            model = my_models.OffsetNet13()
+        if multi:
+            if offset:
+                model = my_models.MultiOffsetNet14()
+            else:
+                model = my_models.MultiNet11()
         else:
-            model = my_models.Net11()    
+            if offset:
+                model = my_models.OffsetNet13()
+            else:
+                model = my_models.Net11()    
         # gets preds
         
         checkpoint = torch.load(model_store_path)
@@ -236,7 +244,8 @@ def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
         else:
             zern = coeffs
             offset_label = [0,0]
-        reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=False, defocus=False)
+        reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=multi, defocus=False)
+        # print(np.shape(image), np.shape(reconstructed))
         corr = helpers.corr_coeff(image, reconstructed)
         if corr > best_corr:
             best_corr = corr

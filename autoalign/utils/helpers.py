@@ -213,8 +213,8 @@ def gen_coeffs(num=11):
     return c
 
 
-def corr_coeff(img1, img2=None, ideal=True, multi=False):
-    if ideal:
+def corr_coeff(img1, img2=[], multi=False):
+    if len(img2)==0:
         img2 = get_sted_psf(multi=multi)
 
     return np.corrcoef(img1.flat, img2.flat)[0,1]
