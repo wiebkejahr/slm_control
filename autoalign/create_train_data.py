@@ -15,8 +15,8 @@ import json
 import h5py
 import skimage
 from skimage.transform import resize, AffineTransform, warp, rotate
-from scipy.ndimage.measurements import center_of_mass
-from scipy.ndimage import shift
+# from scipy.ndimage.measurements import center_of_mass
+# from scipy.ndimage import shift
 
 # local packages
 from utils.helpers import *

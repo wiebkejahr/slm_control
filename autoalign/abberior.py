@@ -30,36 +30,6 @@ from scipy.ndimage.measurements import center_of_mass
 from scipy.ndimage import shift
 
 
-def test(model, input_image, model_store_path):
-    # load the model weights from training
-    
-    checkpoint = torch.load(model_store_path)
-    # print(checkpoint['model_state_dict'])
-    # exit()
-
-    model.load_state_dict(state_dict=checkpoint['model_state_dict'])
-
-    # mean = 0.1083
-    # std = 0.2225
-
-    # Test the model
-    model.eval()
-
-    with torch.no_grad():
-        # adds 3rd color channel dim and batch dim
-        # NOTE: THIS IS ONLY FOR 1D
-        image = torch.from_numpy(input_image).unsqueeze(0).unsqueeze(0)
-        # NOTE: THIS IS ONLY FOR 3D
-        # print(np.max(input_image), np.min(input_image))
-        # image = torch.from_numpy(input_image).unsqueeze(0)
-
-        outputs = model(image)
-        coeffs = outputs.numpy().squeeze()
-        # correlation = helpers.corr_coeff(helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
-        #     corrections=[helpers.create_phase(coeffs=(-1.)*coeffs)]))
-
-    return coeffs
-
 def correct_tip_tilt():
 
     # acquire the image from Imspector
@@ -113,6 +83,8 @@ def get_image(multi=False, config = False):
         # time.sleep(0.5)
         # im.start(msr)
         image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+        stats = [np.max(image_xy), np.min(image_xy), np.std(image_xy)]
+        image = helpers.preprocess(image_xy)
     except:
         print("Cannot find 'ExpControl Ch1 {1}' window")
         exit()
@@ -127,7 +99,6 @@ def get_image(multi=False, config = False):
     #     print("Cannot find 'ExpControl Ch1 {15}' window")
     #     exit()
 
-    image = helpers.preprocess(image_xy)
     
     #image_xz = im.measurement('ExpControl Ch1 {13}')
     #image_yz = im.measurement('ExpControl Ch1 {15}')
@@ -140,6 +111,7 @@ def get_image(multi=False, config = False):
         time.sleep(3)
         im.pause(x)
         image_xy = x.stack('ExpControl Ch1 {1}').data()
+        stats = [np.max(image_xy), np.min(image_xy), np.std(image_xy)]
         image_xy = helpers.preprocess(image_xy) # takes off black edge, resizes to (64, 64) and standardizes
         time.sleep(0.5)
 
@@ -169,11 +141,11 @@ def get_image(multi=False, config = False):
     #     image = image_xy
     
     if config:
-        return image, configuration, msr
+        return image, configuration, msr, stats
     else:
         return image
 
-def abberior_multi(model_store_path, image, offset=False, i=0):
+def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
     
     # creates an instance of CNN
     # model = my_models.MultiNetCentered()
@@ -229,7 +201,35 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
         else:
             model = my_models.Net11()    
         # gets preds
-        coeffs = test(model, image, model_store_path)
+        
+        checkpoint = torch.load(model_store_path)
+        # print(checkpoint['model_state_dict'])
+        # exit()
+
+        model.load_state_dict(state_dict=checkpoint['model_state_dict'])
+
+        # mean = 0.1083
+        # std = 0.2225
+
+        # Test the model
+        model.eval()
+
+        with torch.no_grad():
+            # adds 3rd color channel dim and batch dim
+            if multi:   
+                input_image = torch.from_numpy(image).unsqueeze(0)
+            else:
+                # NOTE: THIS IS ONLY FOR 1D
+                input_image = torch.from_numpy(image).unsqueeze(0).unsqueeze(0)
+    
+            outputs = model(input_image)
+            coeffs = outputs.numpy().squeeze()
+            # image = image.numpy()
+            # correlation = helpers.corr_coeff(helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
+            #     corrections=[helpers.create_phase(coeffs=(-1.)*coeffs)]))
+
+        # return coeffs
+
         if offset:
             zern = coeffs[:-2]
             offset_label = coeffs[-2:]
@@ -286,28 +286,6 @@ def abberior_multi(model_store_path, image, offset=False, i=0):
 
 
 
-    # print(coeffs)
-    # a dictionary of correction terms to be passed to SLM control
-    # corrections = {
-    #         "sphere": [
-    #             coeffs[9],
-    #             0.0
-    #         ],
-    #         "astig": [
-    #             coeffs[2], #used to be neg
-    #             coeffs[0]
-    #         ],
-    #         "coma": [
-    #             coeffs[5],
-    #             coeffs[4] #used to be neg
-    #         ],
-    #         "trefoil": [
-    #             coeffs[6],
-    #             coeffs[3]
-    #         ]
-    #     }
-
-    # return corrections
 
 
 
