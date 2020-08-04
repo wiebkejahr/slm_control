@@ -9,6 +9,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+class ISOnet(nn.Module):
+    def __init__(self):
+        super(ISOnet, self).__init__()
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=7)
+        self.
+
+
 class Net12(nn.Module):
     """
     A simple CNN based on AlexNet
