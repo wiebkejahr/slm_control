@@ -44,7 +44,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 #   --mode {fluor,sted,z-sted} which mode of data to create
 
 if [ ! -f ${DATASET} ]; then
-python3 ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted'
+python ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted'
 else
 echo "Dataset already exists"
 fi
@@ -58,7 +58,7 @@ MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}"
 # MODEL_NAME="20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_SECOND"
 # don't touch these
 MODEL_STORE_PATH="${MODEL_DIR}/${MODEL_NAME}.pth"
-# LOGDIR=${LOG_DIR}/${MODEL_NAME}
+LOGDIR=${LOG_DIR}/${MODEL_NAME}
 # CHECKPOINT_DIR="${MODEL_DIR}/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
 
 # To see all options, run 'python train.py --help'. Output copied below.
@@ -77,7 +77,7 @@ MODEL_STORE_PATH="${MODEL_DIR}/${MODEL_NAME}.pth"
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
 if [ ! -f ${MODEL_STORE_PATH} ]; then
-python3 ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} 
+python ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} 
 else
 echo "Model already exists"
 fi
