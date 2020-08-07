@@ -40,11 +40,11 @@ class SLM_Display(QtWidgets.QWidget):
         self.setGeometry(screen1.left(), screen1.top(), screen1.width(), screen1.height())        
         self.showFullScreen()  
             
-        vbox = QtWidgets.QVBoxLayout()
+        #vbox = QtWidgets.QVBoxLayout()
         self.img_frame = QtWidgets.QLabel(self)
         self.update_image(data)
-        vbox.addWidget(self.img_frame)
-        self.setLayout(vbox)
+        self.img_frame.setCursor(QtCore.Qt.BlankCursor) #vbox.addWidget(self.img_frame)
+        self.img_frame.show() #self.setLayout(vbox)
 
     def create_imspec_display(self, data):
                     
@@ -92,7 +92,7 @@ class SLM_Display(QtWidgets.QWidget):
         
         
         elif self.display == "imspector":
-            #print("display imspector")
+            print("display imspector")
             try:
                 self.stk.data()[:] = data / 255
                 self.meas.update()
