@@ -84,9 +84,10 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
+MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
-MODEL_STORE_PATH="autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64.pth"
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -281,19 +282,19 @@ class Main_Window(QtWidgets.QMainWindow):
         # self.correct_tiptilt()
         # self.correct_defocus()
 
-    def automate(self, model_store_path=MODEL_STORE_PATH, num_its=1):
-        multi=False
+    def automate(self, model_store_path=MODEL_STORE_PATH, num_its=3):
+        multi=True
         offset=False
-        
+        px_size = 10
+        i_start = 0
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []} 
-        path = 'D:/Data/20200804_Wiebke_Hope_Autoalign/'
+        path = 'D:/Data/20200804_Wiebke_Hope_Autoalign/test_centering/'
         # NOTE: multi is meant to be hardcoded here, we only need the xy to return the config
         img, conf, msr, stats = abberior.get_image(multi=False, config=True)
         x_init = conf.parameters('ExpControl/scan/range/x/g_off')
         y_init = conf.parameters('ExpControl/scan/range/y/g_off')
         z_init = conf.parameters('ExpControl/scan/range/z/g_off')
-        i_start = 0
 
         for ii in range(num_its):
             # 1. zeroes SLM
@@ -302,20 +303,54 @@ class Main_Window(QtWidgets.QMainWindow):
             img, conf, msr, stats = abberior.get_image(multi=multi, config=True)
 
             #TODO: Which values are good will depend on the system & acquisition parameters. Needs to be tested
+            #IMPORTANT: should also stop acquisition, potentially shut down Imspector?
             if stats[2] < 25:
                 print("Interrupted because no signal. Stats: ", stats)
                 break
 
             # 2. fits CoM
-            x_shape, y_shape = np.shape(img)
-            b, a = helpers.get_CoM(img)
-            px_size = 10
-            dx = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
-            dy = ((y_shape-1)/2-b)*1e-9*px_size
+            if multi:
+                _, x_shape, y_shape = np.shape(img)
+                ####### xy ########
+                b, a = helpers.get_CoM(img[0])
+                dx_xy = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
+                dy_xy = ((y_shape-1)/2-b)*1e-9*px_size  # convert to m
+
+                ####### xz ########
+                b, a = helpers.get_CoM(img[1])
+                dx_xz = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
+                dz_xz = ((y_shape-1)/2-b)*1e-9*px_size  # convert to m
+                
+                ######## yz #########
+                b, a = helpers.get_CoM(img[2])
+                dy_yz = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
+                dz_yz = ((y_shape-1)/2-b)*1e-9*px_size  # convert to m
+
+                print(dx_xy*1e9, dx_xz*1e9, dy_xy*1e9, dy_yz*1e9, dz_xz*1e9, dz_yz*1e9)
+                
+                dx = np.average([dx_xy, dx_xz])
+                dy = np.average([dy_xy, dy_yz])
+                dz = np.average([dz_xz, dz_yz])
+
+
+                #d_obj = D/3/1000 # scaling
+                # print(dz, f, D, lambd)
+            else:
+                x_shape, y_shape = np.shape(img)
+                b, a = helpers.get_CoM(img)
+                dx = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
+                dy = ((y_shape-1)/2-b)*1e-9*px_size
+                dz = 0
+            print("delta positions: ", dx*1e9, dy*1e9, dz*1e9)
+            lim = 160e-9
+            if np.abs(dx) >= lim or np.abs(dy) >= lim or np.abs(dz)>=lim:
+                print('skipped', dx, dy, dz)
+                conf.set_parameters('ExpControl/scan/range/x/g_off', x_init)
+                conf.set_parameters('ExpControl/scan/range/y/g_off', y_init)
+                conf.set_parameters('ExpControl/scan/range/z/g_off', z_init)
+                continue
 
             # 3. centers using ImSpector
-            # TODO: this is the coarse stage at the moment, need to find fine parameters
-
             #coarse
             #xo = conf.parameters('ExpControl/scan/range/offsets/coarse/x/g_off')
             #yo = conf.parameters('ExpControl/scan/range/offsets/coarse/y/g_off')
@@ -328,15 +363,15 @@ class Main_Window(QtWidgets.QMainWindow):
             
             xPos = xo - dx
             yPos = yo - dy
-            #xPos = xo + 1e-6
-            #yPos = yo + 1e-6
-            # #TODO these value changes do not update. is there a signalling update?
-            # #TODO: this should anyway be the fine offsets, not coarse
-            if np.abs(xPos) >= 800e-6 or np.abs(yPos) >= 800e-6:
-                print('skipped', xPos, yPos)
-                conf.set_parameters('ExpControl/scan/range/x/g_off', x_init)
-                conf.set_parameters('ExpControl/scan/range/y/g_off', y_init)
-                continue
+            zPos = zo - dz
+            print("positions: ", xPos, yPos, zPos)
+
+            # if np.abs(xPos) >= 800e-6 or np.abs(yPos) >= 800e-6:
+            #     print('skipped', xPos, yPos)
+            #     conf.set_parameters('ExpControl/scan/range/x/g_off', x_init)
+            #     conf.set_parameters('ExpControl/scan/range/y/g_off', y_init)
+            #     conf.set_parameters('ExpControl/scan/range/z/g_off', z_init)
+            #     continue
             #coarse
             #conf.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', xPos)
             #conf.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', yPos)
@@ -344,6 +379,7 @@ class Main_Window(QtWidgets.QMainWindow):
             #TODO:  as always, not entirely sure where the random factor of two comes from
             conf.set_parameters('ExpControl/scan/range/x/g_off', xPos)
             conf.set_parameters('ExpControl/scan/range/y/g_off', yPos)
+            conf.set_parameters('ExpControl/scan/range/z/g_off', zPos)
             #conf.set_parameters('ExpControl/scan/range/offsets/coarse/z/g_off', zPos)
             
             # 4. dials in random aberrations and sends them to SLM
@@ -363,17 +399,18 @@ class Main_Window(QtWidgets.QMainWindow):
             #TODO get location of python script instead of hardcoding path
             name = path + str(ii+i_start) + "_aberrated.msr"
             msr.save_as(name)
-            d['init_corr'].append(helpers.corr_coeff(img))
+
+            d['init_corr'].append(helpers.corr_coeff(img, multi=multi))
             # 6. single pass
             self.zernike, _, corr = self.corrective_loop(model_store_path=model_store_path, offset=offset, multi=multi, image=img)
             d['preds'].append(self.zernike.tolist())
             d['corr'].append(corr)
             name = path + str(ii+i_start) + "_corrected.msr"
             msr.save_as(name)
-            with open(path +'200803_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64_' +str(i_start)+'.txt', 'w') as file:
+            with open(path +'test_centering_' +str(i_start)+'.txt', 'w') as file:
                 json.dump(d, file)
             # d['offset'].append(self.offset.tolist())
-        print('DONE with automated loop!', '\n,', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
+        print('DONE with automated loop!', '\n', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
 
 
 
