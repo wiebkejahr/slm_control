@@ -14,8 +14,13 @@ class ISOnet(nn.Module):
     def __init__(self):
         super(ISOnet, self).__init__()
         self.conv1 = nn.Conv2d(1, 16, kernel_size=7)
-        self.
-
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=7)
+        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear')
+    
+    def forward(self, x):
+        x = F.max_pool2d(F.relu(self.conv1(x)), (2,2))
+        x = F.max_pool2d(F.relu(self.conv2(x)), (2,2))
+        
 
 class Net12(nn.Module):
     """
