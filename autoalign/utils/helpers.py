@@ -11,6 +11,7 @@ import random
 from tqdm import tqdm
 from numpy.random import normal
 from math import factorial as mfac
+from torchvision import transforms
 
 # third party imports
 import numpy as np
@@ -375,7 +376,9 @@ def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], multi
 # modified from a stack overflow answer
 def get_stats(data_path, batch_size, mode='train'):
     """ Finding Dataset Stats for Normalization before Training."""
-    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, transform=my_classes.ToTensor())
+    # NOTE: THIS IS CHANGED AS WELL WHEN MAKING THEM PIL IMAGES
+    dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, transform=transforms.ToTensor())
+    # dataset = my_classes.PSFDataset(hdf5_path=data_path, mode=mode, transform=my_classes.ToTensor())
     loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     mean = 0.
     std = 0.

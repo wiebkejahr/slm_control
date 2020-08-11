@@ -14,6 +14,9 @@ import numpy as np
 from torch.utils import data
 import torch
 from torchvision import transforms
+from PIL import Image
+from matplotlib import cm
+
 
 from utils import helpers
 # import autoalign.utils.helpers as helpers
@@ -48,13 +51,18 @@ class PSFDataset(data.Dataset):
         return self.images.shape[0]
     
     def __getitem__(self, idx):
-        sample = {'image': self.images[idx], 'label': self.labels[idx]}
-        
-        if self.transform:
-            sample = self.transform(sample)
+        image, label = self.images[idx], self.labels[idx]
+        image = helpers.normalize_img(image.squeeze())
+        # print(sample['image'].squeeze().shape)
+        # print(np.max(sample['image']), np.min(sample['image']))
+        # print(np.max(sample['image']*255), np.min(sample['image']*255))
+        image = Image.fromarray(np.uint8(image*255), 'L')
 
-        return sample
-        # return {sample['image'], sample['label']}
+        if self.transform:
+            image = self.transform(image)
+
+        # return [image, label]
+        return {'image': image, 'label':label}
 
 
 # class Offset(object):
@@ -107,10 +115,9 @@ class Noise(object):
         self.bgnoise = bgnoise
         self.poiss = poiss
 
-    def __call__(self, sample):
-        image, label = sample['image'].numpy(), sample['label'].numpy()
-        return {'image': torch.from_numpy(helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss)),
-                'label': torch.from_numpy(label)}
+    def __call__(self, image):
+        image =image.numpy()
+        return torch.from_numpy(helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss))
 
 
 class Normalize(object):
@@ -120,29 +127,26 @@ class Normalize(object):
         self.mean = mean
         self.std = std
 
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
+    def __call__(self, image):
         
         for channel in range(image.size(0)):
             image[channel] = (image[channel] - self.mean[channel])/ self.std[channel]
 
-        return {'image': image,
-                'label': label}
+        return image
 
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
+    def __call__(self, image):
+        
         # NOTE: really not sure about these axes, 
         # I'm only using 1 color channel, so it's usually non-existent
         # swap color axis because
         # numpy image: H x W x C
         # torch image: C X H X W
         #image = image.transpose((2, 0, 1))
-        return {'image': torch.from_numpy(image),
-                'label': torch.from_numpy(label)}
+        return torch.from_numpy(image)
 
 
 

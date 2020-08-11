@@ -15,6 +15,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import torchvision
+import torchvision.models as models
 
 import numpy as np
 import argparse as ap
@@ -155,7 +156,12 @@ def main(args):
     
     # TODO: set image between [0,1] so you can use transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) like ImageNet
     # transforms.RandomHorizontalFlip(),
-    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(bgnoise=2, poiss=350)])
+    # mean = [0.485, 0.456, 0.406]
+    # std = [0.229, 0.224, 0.225]
+    # tsfms = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(bgnoise=2, poiss=350)])
+    # tsfms = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(bgnoise=2, poiss=350)])
+    
+    tsfms = transforms.Compose([transforms.ToTensor(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(bgnoise=2, poiss=350)])
     
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
     val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
@@ -173,6 +179,14 @@ def main(args):
         print(i, j)
     print('is CUDA available? {}'.format(torch.cuda.is_available()))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+    # for i, sample in enumerate(data_loaders['train']):
+    #     print(sample['image'].shape)
+    #     plt.figure()
+    #     plt.imshow(sample['image'].squeeze()[0])
+    #     plt.show()
+    # exit()
     ################################## running ###################################
     
     # # TODO: the above method of modifying the dataset after creation also gives a streamlined
@@ -188,7 +202,12 @@ def main(args):
     #     else:
     #         model = my_models.Net11()
 
-    model = resnet.ResNet18()
+    model = models.alexnet(pretrained=False, num_classes=11)
+    # num_ftrs = model..in_features
+    # model.fc = nn.Linear(num_ftrs, 11)
+    # print(model)
+    # exit()
+
 
     # print(model)
     criterion = nn.MSELoss(reduction='none') 
