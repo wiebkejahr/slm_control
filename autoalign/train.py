@@ -71,7 +71,7 @@ def train(model, data_loaders, optimizer, exp_lr_scheduler, criterion, num_epoch
                 
                 # Run the forward pass
                 with torch.set_grad_enabled(phase == 'train'):
-                    outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
+                    outputs = model(images.float()) # e.g. [32, 12] = [batch_size, output_dim]
                     # no activation function on the final layer means that the output IS the weight of the final layer
                     loss = criterion(outputs, labels) # MSE
                     # sum of averages for each coeff position
@@ -203,6 +203,9 @@ def main(args):
     #         model = my_models.Net11()
 
     model = models.alexnet(pretrained=False, num_classes=11)
+    first_conv_layer = [nn.Conv2d(1,3, kernel_size=3, stride=1, padding=1, bias=True)]
+    first_conv_layer.extend(list(model.features))
+    model.features = nn.Sequential(*first_conv_layer )
     # num_ftrs = model..in_features
     # model.fc = nn.Linear(num_ftrs, 11)
     # print(model)
