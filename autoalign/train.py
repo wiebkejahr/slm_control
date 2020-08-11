@@ -39,7 +39,7 @@ def train(model, data_loaders, optimizer, exp_lr_scheduler, criterion, num_epoch
     
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
-    # train_writer = SummaryWriter(logdir)
+    train_writer = SummaryWriter(logdir)
     
     for epoch in range(num_epochs):
         
@@ -101,6 +101,7 @@ def train(model, data_loaders, optimizer, exp_lr_scheduler, criterion, num_epoch
             
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
+            
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
