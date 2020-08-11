@@ -8,7 +8,16 @@ Created on: Friday, 24th January 2020 9:18:54 am
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.models as models
 
+
+# class MyResNe50(models.resnet.ResNet):
+#     def __init__(self, training=True):
+#         super(MyResNe50, self).__init__(block=models.resnet.Bottleneck,
+#                                         layers=[3, 4, 6, 3], 
+#                                         groups=32, 
+#                                         width_per_group=4)
+#         self.fc = nn.Linear(2048, 1)
 
 class ISOnet(nn.Module):
     def __init__(self):

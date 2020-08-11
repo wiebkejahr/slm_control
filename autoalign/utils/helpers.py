@@ -8,6 +8,7 @@ Created on: Thursday, 28th November 2019 10:54:30 am
 import random
 import json
 import random
+from tqdm import tqdm
 from numpy.random import normal
 from math import factorial as mfac
 
@@ -39,17 +40,21 @@ def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
     return (img-np.min(img))/(np.max(img)-np.min(img))
 
-def add_noise_old(img):
-    """Adds Poisson noise to the image using skimage's built-in method. Function normalizes image before adding noise"""
-    # return img + np.random.poisson(img)
-    return skimage.util.random_noise(normalize_img(img), mode='gaussian', seed=None, clip=True, var=0.0001)
 
-# def crop_image(img,tol=0.2):
-#     """Function to crop the dark line on the edge of the acquired image data.
-#     img is 2D image data (NOTE: it only works with 2D!)
-#     tol  is tolerance."""
-#     mask = img>tol
-#     return img[np.ix_(mask.any(1),mask.any(0))]
+def generate_random_data(res=192, count=10):
+    """This function generates two lists of aberrated images and their corresponding phasemasks.
+    It is intended to be used with the UNet architecture currently laid out in unet.py"""
+    
+    input_images = []
+    target_masks = []
+    for i in tqdm(range(count)):
+        image, mask = gen_sted_psf_phase(res=res)
+        input_images.append(image)
+        target_masks.append(target_masks)
+
+    return input_images, target_masks
+
+
 
 # NOTE: fn contributed by Julia Lyudchik
 # TODO: tune optional argument values to match the look we're going for
@@ -273,16 +278,12 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res
     return zern
 
 
-def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
+def gen_sted_psf(res=64, offset=False,  multi=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
-    if defocus:
-        coeffs = gen_coeffs(num=12)
-        nums = np.arange(2, 14)
-    else:
-        coeffs = gen_coeffs(num=11)
-        nums = np.arange(3, 14)
+    coeffs = gen_coeffs(num=11)
+    nums = np.arange(3, 14)
     
     if offset:
         offset_label = gen_offset()
@@ -299,6 +300,24 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     img = sted_psf(zern, res, offset=offset_label, plane=plane)
 
     return img, coeffs, offset_label
+
+def gen_sted_psf_phase(res=192):
+    """function has been simplified from gen_sted_psf() above just to create a 192x192 aberrated image and its corresponding phase mask"""
+    # no defoccus, tip, or tilt
+    coeffs = gen_coeffs(num=11)
+    nums = np.arange(3, 14)
+    # no offset
+    offset_label = np.asarray([0,0])
+
+    zern = create_phase(coeffs, num=nums, res1=res, res2=res)
+    
+    # just 1D
+    plane = 'xy'
+
+    img = sted_psf(zern, res, offset=offset_label, plane=plane)
+
+    return img, zern
+
 
 def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi=False, defocus=False, corrections=[]):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.

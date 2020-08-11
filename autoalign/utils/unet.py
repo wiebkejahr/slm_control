@@ -1,8 +1,115 @@
-# from https://github.com/usuyama/pytorch-unet
+# adapted from https://github.com/usuyama/pytorch-unet
+
+from helpers import generate_random_data
+import h5py
+import pickle
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms, datasets, models
+from torch.utils.tensorboard import SummaryWriter
+import torchvision.utils
 
 import torch
 import torch.nn as nn
 from torchvision import models
+
+from collections import defaultdict
+import torch.nn.functional as F
+
+class PhasemaskDataset(Dataset):
+    def __init__(self, path=None, transform=None):
+        # self.file = h5py.File(hdf5_path, "r")
+        
+        # if mode =='train':
+        #     self.input_images = self.file['train_img']
+        #     self.target_masks = self.file['train_mask']
+        # elif mode == 'val':
+        #     self.input_images = self.file['val_img']
+        #     self.target_masks = self.file['val_mask']
+        # elif mode == 'test':
+        #     self.input_images = self.file['test_img']
+        #     self.target_masks = self.file['test_mask']
+        
+        # self.input_images, self.target_masks = generate_random_data(res=192, count=count)
+        self.file = path
+
+        with open(path, 'rb') as f:
+            my_dict = pickle.load(f)
+        self.input_images = my_dict['images']
+        self.input_images = torch.stack([torch.Tensor(i) for i in self.input_images])
+
+        self.target_masks = my_dict['masks']
+        self.target_masks = torch.stack([torch.Tensor(i) for i in self.target_masks])
+    
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.input_images)
+
+    def __getitem__(self, idx):
+        image = self.input_images[idx]
+        mask = self.target_masks[idx]
+        if self.transform:
+            image = self.transform(image)
+
+        return [image, mask]
+
+
+def make_data():
+    # use the same transformations for train/val in this example
+    # NOTE: used to also have totensor, but I'm not using PIL images
+    trans = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # imagenet
+
+    # train_set = PhasemaskDataset(count=1, transform = trans)
+    # val_set = PhasemaskDataset(count=1, transform = trans)
+    # train_set = PhasemaskDataset('./test.hdf5', mode='train', transform = trans)
+    # val_set = PhasemaskDataset('./test.hdf5', mode='val', transform = trans)
+    train_set = PhasemaskDataset(path='./trainRGB_5.pkl', transform = trans)
+    val_set = PhasemaskDataset(path='./valRGB_5.pkl', transform = trans)
+    
+    # print(len(train_set))
+    image_datasets = {
+        'train': train_set, 'val': val_set
+    }
+
+    batch_size = 1
+
+    dataloaders = {
+        'train': DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=0),
+        'val': DataLoader(val_set, batch_size=batch_size, shuffle=True, num_workers=0)
+    }
+
+    return dataloaders
+
+
+
+def see_data(dataloaders):
+    
+    # def reverse_transform(inp):
+    #     inp = inp.numpy().transpose((1, 2, 0))
+    #     mean = np.array([0.485, 0.456, 0.406])
+    #     std = np.array([0.229, 0.224, 0.225])
+    #     inp = std * inp + mean
+    #     inp = np.clip(inp, 0, 1)
+    #     inp = (inp * 255).astype(np.uint8)
+
+    #     return inp
+
+    # Get a batch of training data
+    for i, sample in enumerate(dataloaders['train']):
+        # print(i)
+        plt.figure()
+        plt.subplot(121)
+        plt.imshow(sample[0][0].numpy()[0])
+        plt.subplot(122)
+        plt.imshow(sample[1][0].numpy()[0])
+        plt.show()
+
+
+############ model stuff ##########
 
 def convrelu(in_channels, out_channels, kernel, padding):
     return nn.Sequential(
@@ -83,7 +190,7 @@ class ResNetUNet(nn.Module):
 
 ########## now this is defining the training loop #############
 
-
+# NOTE: I have no clue what's going on in this loss fn
 def dice_loss(pred, target, smooth = 1.):
     pred = pred.contiguous()
     target = target.contiguous()    
@@ -95,13 +202,12 @@ def dice_loss(pred, target, smooth = 1.):
     return loss.mean()
 
 
-from collections import defaultdict
-import torch.nn.functional as F
+
 
 def calc_loss(pred, target, metrics, bce_weight=0.5):
     bce = F.binary_cross_entropy_with_logits(pred, target)
 
-    pred = F.sigmoid(pred)
+    pred = torch.sigmoid(pred)
     dice = dice_loss(pred, target)
 
     loss = bce * bce_weight + dice * (1 - bce_weight)
@@ -120,6 +226,9 @@ def print_metrics(metrics, epoch_samples, phase):
     print("{}: {}".format(phase, ", ".join(outputs)))
 
 def train_model(model, optimizer, scheduler, num_epochs=25):
+    logdir='./autoalign/runs/best_unet_model'
+    train_writer = SummaryWriter(logdir)
+    
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1e10
 
@@ -132,9 +241,7 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
             if phase == 'train':
-                scheduler.step()
-                for param_group in optimizer.param_groups:
-                    print("LR", param_group['lr'])
+                
 
                 model.train()  # Set model to training mode
             else:
@@ -143,7 +250,11 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
             metrics = defaultdict(float)
             epoch_samples = 0
 
-            for inputs, labels in dataloaders[phase]:
+            for i, sample in enumerate(dataloaders[phase]):
+                
+                inputs = sample[0]
+                labels = sample[1]
+                
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
@@ -160,12 +271,20 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
+                        # NOTE: this used to be in the first if phase == "train"
+                        # but pytorch gave me a warning it should be the other way
+                        scheduler.step()
+                        for param_group in optimizer.param_groups:
+                            print("LR", param_group['lr'])
 
                 # statistics
                 epoch_samples += inputs.size(0)
 
             print_metrics(metrics, epoch_samples, phase)
             epoch_loss = metrics['loss'] / epoch_samples
+            
+            train_writer.add_scalar('train_loss',
+                            epoch_loss, i)
 
             # deep copy the model
             if phase == 'val' and epoch_loss < best_loss:
@@ -180,19 +299,55 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
 
     # load best model weights
     model.load_state_dict(best_model_wts)
+    torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict()
+                }, './best_unet_model2.pth')
     return model
 
+########## eval stuff #############
+def test(model):
 
+    model.eval()   # Set model to the evaluation mode
+
+    # Create another simulation dataset for test
+    trans = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # imagenet
+    test_dataset = PhasemaskDataset('./testRGB_5.pkl', transform = trans)
+    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0)
+
+    # Get the first batch
+    inputs, labels = next(iter(test_loader))
+    inputs = inputs.to(device)
+    labels = labels.to(device)
+
+    # Predict
+    pred = model(inputs)
+    # The loss functions include the sigmoid function.
+    pred = torch.sigmoid(pred)
+    pred = pred.data.cpu().numpy()
+    print(pred.shape) # (1, 3, 192, 192)
+    
+    plt.figure()
+    plt.subplot(131)
+    plt.imshow(inputs.numpy()[0][0])
+    plt.subplot(132)
+    plt.imshow(labels.numpy()[0][0])
+    plt.subplot(133)
+    plt.imshow(pred[0][0])
+    plt.show()
+    exit()
+    # Change channel-order and make 3 channels for matplot
+    
+    # input_images_rgb = [reverse_transform(x) for x in inputs.cpu()]
+
+    # # Map each channel (i.e. class) to each color
+    # target_masks_rgb = [helper.masks_to_colorimg(x) for x in labels.cpu().numpy()]
+    # pred_rgb = [helper.masks_to_colorimg(x) for x in pred]
+
+    # helper.plot_side_by_side([input_images_rgb, target_masks_rgb, pred_rgb])
 
 if __name__ == "__main__":
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # model = ResNetUNet(n_class=6)
-    # model = model.to(device)
-
-    # # check keras-like model summary using torchsummary
-    # from torchsummary import summary
-    # summary(model, input_size=(3, 224, 224))
-
 
     ########### this is actually training ############
     import torch
@@ -203,17 +358,24 @@ if __name__ == "__main__":
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
+    dataloaders = make_data() 
+    # see_data(dataloaders)
 
-    num_class = 6
+    
+
+    # # freeze backbone layers
+    # #for l in model.base_layers:
+    # #    for param in l.parameters():
+    # #        param.requires_grad = False
+    # this seems to be the channel number?
+    num_class = 3
     model = ResNetUNet(num_class).to(device)
-
-    # freeze backbone layers
-    #for l in model.base_layers:
-    #    for param in l.parameters():
-    #        param.requires_grad = False
-
     optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
 
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
 
-    model = train_model(model, optimizer_ft, exp_lr_scheduler, num_epochs=60)
+    # model = train_model(model, optimizer_ft, exp_lr_scheduler, num_epochs=10)
+    
+    
+    # torch.load
+    test(model)

@@ -23,7 +23,7 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=18000 # will do 90/10 train/validation split
 TEST_NUM=20 # number of additional test samples to create
-NAME="20.08.03_1D_centered_18k_norm_dist"
+NAME="20.07.12_no_defocus_1D_centered_20k"
 # NAME="20.07.22_1D_offset_15k" # make this as descriptive as possible
 # don't touch this
 DATASET="${DATA_DIR}/${NAME}.hdf5"
@@ -43,18 +43,18 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 #   --offset              (FLAG) whether or not to incorporate offset
 #   --mode {fluor,sted,z-sted} which mode of data to create
 
-if [ ! -f ${DATASET} ]; then
-python ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted'
-else
-echo "Dataset already exists"
-fi
+# if [ ! -f ${DATASET} ]; then
+# python ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted'
+# else
+# echo "Dataset already exists"
+# fi
 
 ######################### 2. TRAIN ##################################
 # HYPERPARAMETERS 
 LR=0.001 # learning rate
 NUM_EPOCHS=15
 BATCH_SIZE=64
-MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}"
+MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_RESNET"
 # MODEL_NAME="20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_SECOND"
 # don't touch these
 MODEL_STORE_PATH="${MODEL_DIR}/${MODEL_NAME}.pth"
