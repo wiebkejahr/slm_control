@@ -168,3 +168,8 @@ autoalign/models/20.07.12_no_defocus_1D_centered_TEST_eps_15_lr_0.001_bs_64.pth
 *.pkl
 best_unet_model.pth
 autoalign/models/20.08.03_1D_centered_18k_norm_dist_TEST_eps_15_lr_0.001_bs_64_RESNET.pth
+autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_20_lr_0.001_bs_64_ALEXNET_cont.pth
+autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64_ALEXNET.pth
+autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64_ALEXNET_sum.pth
+autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_50_lr_0.001_bs_64_ALEXNET.pth
+autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_25_lr_0.001_bs_64_ALEXNET_redo.pth

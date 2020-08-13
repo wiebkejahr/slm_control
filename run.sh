@@ -52,14 +52,14 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 ######################### 2. TRAIN ##################################
 # HYPERPARAMETERS 
 LR=0.001 # learning rate
-NUM_EPOCHS=15
+NUM_EPOCHS=25
 BATCH_SIZE=64
-MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_RESNET"
+MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}_ALEXNET_redo"
 # MODEL_NAME="20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_SECOND"
 # don't touch these
 MODEL_STORE_PATH="${MODEL_DIR}/${MODEL_NAME}.pth"
 LOGDIR=${LOG_DIR}/${MODEL_NAME}
-# CHECKPOINT_DIR="${MODEL_DIR}/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
+CHECKPOINT_DIR="${MODEL_DIR}/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64_ALEXNET.pth"
 
 # To see all options, run 'python train.py --help'. Output copied below.
 #
@@ -76,11 +76,11 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --logdir              path to logging dir for optional tensorboard visualization
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
-if [ ! -f ${MODEL_STORE_PATH} ]; then
-python ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} 
-else
-echo "Model already exists"
-fi
+# if [ ! -f ${MODEL_STORE_PATH} ]; then
+# python ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} #--warm_start ${CHECKPOINT_DIR}
+# else
+# echo "Model already exists"
+# fi
 ####################### 3. EVALUATE ################################
 # To see all options, run 'python evaluate.py --help'. Output copied below.
 #
@@ -93,6 +93,6 @@ fi
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-# python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
+python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR}
 
 # ./utils/tensorboard.sh

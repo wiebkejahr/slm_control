@@ -40,6 +40,7 @@ def train(model, data_loaders, optimizer, exp_lr_scheduler, criterion, num_epoch
     
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
+    best_loss = 1e4
     train_writer = SummaryWriter(logdir)
     
     for epoch in range(num_epochs):
@@ -74,8 +75,14 @@ def train(model, data_loaders, optimizer, exp_lr_scheduler, criterion, num_epoch
                     outputs = model(images.float()) # e.g. [32, 12] = [batch_size, output_dim]
                     # no activation function on the final layer means that the output IS the weight of the final layer
                     loss = criterion(outputs, labels) # MSE
-                    # sum of averages for each coeff position
-                    loss = torch.sum(torch.mean(loss, dim=0))
+                    # print('loss shape: {}'.format(loss.shape)) # [64, 11]
+                    
+                    # # sum of averages for each coeff position
+                    loss = torch.mean(loss, dim=0)
+                    # print('loss shape: {}'.format(loss.shape))
+                    loss = torch.sum(loss)
+                    # print('loss shape: {}'.format(loss.shape)) 
+                    # exit()
 
                     if phase == 'train':
                         # backward + optimize only in train
@@ -84,7 +91,7 @@ def train(model, data_loaders, optimizer, exp_lr_scheduler, criterion, num_epoch
 
                 # statistics
                 running_loss += loss.item()*images.size(0) # loss.item() is the loss over a single batch
-                close = np.isclose(outputs.detach().numpy(), labels, rtol=0.001)
+                close = np.isclose(outputs.detach().numpy(), labels, rtol=0.1)
                 close = np.sum(close, axis=1)
                 # counts how many labels are guessed completely correctly within the tolerance
                 running_corrects += np.count_nonzero(close == 11)
@@ -105,8 +112,10 @@ def train(model, data_loaders, optimizer, exp_lr_scheduler, criterion, num_epoch
             
 
             # deep copy the model
-            if phase == 'val' and epoch_acc > best_acc:
-                best_acc = epoch_acc
+            # NOTE: OH, DUH! this makes a huge difference, it's never being updated from the initial params
+            if phase == 'val' and epoch_loss < best_loss:
+                print('loss decreased...updating best model weights')
+                best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
 
         print()
@@ -214,6 +223,7 @@ def main(args):
 
 
     # print(model)
+    # criterion = nn.MSELoss(reduction='none') 
     criterion = nn.MSELoss(reduction='none') 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # Decay LR by a factor of 0.1 every 7 epochs

@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
+import torchvision.models as models
 
 # local packages
 import utils.my_models as my_models
@@ -54,7 +55,10 @@ def test(model, test_loader, logdir, model_store_path):
     correlations = []
     MSE = []
     
-    for i, (images, labels) in enumerate(test_loader): # i is 0 when batch_size is 1
+    for i, sample in enumerate(test_loader): # i is 0 when batch_size is 1
+
+        images = sample['image']
+        labels = sample['label']
     
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
 
@@ -62,32 +66,48 @@ def test(model, test_loader, logdir, model_store_path):
         ################
             
             # gets preds
-            outputs = model(images)
+            outputs = model(images.float())
             preds = outputs.numpy().squeeze()
+            print(labels.numpy().squeeze())
+            print(preds)
+            print(mean_squared_error(labels.numpy().squeeze(), preds))
+            # exit()
             
-            reconstructed = get_sted_psf(coeffs=preds, multi=True)
-            corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=True, \
-                corrections=[create_phase(coeffs=(-1.)*preds)])
-            correlation = corr_coeff(corrected, multi=True)
+            reconstructed = get_sted_psf(coeffs=preds, multi=False)
+            # corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, corrections=[create_phase(coeffs=(-1.)*preds)])
+            # correlation = corr_coeff(corrected, multi=False)
             
-            so_far = -1
-            while correlation > so_far:
-                # while it is not optimized, if it comes accross a higher correlation, work down and switch out preds
-                new_preds = model(images).numpy().squeeze()
-                new_corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=True, \
-                    corrections=[create_phase(coeffs=(-1.)*new_preds)])
-                new_correlation = corr_coeff(new_corrected, multi=True)
-                if new_correlation > correlation:
-                    so_far = correlation
-                    correlation = new_correlation
-                    print('upper: {}, lower: {}'.format(correlation, so_far))
-                    preds = new_preds
-                else:
-                    correlations.append(correlation)
-                    MSE.append(mean_squared_error(labels.numpy().squeeze(), preds))
-                    # print('final correlation: {}'.format(correlation))
-                    break
+            plt.figure()
+            plt.subplot(121)
+            plt.imshow(images.numpy().squeeze())
+            plt.subplot(122)
+            plt.imshow(reconstructed)
+            # plt.subplot(133)
+            # plt.imshow(corrected)
+            plt.show()
+            
+            
+            
+            
+            # so_far = -1
+            # while correlation > so_far:
+            #     # while it is not optimized, if it comes accross a higher correlation, work down and switch out preds
+            #     new_preds = model(images).numpy().squeeze()
+            #     new_corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=True, \
+            #         corrections=[create_phase(coeffs=(-1.)*new_preds)])
+            #     new_correlation = corr_coeff(new_corrected, multi=True)
+            #     if new_correlation > correlation:
+            #         so_far = correlation
+            #         correlation = new_correlation
+            #         print('upper: {}, lower: {}'.format(correlation, so_far))
+            #         preds = new_preds
+            #     else:
+            #         correlations.append(correlation)
+            #         MSE.append(mean_squared_error(labels.numpy().squeeze(), preds))
+            #         # print('final correlation: {}'.format(correlation))
+            #         break
                     
+            ###############################################
             # plt.figure()
             # plt.plot(np.arange(3, 14), labels.numpy().squeeze())
             # plt.plot(np.arange(3, 14), preds, linestyle='dashed')
@@ -126,21 +146,26 @@ def main(args):
     model_store_path = args.model_store_path
     # print(model_store_path) 
     # exit()
-    if args.multi:
-        if args.offset:
-            model = my_models.MultiOffsetNet()
-        else:
-            model = my_models.MultiNet()
-    else:
-        if args.offset:
-            model = my_models.OffsetNet()
-        else:
-            model = my_models.Net()
+    # if args.multi:
+    #     if args.offset:
+    #         model = my_models.MultiOffsetNet()
+    #     else:
+    #         model = my_models.MultiNet()
+    # else:
+    #     if args.offset:
+    #         model = my_models.OffsetNet()
+    #     else:
+    #         model = my_models.Net()
     
     # model = my_models.NetCentered()
     # model = my_models.MultiNetCentered()
-    model = my_models.MultiNetCat()
+    # model = my_models.MultiNetCat()
     # print(model)
+
+    model = models.alexnet(pretrained=False, num_classes=11)
+    first_conv_layer = [nn.Conv2d(1,3, kernel_size=3, stride=1, padding=1, bias=True)]
+    first_conv_layer.extend(list(model.features))
+    model.features = nn.Sequential(*first_conv_layer )
 
     
     # NOTE: this part needs work. determine which model to use from loading the data and checking the shape
@@ -155,9 +180,8 @@ def main(args):
     model.load_state_dict(checkpoint['model_state_dict'])
     
     mean, std = get_stats(data_path, batch_size=10, mode='test')
-    test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='test', transform=transforms.Compose([
-        my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std)]))
+    tsfms = transforms.Compose([transforms.ToTensor(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(bgnoise=2, poiss=350)])
+    test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='test', transform=tsfms)
     test_loader = DataLoader(dataset=test_dataset, batch_size=1, \
         shuffle=False, num_workers=0)
 
