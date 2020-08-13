@@ -74,8 +74,7 @@ def main(args):
         label_dim = 13
     else:
         label_dim = 11
-    #NOTE: overriding
-    # label_dim = 2
+
 
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':

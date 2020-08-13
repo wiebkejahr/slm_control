@@ -49,14 +49,21 @@ class PSFDataset(data.Dataset):
     
     def __len__(self):
         return self.images.shape[0]
+
+    def _get_dim(self):
+        return self.images.shape[1]
     
     def __getitem__(self, idx):
         image, label = self.images[idx], self.labels[idx]
         image = helpers.normalize_img(image.squeeze())
-        # print(sample['image'].squeeze().shape)
-        # print(np.max(sample['image']), np.min(sample['image']))
-        # print(np.max(sample['image']*255), np.min(sample['image']*255))
-        image = Image.fromarray(np.uint8(image*255), 'L')
+
+        if self._get_dim() == 1:
+            # this is only for 1D (64, 64)
+            image = Image.fromarray(np.uint8(image*255), 'L')
+        elif self._get_dim() == 3:
+            # first need to rearrange (3, 64, 64) into (64, 64, 3)
+            image = np.transpose(image, (1, 2, 0))
+            image = Image.fromarray(np.uint8(image*255))
 
         if self.transform:
             image = self.transform(image)
