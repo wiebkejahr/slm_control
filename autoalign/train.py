@@ -212,7 +212,7 @@ def main(args):
     #     else:
     #         model = my_models.Net11()
 
-    model = models.alexnet(pretrained=False, num_classes=11)
+    model = models.alexnet(pretrained=False, num_classes=13)
     
     if not args.multi:
         # if the model is only 1D, need to add a conv layer to the front of it so it matches up
