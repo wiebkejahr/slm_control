@@ -28,6 +28,7 @@ import utils.helpers as helpers
 import utils.my_models as my_models
 from scipy.ndimage.measurements import center_of_mass
 from scipy.ndimage import shift
+import torchvision.models as models
 
 
 def correct_tip_tilt():
@@ -208,6 +209,9 @@ def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
                 model = my_models.OffsetNet13()
             else:
                 model = my_models.Net11()    
+        
+        # overriding model
+        model = models.alexnet(pretrained=False, num_classes=11)
         # gets preds
         
         checkpoint = torch.load(model_store_path)
@@ -230,7 +234,7 @@ def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
                 # NOTE: THIS IS ONLY FOR 1D
                 input_image = torch.from_numpy(image).unsqueeze(0).unsqueeze(0)
     
-            outputs = model(input_image)
+            outputs = model(input_image.float())
             coeffs = outputs.numpy().squeeze()
             # image = image.numpy()
             # correlation = helpers.corr_coeff(helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
