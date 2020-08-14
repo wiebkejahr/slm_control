@@ -25,7 +25,7 @@ NUM_POINTS=18000 # will do 90/10 train/validation split
 TEST_NUM=20 # number of additional test samples to create
 # NAME="20.08.03_1D_centered_18k_norm_dist"
 # NAME="20.07.22_1D_offset_15k_TEST"
-NAME="20.06.22_no_defocus_multi_20k"
+NAME="20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64"
 # NAME="20.07.22_1D_offset_15k" # make this as descriptive as possible
 # don't touch this
 DATASET="${DATA_DIR}/${NAME}.hdf5"
@@ -95,6 +95,6 @@ fi
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-# python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR}
+# python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --multi
 
 # ./utils/tensorboard.sh

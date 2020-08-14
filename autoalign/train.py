@@ -170,7 +170,7 @@ def main(args):
     # tsfms = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(bgnoise=2, poiss=350)])
     # tsfms = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(bgnoise=2, poiss=350)])
     
-    tsfms = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])#, my_classes.Noise(bgnoise=2, poiss=350)])
+    # tsfms = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])#, my_classes.Noise(bgnoise=2, poiss=350)])
     tsfms = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])#, my_classes.Noise(bgnoise=2, poiss=350)])
     
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
