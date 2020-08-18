@@ -29,7 +29,14 @@ class ISOnet(nn.Module):
     def forward(self, x):
         x = F.max_pool2d(F.relu(self.conv1(x)), (2,2))
         x = F.max_pool2d(F.relu(self.conv2(x)), (2,2))
-        
+
+class MyAlexNet(nn.Module):
+    def __init__(self, pretrained, num_classes):
+        super(MyAlexNet, self).__init__()
+        self.model = models.alexnet(pretrained=pretrained, num_classes=num_classes)
+    
+    def forward(self, x):
+
 
 class Net12(nn.Module):
     """
@@ -38,7 +45,7 @@ class Net12(nn.Module):
     "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
     """
     def __init__(self):
-        super(Net, self).__init__()
+        super(Net12, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2)
         self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
