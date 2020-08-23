@@ -18,7 +18,7 @@ from PIL import Image
 from matplotlib import cm
 
 
-from utils import helpers
+# from utils import helpers
 # import autoalign.utils.helpers as helpers
 
 

@@ -284,6 +284,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False):
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
     coeffs = gen_coeffs(num=11)
+    # print(coeffs)
     nums = np.arange(3, 14)
     
     if offset:
@@ -311,7 +312,6 @@ def gen_sted_psf_phase(res=192):
     offset_label = np.asarray([0,0])
 
     zern = create_phase(coeffs, num=nums, res1=res, res2=res)
-    
     # just 1D
     plane = 'xy'
 
@@ -330,7 +330,9 @@ def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi
         nums = np.arange(3, 14)
     
     zern = create_phase(coeffs=coeffs,num=nums, res1=res,res2=res, corrections=corrections)
-    
+    plt.figure()
+    plt.imshow(zern, cmap='hot')
+    plt.show()
     if multi:
         plane = 'all'
     else:
@@ -491,106 +493,17 @@ def plot_xsection_abber(img1, img2):
     return fig
 
 if __name__ == "__main__":
-    for i in range(10):
-        print(gen_offset())
+    # plot_xsection(get_sted_psf(multi=True))
+    # img, _, _ = gen_sted_psf(multi=True)
+    # plot_xsection(img)
+    # plt.show()
+    coeffs = [-0.119, 0.156, -0.107, 0.152, 0.209, -0.3, -0.085, -0.156, 0.115, -0.02, 0.095]
+    offset = gen_offset()
+    print(offset)
+    # plt.figure()
+    plt.imshow(get_sted_psf(coeffs = coeffs, offset_label=offset), cmap='hot')
+    plt.show()
+    # plt.figure()
+    # plt.subplot(131)
+    # plt.imshow()
     
-# TODO: redirect to the original now that it's in the same repo
-#########################################################################################
-#
-#   Functions from Wiebke's Pattern Calculator code that are necessary for redundancy.
-#   I want my code to run as a self-contained unit that can be plugged into the pre-
-#   existing GUI, this helps me achieve that.
-
-# TODO: change to be actual PC fns
-#
-#########################################################################################
-
-
-# ######## fn to create a single zernike phase mask #######
-# def create_zernike(size, order, rad=1):
-#     """ Calculates the Zernike polynomial of a given order, for the given 
-#         image size. Normalizes the polynomials in the center quadrant of the 
-#         image to [0,1]. """
-#     xcoord, ycoord = create_coords(size)
-#     xcoordnorm = (xcoord/np.max(np.abs([np.max(xcoord), np.min(xcoord)])))*2
-#     ycoordnorm = (ycoord/np.max(np.abs([np.max(ycoord), np.min(ycoord)])))*2
-    
-#     rho, phi = cart2polar(xcoord, ycoord)
-    
-#     # when normalizing rho: factor of two is needed because I'm creating images
-#     # double the size for subsequent cropping. Factor of 2 / sqrt(2) is needed 
-#     # because I'm working on a square whereas the polynomials are defined on a 
-#     # circle
-#     # NOTE: this has totally changed
-#     rho = rho * 2 * 2 / np.sqrt(2) / rad
-#     # print(size, np.min(xcoordnorm), np.max(xcoordnorm), np.min(ycoordnorm), np.max(ycoordnorm),
-#     #       np.min(rho), np.max(rho), np.min(phi), np.max(phi))
-    
-#     if order[1] < 0:
-#         zernike = zernike_coeff(rho, np.abs(order)) * np.sin(np.abs(order[1]) * phi)
-#     elif order[1] >= 0:
-#         zernike = zernike_coeff(rho, order) * np.cos(order[1] * phi)
-    
-#     #mask = (rho <= 1)
-#     #zernike = zernike * mask
-#     return zernike
-
-# ######## and its helper fns ##################
-# def create_coords(size, off = [0,0]):
-#     """ Returns the cartesian coordinates of each pixel in a matrix from the 
-#         inputs size and offset (defining the center position). ATTENTION:
-#         array of cartesian coordinates is created at 2x the size needed. Will 
-#         be cropped later in the workflow for easy offsetting. """
-#     x = np.arange((-size[0]/2 + off[0]), (size[0]-size[0]/2 + off[0]))
-#     y = np.arange((-size[1]/2 + off[1]), (size[1]-size[1]/2 + off[1]))    
-#     xcoords = np.multiply.outer(np.ones(size[0]), y)
-#     ycoords = np.multiply.outer(x, np.ones(size[1]))    
-#     return xcoords, ycoords
-
-# def cart2polar(x, y):
-#     """ Returns normalized polar coordinates for cartesian inputs x and y. """
-#     z = x + 1j * y
-#     return (np.abs(z)/np.max(np.abs(z)), np.angle(z))
-
-# def zernike_coeff(rho, order):
-#     """ Calculates the Zernike coeff for a given order and radius rho. """
-#     coeff = 0
-#     nn = order[0]
-#     mm = np.abs(order[1])
-    
-#     for kk in range(int((nn - mm)/2)+1):
-#         c = (np.power(-1, kk) * mfac(nn - kk))/ \
-#             (mfac(kk) * \
-#              mfac((nn + mm)/2 - kk) * \
-#              mfac((nn - mm)/2 - kk))
-#         r = (np.power(rho, nn - 2 * kk))
-#         coeff = coeff + c * r
-#     return coeff
-
-
-# ########## fn to create vortex (donut phase mask) ############
-# def create_donut(size, rot, amp):
-#     """" Creates the phasemask for shaping the 2D donut with the given image 
-#         size, rotation and amplitude of the donut. """
-#     xcoord, ycoord = create_coords(size)
-#     dn = 0.5 / np.pi * np.mod(cart2polar(xcoord, ycoord)[1] + (rot + 180) /
-#                               180 * np.pi, 2*np.pi) * amp
-#     return dn
-
-# ########## fn to crop phase mask to the right scaling ########
-
-# def crop(full, size, offset = [0,0]):
-#     """ Crops the full data to half the size, using the provided offset. """
-#     minx = int(size[0]/2 + offset[0])
-#     maxx = int(size[0]*3/2 + offset[0])
-#     miny = int(size[1]/2 + offset[1])
-#     maxy = int(size[1]*3/2 + offset[1])    
-#     cropped = full[minx:maxx, miny:maxy]
-#     return cropped
-
-
-
-
-
-
-
