@@ -86,6 +86,7 @@ def main(args):
 
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
+        
         # save the label and image
         if args.offset:
             train_labels.append(zern_label+offset_label)

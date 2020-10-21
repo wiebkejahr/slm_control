@@ -33,8 +33,10 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
     # will return a [batchsize x 12] array of losses
     criterion = nn.MSELoss(reduction='none') 
 
+    # for tensorboard logging
     train_writer = SummaryWriter(logdir)
     
+    #puts model into train mode
     model.train()
     for epoch in range(num_epochs):
         

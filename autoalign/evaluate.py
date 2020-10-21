@@ -139,7 +139,7 @@ def main(args):
     
     # model = my_models.NetCentered()
     # model = my_models.MultiNetCentered()
-    model = my_models.MultiNetCat()
+    # model = my_models.MultiNetCat()
     # print(model)
 
     

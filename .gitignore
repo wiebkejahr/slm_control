@@ -164,3 +164,4 @@ autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss
 #autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth
 autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_poiss1000.pth
 autoalign/models/20.07.23_1D_offset_only_500_eps_15_lr_0.001_bs_64.pth
+best_unet_model.pth

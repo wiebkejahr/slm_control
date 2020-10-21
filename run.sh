@@ -93,6 +93,6 @@ fi
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-# python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
+python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
 
 # ./utils/tensorboard.sh
