@@ -143,13 +143,6 @@ class Main_Window(QtWidgets.QMainWindow):
             self.p.general["slm_mag"])
         
         
-        #self.bools = {
-        #    "split_image"   : self.p.general["split_image"],
-        #    "flat_field"    : self.p.general["flat_field"],
-        #    "single_aberr"  : self.p.general["single_aberr"],
-        #    "double_pass"   : self.p.general["double_pass"]}
-        
-        
         self.init_data()
         
         self.show()
@@ -162,15 +155,15 @@ class Main_Window(QtWidgets.QMainWindow):
         
         if self.p.general["split_image"]:
             self.img_size = np.asarray(self.p.general["size_slm"])
+            self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"], recalc = False)
         else:
             self.img_size = np.asarray([self.p.general["size_slm"][0], 
                                         self.p.general["size_slm"][1]*2])
-            
+            self.load_flat_field(self.p.general["cal1"], self.p.general["cal1"], recalc = False)
+        
         self.init_zernikes()
         self.init_images()
         self.create_main_frame()
-
-        self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
         self.combine_and_update()
 
         
@@ -191,11 +184,18 @@ class Main_Window(QtWidgets.QMainWindow):
         self.p.load_file_obj(fname[0], self.current_objective, fname[1])
         # print("left", self.p.left)
         # print("right", self.p.right)
-        self.img_l.update_guivalues(self.p, self.p.left)
-        self.img_r.update_guivalues(self.p, self.p.right)
-        self.zernikes_all = np.zeros_like(self.img_l.data)
-        self.phase_tiptilt = np.zeros_like(self.img_l.data)
-        self.phase_defocus = np.zeros_like(self.img_l.data)
+        if self.p.general["split_image"]:
+            self.img_l.update_guivalues(self.p, self.p.left)
+            self.img_r.update_guivalues(self.p, self.p.right)
+            self.zernikes_all = np.zeros_like(self.img_l.data)
+            self.phase_tiptilt = np.zeros_like(self.img_l.data)
+            self.phase_defocus = np.zeros_like(self.img_l.data)
+        else:
+            #TODO: general values, not left values
+            self.img_full.update_guivalues(self.p, self.p.left)
+            self.zernikes_all = np.zeros_like(self.img_full.data)
+            self.phase_tiptilt = np.zeros_like(self.img_full.data)
+            self.phase_defocus = np.zeros_like(self.img_full.data)
 
         #self.objective_changed()
         # TODO WJ
@@ -223,13 +223,13 @@ class Main_Window(QtWidgets.QMainWindow):
 
         # setting all to None first helps when function is called later on
         # to clear all data, eg when 'split image' boolean is changed 
-        self.img_l = None
-        self.img_r = None
-        self.img_full = None
-        #self.flatfield_orig = None
-        self.zernikes_all = None
-        self.phase_tiptilt = None
-        self.phase_defocs = None
+        # self.img_l = None
+        # self.img_r = None
+        # self.img_full = None
+        # #self.flatfield_orig = None
+        # self.zernikes_all = None
+        # self.phase_tiptilt = None
+        # self.phase_defocs = None
         
         if self.p.general["split_image"]:
             
@@ -392,9 +392,6 @@ class Main_Window(QtWidgets.QMainWindow):
         lbox_img.addWidget(QtWidgets.QLabel('Phase'))
         lbox_img.addWidget(QtWidgets.QLabel('Rotation'))
         lbox_img.addWidget(QtWidgets.QLabel('Steps'))
-        # TODO: added as a temp measure to correct for scaling diff 
-        # btw vector diffraction and GUI 
-        #lbox_img.addWidget(QtWidgets.QLabel('Scale'))
         lbox_img.addWidget(QtWidgets.QLabel('Astigmatism X/Y'))
         lbox_img.addWidget(QtWidgets.QLabel('Coma X/Y'))
         lbox_img.addWidget(QtWidgets.QLabel('Spherical 1/2'))
@@ -410,6 +407,7 @@ class Main_Window(QtWidgets.QMainWindow):
             c.addLayout(self.img_l.create_gui(self.p, self.p.left), 0, 1, 1, 2)
             c.addLayout(self.img_r.create_gui(self.p, self.p.right), 0, 3, 1, 2)
         else:
+            #TODO: change this left; requires change for all objectives
             c.addLayout(self.img_full.create_gui(self.p, self.p.left), 0, 1, 1, 2)
             
         c.setAlignment(QtCore.Qt.AlignRight)
@@ -653,78 +651,8 @@ class Main_Window(QtWidgets.QMainWindow):
         #######################################
 
     # NOTE: end of my fns
-     
-
-    def openFileDialog(self, path):
-        """ Creates a dialog to open a file. At the moement, it is only used 
-            to load the image for the flat field correction. There is no 
-            sanity check implemented whether the selected file is a valid image. """
-        options = QtWidgets.QFileDialog.Options()
-        options |= QtWidgets.QFileDialog.DontUseNativeDialog
-        work_dir = os.path.dirname(os.path.realpath(__file__))
-        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
-                        "Load flat field correction", work_dir +'/'+ path)
-        if fileName:
-            return fileName
-        else:
-            return None
-
-        
-    def openFlatFieldDialog(self, path):
-        """ Creates a dialog to open a file. At the moement, it is only used 
-            to load the image for the flat field correction. There is no 
-            sanity check implemented whether the selected file is a valid image. """
-        options = QtWidgets.QFileDialog.Options()
-        options |= QtWidgets.QFileDialog.DontUseNativeDialog
-        work_dir = os.path.dirname(os.path.realpath(__file__))
-        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
-                        "Load flat field correction", work_dir +'/'+ path)
-        # TODO: needs to be implemented to work for two paths, one for left, 
-        # one for right side
-        print("Currently not implemented. Please add paths in the files for \
-              left and right side parameters as 'cal1'.")
-        #if fileName:
-        #    self.load_flat_field(fileName)
-        #    self.combine_and_update()
-
-    
-    def load_flat_field(self, path_l, path_r):
-        """ Opens the images in the parameter paths, combines two halves to 
-            one image and sets as new flatfield correction. """
-     
-        s = np.asarray(self.p.general["size_slm"])    
-        lhalf = pcalc.crop(np.asarray(pcalc.load_image(path_l))/255, 
-                           s, [ s[1] // 2, s[0] // 2])
-        rhalf = pcalc.crop(np.asarray(pcalc.load_image(path_r))/255, 
-                           s, [-(s[1] // 2), s[0] // 2])
-        
-        # check whethere double pass is activated and cross correction as on 
-        # Abberior should be applied: det offsets to [0,0] for not activated        
-        if self.dbl_pass_state.checkState():            
-            ff_l_patched = np.zeros([2 * s[0], 2 * s[1]])
-            ff_l_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = lhalf
-            ff_r_patched = np.zeros([2 * s[0], 2 * s[1]])
-            ff_r_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = rhalf
-            off = self.img_r.offset - self.img_l.offset
-            lhalf = lhalf + pcalc.crop(ff_r_patched, s, -off)
-            rhalf = rhalf + pcalc.crop(ff_l_patched, s,  off)
-
-        self.flatfieldcor = [lhalf, rhalf]
-        self.flat_field(self.flt_fld_state.checkState())
 
 
-    def flat_field(self, state, recalc = True):
-        """ Opens the image in the parameter path and sets as new flatfield
-            correction. """
-        if state:
-            self.flatfield = self.flatfieldcor
-        else:
-            self.flatfield = [np.zeros_like(self.flatfieldcor[0]), 
-                              np.zeros_like(self.flatfieldcor[1])]
-        if recalc:
-            self.combine_and_update()
-
-            
     def crea_but(self, box, action, name, param = None):
         """ Creates and labels a button and connects button and action. Input: 
             Qt layout to place the button, function: action to perform, string: 
@@ -767,7 +695,78 @@ class Main_Window(QtWidgets.QMainWindow):
         box.setContentsMargins(0,0,0,0)
         if state:
             checkbox.setChecked(True)
-        return checkbox
+        return checkbox     
+
+
+    def openFileDialog(self, path):
+        """ Creates a dialog to open a file. At the moement, it is only used 
+            to load the image for the flat field correction. There is no 
+            sanity check implemented whether the selected file is a valid image. """
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        work_dir = os.path.dirname(os.path.realpath(__file__))
+        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
+                        "Load flat field correction", work_dir +'/'+ path)
+        if fileName:
+            return fileName
+        else:
+            return None
+
+        
+    def openFlatFieldDialog(self, path):
+        """ Creates a dialog to open a file. At the moement, it is only used 
+            to load the image for the flat field correction. There is no 
+            sanity check implemented whether the selected file is a valid image. """
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        work_dir = os.path.dirname(os.path.realpath(__file__))
+        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
+                        "Load flat field correction", work_dir +'/'+ path)
+        # TODO: needs to be implemented to work for two paths, one for left, 
+        # one for right side
+        print("Currently not implemented. Please add paths in the files for \
+              left and right side parameters as 'cal1'.")
+        #if fileName:
+        #    self.load_flat_field(fileName)
+        #    self.combine_and_update()
+
+    
+    def load_flat_field(self, path_l, path_r, recalc = True):
+        """ Opens the images in the parameter paths, combines two halves to 
+            one image and sets as new flatfield correction. """
+     
+        s = np.asarray(self.p.general["size_slm"])    
+        lhalf = pcalc.crop(np.asarray(pcalc.load_image(path_l))/255, 
+                           s, [ s[1] // 2, s[0] // 2])
+        rhalf = pcalc.crop(np.asarray(pcalc.load_image(path_r))/255, 
+                           s, [-(s[1] // 2), s[0] // 2])
+        
+        # check whethere double pass is activated and cross correction as on 
+        # Abberior should be applied: det offsets to [0,0] for not activated        
+        if self.p.general["double_pass"]:            
+            ff_l_patched = np.zeros([2 * s[0], 2 * s[1]])
+            ff_l_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = lhalf
+            ff_r_patched = np.zeros([2 * s[0], 2 * s[1]])
+            ff_r_patched[s[0] // 2 : 3 * s[0] // 2, s[1] // 2 : 3 * s[1] // 2] = rhalf
+            off = self.img_r.offset - self.img_l.offset
+            lhalf = lhalf + pcalc.crop(ff_r_patched, s, -off)
+            rhalf = rhalf + pcalc.crop(ff_l_patched, s,  off)
+
+        self.flatfieldcor = [lhalf, rhalf]
+        self.flat_field(self.p.general["flat_field"], recalc)
+
+
+    def flat_field(self, state, recalc = True):
+        """ Opens the image in the parameter path and sets as new flatfield
+            correction. """
+        self.p.general["flat_field"] = int(state)
+        if state:
+            self.flatfield = self.flatfieldcor
+        else:
+            self.flatfield = [np.zeros_like(self.flatfieldcor[0]), 
+                              np.zeros_like(self.flatfieldcor[1])]
+        if recalc:
+            self.combine_and_update()
 
 
     def split_image(self, state = True):
@@ -790,6 +789,7 @@ class Main_Window(QtWidgets.QMainWindow):
             Toggles between identical correction for both halves of the sensor
             and using individidual corrections. When single correction is 
             active, the values from the left sensor half are used. """
+        self.p.general["single_aberr"] = int(state)
         if state:
             self.img_r.aberr.astig.xgui.setValue(self.img_l.aberr.astig.xgui.value())
             self.img_r.aberr.astig.ygui.setValue(self.img_l.aberr.astig.ygui.value())
@@ -807,9 +807,13 @@ class Main_Window(QtWidgets.QMainWindow):
             curvature during the unmodulated reflection, the flatfield pattern
             from the first impact needs to be shifted by the offset and added 
             to the flatfield correction of the second impact. """
-        if self.flt_fld_state.checkState():
+        self.p.general["double_pass"] = int(state)
+        if self.p.general["flat_field"]:#flt_fld_state.checkState():
             print("calling flatfield")
-            self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
+            if self.p.general["split_image"]:
+                self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
+            else:
+                self.load_flat_field(self.p.general["cal1"], self.p.general["cal1"])
         
     
     def calc_slmradius(self, backaperture, mag):
@@ -857,8 +861,11 @@ class Main_Window(QtWidgets.QMainWindow):
         """ Function to recalculate the left and right images completely. 
             Update is set to false to prevent redrawing after every step of 
             the recalculation. Image display is only updated once at the end. """
-        self.img_l.update(update = False, completely = True)
-        self.img_r.update(update = False, completely = True)
+        if self.p.general["split_image"]:
+            self.img_l.update(update = False, completely = True)
+            self.img_r.update(update = False, completely = True)
+        else:
+            self.img_full.update(update = False, completely = True)
         self.combine_and_update()
 
         
@@ -889,21 +896,15 @@ class Main_Window(QtWidgets.QMainWindow):
                                                 r * self.p.right["slm_range"])
             self.plt_frame.plot(pcalc.stitch_images(l, r))
                     
-        else:
-            # TODO: implement proper SLM scaling. needs to be in params general now
-            print(np.shape(self.img_full.data),
-                  np.shape(pcalc.stitch_images(self.flatfield[0], self.flatfield[1])),
-                  np.shape(self.zernikes_all), 
-                  np.shape(self.phase_tiptilt), np.shape(self.phase_defocus))
-            
+        else:            
             self.img_data = pcalc.phase_wrap(pcalc.add_images([self.img_full.data, 
                                                                pcalc.stitch_images(self.flatfield[0], self.flatfield[1]), 
                                                                self.zernikes_all, 
                                                                self.phase_tiptilt,
                                                                self.phase_defocus]), 
-                                             1)
-            
+                                             self.p.general["phasewrap"])
             self.plt_frame.plot(self.img_data)
+            self.img_data = self.img_data * self.p.general["slm_range"]
             
         if self.slm != None:
             self.slm.update_image(np.uint8(self.img_data))
