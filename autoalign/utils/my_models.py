@@ -30,12 +30,13 @@ class ISOnet(nn.Module):
         x = F.max_pool2d(F.relu(self.conv1(x)), (2,2))
         x = F.max_pool2d(F.relu(self.conv2(x)), (2,2))
 
-class MyAlexNet(nn.Module):
-    def __init__(self, pretrained, num_classes):
-        super(MyAlexNet, self).__init__()
-        self.model = models.alexnet(pretrained=pretrained, num_classes=num_classes)
+# TODO: WJ: commented out Oct23 2020. incomplete. How did the code ever run with this?!
+# class MyAlexNet(nn.Module):
+#     def __init__(self, pretrained, num_classes):
+#         super(MyAlexNet, self).__init__()
+#         self.model = models.alexnet(pretrained=pretrained, num_classes=num_classes)
     
-    def forward(self, x):
+#     def forward(self, x):
 
 
 class Net12(nn.Module):
