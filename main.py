@@ -131,29 +131,47 @@ class Main_Window(QtWidgets.QMainWindow):
         self.setGeometry(screen0.left(), screen0.top(), 
                          screen0.width()/4, .9*screen0.height())
         
-        # edited this to reflect new file organization
+                    
         self.param_path = ['parameters/', 'params']
         self.p = param()
         self.p.load_file_general(self.param_path[0], self.param_path[1])
-        #self.load_params(self.param_path[0] + self.param_path[1])
         self.current_objective = self.p.general["objective"]
         self.p.load_file_obj(self.param_path[0], self.current_objective, self.param_path[1])
         
-        #print(self.current_objective)
-        #print(self.p.objectives[self.current_objective]["backaperture"])
         self.slm_radius = self.calc_slmradius(
             self.p.objectives[self.current_objective]["backaperture"],
             self.p.general["slm_mag"])
         
+        
+        #self.bools = {
+        #    "split_image"   : self.p.general["split_image"],
+        #    "flat_field"    : self.p.general["flat_field"],
+        #    "single_aberr"  : self.p.general["single_aberr"],
+        #    "double_pass"   : self.p.general["double_pass"]}
+        
+        
+        self.init_data()
+        
+        self.show()
+        self.raise_()
+        
+    def init_data(self):
+        """ Called upon start up to initialize all the date for the first time.
+            Recalled when the split_image checkbox is changed, because this
+            will change the size of all the images etc. """        
+        
+        if self.p.general["split_image"]:
+            self.img_size = np.asarray(self.p.general["size_slm"])
+        else:
+            self.img_size = np.asarray([self.p.general["size_slm"][0], 
+                                        self.p.general["size_slm"][1]*2])
+            
         self.init_zernikes()
         self.init_images()
         self.create_main_frame()
 
-        # NOTE: I could not find where self.p.left is set so I hacked it
-        self.load_flat_field('slm_control/{}'.format(self.p.left["cal1"]), 'slm_control/{}'.format(self.p.right["cal1"]))
+        self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
         self.combine_and_update()
-        self.show()
-        self.raise_()
 
         
     # def load_params(self, fname):
@@ -197,6 +215,214 @@ class Main_Window(QtWidgets.QMainWindow):
         
         self.p.write_file(fname[0], self.current_objective, fname[1])
         
+        
+    def init_images(self):
+        """ Called upon startup of the program. Initizialises the variables
+            containing the left and right halves of the SLM or the full image,
+            depending on the state of the "split image" boolean. """
+
+        # setting all to None first helps when function is called later on
+        # to clear all data, eg when 'split image' boolean is changed 
+        self.img_l = None
+        self.img_r = None
+        self.img_full = None
+        #self.flatfield_orig = None
+        self.zernikes_all = None
+        self.phase_tiptilt = None
+        self.phase_defocs = None
+        
+        if self.p.general["split_image"]:
+            
+            self.img_l = PI.Half_Pattern(self.p, self.img_size)
+            self.img_l.call_daddy(self)
+            self.img_l.set_name("img_l")
+            
+            self.img_r = PI.Half_Pattern(self.p, self.img_size)
+            self.img_r.call_daddy(self)
+            self.img_r.set_name("img_r")
+    
+            self.zernikes_all = np.zeros_like(self.img_l.data)
+            self.phase_tiptilt = np.zeros_like(self.img_l.data)
+            self.phase_defocus = np.zeros_like(self.img_l.data)
+            
+        else:
+            self.img_full = PI.Half_Pattern(self.p, self.img_size)
+            self.img_full.call_daddy(self)
+            self.img_full.set_name("full")
+            self.zernikes_all = np.zeros_like(self.img_full.data)
+            self.phase_tiptilt = np.zeros_like(self.img_full.data)
+            self.phase_defocus = np.zeros_like(self.img_full.data)
+
+        
+    def init_zernikes(self):
+        """ Creates a dictionary containing all of the Zernike polynomials by
+            their names. Updates in the GUI only change the weight of each 
+            polynomial. Thus, polynomials do not have to be updated, just their
+            weights. """
+            
+        # normalisation for tip / tilt is different from the other Zernikes:
+        # grating periods should be in /mm and they should be independent of
+        # the objective's diameter:
+        # we're using the SLM off-axis to reflect the beam into the center of
+        # the objective's backaperture. None of the actual optics depends on the
+        # objective used.
+        # I'm using the SLM radius calculation with backaperture = mag = 1
+        # to determine correct size for tip/tilt. Extra factor of two is because
+        # patterns are created at double size, then cropped.
+
+        #size = 2 * np.asarray(self.p.general["size_slm"])
+        #size = 2 * self.img_size
+        
+        self.rtiptilt = 2 * pcalc.normalize_radius(1, 1, self.p.general["slm_px"], 
+                                              self.img_size)#self.p.general["size_slm"])
+        
+        self.zernikes_normalized = {
+            "tiptiltx" : pcalc.create_zernike(2 * self.img_size, [ 1,  1], 1, self.rtiptilt),
+            "tiptilty" : pcalc.create_zernike(2 * self.img_size, [ 1, -1], 1, self.rtiptilt),
+            "defocus"  : pcalc.create_zernike(2 * self.img_size, [ 2,  0], 1, self.slm_radius),
+            "astigx"   : pcalc.create_zernike(2 * self.img_size, [ 2,  2], 1, self.slm_radius),
+            "astigy"   : pcalc.create_zernike(2 * self.img_size, [ 2, -2], 1, self.slm_radius),
+            "comax"    : pcalc.create_zernike(2 * self.img_size, [ 3,  1], 1, self.slm_radius),
+            "comay"    : pcalc.create_zernike(2 * self.img_size, [ 3, -1], 1, self.slm_radius),
+            "trefoilx" : pcalc.create_zernike(2 * self.img_size, [ 3,  3], 1, self.slm_radius),
+            "trefoily" : pcalc.create_zernike(2 * self.img_size, [ 3, -3], 1, self.slm_radius),           
+            "sphere1"  : pcalc.create_zernike(2 * self.img_size, [ 4,  0], 1, self.slm_radius),
+            "sphere2"  : pcalc.create_zernike(2 * self.img_size, [ 6,  0], 1, self.slm_radius)
+            }
+    
+        
+    def create_main_frame(self):
+        """ Creates the UI: Buttons to load/save parameters and flatfield 
+            correction. Frames to display the patterns. Creates the GUI 
+            elements contained in the Half_Pattern and Aberr_Pattern classes 
+            that are used to change the parameters for pattern creation. """
+        
+        self.main_frame = QtWidgets.QWidget()  
+        vbox = QtWidgets.QVBoxLayout()     
+
+        # Quit, objective diameter and autoalign buttons
+        hbox = QtWidgets.QHBoxLayout()
+        self.crea_but(hbox, self._quit, "Quit")
+        self.rad_but = QtWidgets.QDoubleSpinBox()
+        self.rad_but.setDecimals(3)
+        self.rad_but.setSingleStep(0.01)
+        self.rad_but.setMinimum(0.01)
+        self.rad_but.setMaximum(10)
+        self.rad_but.setValue(1.68)
+        self.rad_but.setMaximumSize(80,50)
+        self.rad_but.valueChanged.connect(lambda: self.radius_changed())
+        hbox.addWidget(self.rad_but)
+
+        vbox.addLayout(hbox)
+        # NOTE: I WROTE THIS
+        self.crea_but(hbox, self.auto_align, "Auto Align")
+
+        vbox.addLayout(hbox)
+        # NOTE: I WROTE THIS
+        self.crea_but(hbox, self.correct_tiptilt, "Tip/Tilt")
+        #self.crea_but(hbox, self.correct_defocus, "Defocus")
+        self.crea_but(hbox, self.automate, "Auto-test")
+                    
+        # doesn't do anything at the moment, could be used to set another path
+        # to load the images from
+        #strng_path = self.labeled_qt(QtWidgets.QLineEdit, "Path for images", vbox)
+        #strng_path.setText(self.p.general["path"])
+
+        # controls to change objectives and to load/save calibration files         
+        hbox = QtWidgets.QHBoxLayout()
+        self.obj_sel = QtWidgets.QComboBox(self)
+        self.obj_sel.setMaximumSize(100, 50)
+        hbox.addWidget(self.obj_sel)            
+        for mm in self.p.objectives:
+            self.obj_sel.addItem(mm)
+        self.obj_sel.setCurrentText(self.current_objective)
+        self.obj_sel.activated.connect(lambda: self.objective_changed())
+        self.crea_but(hbox, self.reload_params, "Load Config", self.param_path)
+        self.crea_but(hbox, self.save_params, "Save Config", self.param_path)
+        hbox.setContentsMargins(0,0,0,0)
+        vbox.addLayout(hbox)
+        
+        # controls for basic SLM operation: opening/closing the display,
+        # changing calibration
+        hbox = QtWidgets.QHBoxLayout()
+        self.crea_but(hbox, self.open_SLMDisplay, "Initialize SLM")
+        self.crea_but(hbox, self.close_SLMDisplay, "Close SLM")
+        
+        # TODO: currently does not work; need to figure out a way to implement
+        # two paths, one for left, one for right side
+        #self.crea_but(hbox, self.openFlatFieldDialog, "load SLM calib", 
+        #              self.p.general["path"]+self.p.general["cal1"])        
+        hbox.setContentsMargins(0,0,0,0)
+        vbox.addLayout(hbox)
+
+        # checkboxes for the different modes of operation: split image (currently
+        # full display operation is not supported), flatfield correction
+        # and single correction and cross correction for double pass geometry
+        # (as on the Abberior))
+        hbox = QtWidgets.QHBoxLayout()
+        self.splt_img_state = self.crea_checkbox(hbox, self.split_image, 
+                        "Split image", self.p.general["split_image"])
+        self.sngl_corr_state = self.crea_checkbox(hbox, self.single_correction, 
+                        "Single correction", self.p.general["single_aberr"])
+        self.dbl_pass_state = self.crea_checkbox(hbox, self.double_pass,
+                        "Double pass", self.p.general["double_pass"])
+        self.flt_fld_state = self.crea_checkbox(hbox, self.flat_field, 
+                        "Flatfield", self.p.general["flat_field"])
+        hbox.setContentsMargins(0,0,0,0)
+        vbox.addLayout(hbox)
+        
+        # creates the Widget to display the image that's being sent to the SLM
+        imgbox = QtWidgets.QHBoxLayout()
+        imgbox.setAlignment(QtCore.Qt.AlignRight)
+        self.plt_frame = PlotCanvas(self)      
+        imgbox.addWidget(self.plt_frame)
+
+        # scale_img = QtWidgets.QVBoxLayout()
+        
+        # create the labels beneath image. Numeric controls are added in the
+        # respective subfunctions.
+        lbox_img = QtWidgets.QVBoxLayout()
+        lbox_img.addWidget(QtWidgets.QLabel('Offset X')) 
+        lbox_img.addWidget(QtWidgets.QLabel('Offset Y'))
+        lbox_img.addWidget(QtWidgets.QLabel('Grating X'))
+        lbox_img.addWidget(QtWidgets.QLabel('Grating Y'))
+        lbox_img.addWidget(QtWidgets.QLabel('Defocus L/R'))
+        lbox_img.addWidget(QtWidgets.QLabel('STED Mode'))
+        lbox_img.addWidget(QtWidgets.QLabel('Radius'))
+        lbox_img.addWidget(QtWidgets.QLabel('Phase'))
+        lbox_img.addWidget(QtWidgets.QLabel('Rotation'))
+        lbox_img.addWidget(QtWidgets.QLabel('Steps'))
+        # TODO: added as a temp measure to correct for scaling diff 
+        # btw vector diffraction and GUI 
+        #lbox_img.addWidget(QtWidgets.QLabel('Scale'))
+        lbox_img.addWidget(QtWidgets.QLabel('Astigmatism X/Y'))
+        lbox_img.addWidget(QtWidgets.QLabel('Coma X/Y'))
+        lbox_img.addWidget(QtWidgets.QLabel('Spherical 1/2'))
+        lbox_img.addWidget(QtWidgets.QLabel('Trefoil Vert/Obl'))
+        
+        lbox_img.setContentsMargins(0,0,0,0)
+        
+        # create the controls provided by img_l, img_r and img_aberr
+        # these are used to set the parameters to create the patterns
+        c = QtWidgets.QGridLayout()
+        c.addLayout(lbox_img, 0, 0, 1, 1)
+        if self.p.general["split_image"]:
+            c.addLayout(self.img_l.create_gui(self.p, self.p.left), 0, 1, 1, 2)
+            c.addLayout(self.img_r.create_gui(self.p, self.p.right), 0, 3, 1, 2)
+        else:
+            c.addLayout(self.img_full.create_gui(self.p, self.p.left), 0, 1, 1, 2)
+            
+        c.setAlignment(QtCore.Qt.AlignRight)
+        c.setContentsMargins(0,0,0,0)
+        
+        # add all the widgets
+        vbox.addLayout(imgbox)
+        vbox.addLayout(c)
+        vbox.setContentsMargins(0,0,0,0)
+        self.main_frame.setLayout(vbox)       
+        self.setCentralWidget(self.main_frame)
+        
+        
     # NOTE: I wrote these fns
     def correct_defocus(self):
         self.defocus = abberior.correct_defocus()#(const=1/6.59371319)
@@ -204,12 +430,14 @@ class Main_Window(QtWidgets.QMainWindow):
         self.phase_defocus = self.phase_defocus + pcalc.crop((1.)*helpers.create_phase(coeffs=[self.defocus], num=[2], res1=1200, res2=792, radscale = self.slm_radius), [600, 396], offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
         self.recalc_images()
 
+
     def correct_tiptilt(self):
         self.tiptilt = abberior.correct_tip_tilt()
         # self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase_tip_tilt(self.tiptilt, res1=600, res2=396, radscale = 2*self.rtiptilt)
         # self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
         self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
         self.recalc_images()
+    
     
     def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False, multi=False,  i=0):
         size = 2 * np.asarray(self.p.general["size_slm"])
@@ -238,6 +466,7 @@ class Main_Window(QtWidgets.QMainWindow):
         print('correlation coeff is: {}'.format(correlation))
         
         return self.zernike, new_img, correlation
+
 
     def auto_align(self, model_store_path=MODEL_STORE_PATH):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
@@ -281,6 +510,7 @@ class Main_Window(QtWidgets.QMainWindow):
         # not needed?
         # self.correct_tiptilt()
         # self.correct_defocus()
+
 
     def automate(self, model_store_path=MODEL_STORE_PATH, num_its=3):
         multi=True
@@ -412,8 +642,6 @@ class Main_Window(QtWidgets.QMainWindow):
             # d['offset'].append(self.offset.tolist())
         print('DONE with automated loop!', '\n', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
 
-
-
         # NOTE: need to know from the model itself which model to use, maybe some kind of json like for
         # the obejctives, but for now, can change manually 
         # size = 2 * np.asarray(self.p.general["size_slm"])
@@ -426,184 +654,6 @@ class Main_Window(QtWidgets.QMainWindow):
 
     # NOTE: end of my fns
      
-    def init_images(self):
-        """ Called upon startup of the program. Initizialises the variables
-            containing the left and right halves of the SLM. """
-            
-        self.img_l = PI.Half_Pattern(self.p)
-        self.img_l.call_daddy(self)
-        self.img_l.set_name("img_l")
-        
-        self.img_r = PI.Half_Pattern(self.p)
-        self.img_r.call_daddy(self)
-        self.img_r.set_name("img_r")
-
-        self.zernikes_all = np.zeros_like(self.img_l.data)
-        self.phase_tiptilt = np.zeros_like(self.img_l.data)
-        self.phase_defocus = np.zeros_like(self.img_l.data)
-        
-    def init_zernikes(self):
-        """ Creates a dictionary containing all of the Zernike polynomials by
-            their names. Updates in the GUI only change the weight of each 
-            polynomial. Thus, polynomials do not have to be updated, just their
-            weights. """
-            
-        # normalisation for tip / tilt is different from the other Zernikes:
-        # grating periods should be in /mm and they should be independent of
-        # the objective's diameter:
-        # we're using the SLM off-axis to reflect the beam into the center of
-        # the objective's backaperture. None of the actual optics depends on the
-        # objective used.
-        # I'm using the SLM radius calculation with backaperture = mag = 1
-        # to determine correct size for tip/tilt. Extra factor of two is because
-        # patterns are created at double size, then cropped.
-
-        size = 2 * np.asarray(self.p.general["size_slm"])
-        self.rtiptilt = 2 * pcalc.normalize_radius(1, 1, self.p.general["slm_px"], 
-                                              self.p.general["size_slm"])
-        
-        self.zernikes_normalized = {
-            "tiptiltx" : pcalc.create_zernike(size, [ 1,  1], 1, self.rtiptilt),
-            "tiptilty" : pcalc.create_zernike(size, [ 1, -1], 1, self.rtiptilt),
-            "defocus"  : pcalc.create_zernike(size, [ 2,  0], 1, self.slm_radius),
-            "astigx"   : pcalc.create_zernike(size, [ 2,  2], 1, self.slm_radius),
-            "astigy"   : pcalc.create_zernike(size, [ 2, -2], 1, self.slm_radius),
-            "comax"    : pcalc.create_zernike(size, [ 3,  1], 1, self.slm_radius),
-            "comay"    : pcalc.create_zernike(size, [ 3, -1], 1, self.slm_radius),
-            "trefoilx" : pcalc.create_zernike(size, [ 3,  3], 1, self.slm_radius),
-            "trefoily" : pcalc.create_zernike(size, [ 3, -3], 1, self.slm_radius),           
-            "sphere1"  : pcalc.create_zernike(size, [ 4,  0], 1, self.slm_radius),
-            "sphere2"  : pcalc.create_zernike(size, [ 6,  0], 1, self.slm_radius)
-            }
-    
-        
-    def create_main_frame(self):
-        """ Creates the UI: Buttons to load/save parameters and flatfield 
-            correction. Frames to display the patterns. Creates the GUI 
-            elements contained in the Half_Pattern and Aberr_Pattern classes 
-            that are used to change the parameters for pattern creation. """
-        
-        self.main_frame = QtWidgets.QWidget()  
-        vbox = QtWidgets.QVBoxLayout()     
-
-        # Quit, objective diameter and autoalign buttons
-        hbox = QtWidgets.QHBoxLayout()
-        self.crea_but(hbox, self._quit, "Quit")
-        self.rad_but = QtWidgets.QDoubleSpinBox()
-        self.rad_but.setDecimals(3)
-        self.rad_but.setSingleStep(0.01)
-        self.rad_but.setMinimum(0.01)
-        self.rad_but.setMaximum(10)
-        self.rad_but.setValue(1.68)
-        self.rad_but.setMaximumSize(80,50)
-        self.rad_but.valueChanged.connect(lambda: self.radius_changed())
-        hbox.addWidget(self.rad_but)
-
-        vbox.addLayout(hbox)
-        # NOTE: I WROTE THIS
-        self.crea_but(hbox, self.auto_align, "Auto Align")
-
-        vbox.addLayout(hbox)
-        # NOTE: I WROTE THIS
-        self.crea_but(hbox, self.correct_tiptilt, "Tip/Tilt")
-        #self.crea_but(hbox, self.correct_defocus, "Defocus")
-        self.crea_but(hbox, self.automate, "Auto-test")
-                    
-        # doesn't do anything at the moment, could be used to set another path
-        # to load the images from
-        #strng_path = self.labeled_qt(QtWidgets.QLineEdit, "Path for images", vbox)
-        #strng_path.setText(self.p.general["path"])
-
-        # controls to change objectives and to load/save calibration files         
-        hbox = QtWidgets.QHBoxLayout()
-        self.obj_sel = QtWidgets.QComboBox(self)
-        self.obj_sel.setMaximumSize(100, 50)
-        hbox.addWidget(self.obj_sel)            
-        for mm in self.p.objectives:
-            self.obj_sel.addItem(mm)
-        self.obj_sel.setCurrentText(self.current_objective)
-        self.obj_sel.activated.connect(lambda: self.objective_changed())
-        self.crea_but(hbox, self.reload_params, "Load Config", self.param_path)
-        self.crea_but(hbox, self.save_params, "Save Config", self.param_path)
-        hbox.setContentsMargins(0,0,0,0)
-        vbox.addLayout(hbox)
-        
-        # controls for basic SLM operation: opening/closing the display,
-        # changing calibration
-        hbox = QtWidgets.QHBoxLayout()
-        self.crea_but(hbox, self.open_SLMDisplay, "Initialize SLM")
-        self.crea_but(hbox, self.close_SLMDisplay, "Close SLM")
-        
-        # TODO: currently does not work; need to figure out a way to implement
-        # two paths, one for left, one for right side
-        #self.crea_but(hbox, self.openFlatFieldDialog, "load SLM calib", 
-        #              self.p.general["path"]+self.p.general["cal1"])        
-        hbox.setContentsMargins(0,0,0,0)
-        vbox.addLayout(hbox)
-
-        # checkboxes for the different modes of operation: split image (currently
-        # full display operation is not supported), flatfield correction
-        # and single correction and cross correction for double pass geometry
-        # (as on the Abberior))
-        hbox = QtWidgets.QHBoxLayout()
-        self.splt_img_state = self.crea_checkbox(hbox, self.split_image, 
-                        "Split image", self.p.general["split_image"])
-        self.sngl_corr_state = self.crea_checkbox(hbox, self.single_correction, 
-                        "Single correction", self.p.general["single_aberr"])
-        self.dbl_pass_state = self.crea_checkbox(hbox, self.double_pass,
-                        "Double pass", self.p.general["double_pass"])
-        self.flt_fld_state = self.crea_checkbox(hbox, self.flat_field, 
-                        "Flatfield", self.p.general["flat_field"])
-        hbox.setContentsMargins(0,0,0,0)
-        vbox.addLayout(hbox)
-        
-        # creates the Widget to display the image that's being sent to the SLM
-        imgbox = QtWidgets.QHBoxLayout()
-        imgbox.setAlignment(QtCore.Qt.AlignRight)
-        self.plt_frame = PlotCanvas(self)      
-        imgbox.addWidget(self.plt_frame)
-
-        # scale_img = QtWidgets.QVBoxLayout()
-        
-        # create the labels beneath image. Numeric controls are added in the
-        # respective subfunctions.
-        lbox_img = QtWidgets.QVBoxLayout()
-        lbox_img.addWidget(QtWidgets.QLabel('Offset X')) 
-        lbox_img.addWidget(QtWidgets.QLabel('Offset Y'))
-        lbox_img.addWidget(QtWidgets.QLabel('Grating X'))
-        lbox_img.addWidget(QtWidgets.QLabel('Grating Y'))
-        lbox_img.addWidget(QtWidgets.QLabel('Defocus L/R'))
-        lbox_img.addWidget(QtWidgets.QLabel('STED Mode'))
-        lbox_img.addWidget(QtWidgets.QLabel('Radius'))
-        lbox_img.addWidget(QtWidgets.QLabel('Phase'))
-        lbox_img.addWidget(QtWidgets.QLabel('Rotation'))
-        lbox_img.addWidget(QtWidgets.QLabel('Steps'))
-        # TODO: added as a temp measure to correct for scaling diff 
-        # btw vector diffraction and GUI 
-        lbox_img.addWidget(QtWidgets.QLabel('Scale'))
-        lbox_img.addWidget(QtWidgets.QLabel('Astigmatism X/Y'))
-        lbox_img.addWidget(QtWidgets.QLabel('Coma X/Y'))
-        lbox_img.addWidget(QtWidgets.QLabel('Spherical 1/2'))
-        lbox_img.addWidget(QtWidgets.QLabel('Trefoil Vert/Obl'))
-        
-        lbox_img.setContentsMargins(0,0,0,0)
-        
-        # create the controls provided by img_l, img_r and img_aberr
-        # these are used to set the parameters to create the patterns
-        c = QtWidgets.QGridLayout()
-        c.addLayout(lbox_img, 0, 0, 1, 1)
-        c.addLayout(self.img_l.create_gui(self.p, self.p.left), 0, 1, 1, 2)
-        c.addLayout(self.img_r.create_gui(self.p, self.p.right), 0, 3, 1, 2)
-        c.setAlignment(QtCore.Qt.AlignRight)
-        c.setContentsMargins(0,0,0,0)
-        
-        # add all the widgets
-        vbox.addLayout(imgbox)
-        vbox.addLayout(c)
-        vbox.setContentsMargins(0,0,0,0)
-        self.main_frame.setLayout(vbox)       
-        self.setCentralWidget(self.main_frame)
-        
 
     def openFileDialog(self, path):
         """ Creates a dialog to open a file. At the moement, it is only used 
@@ -723,10 +773,16 @@ class Main_Window(QtWidgets.QMainWindow):
     def split_image(self, state = True):
         """ Action called when the "Split image" checkbox is selected. Toggles
             between split image operation and single image operation."""
+        self.p.general["split_image"] = int(state)
+        
         if state:
+            #self.dbl_pass_state.setChecked(False)
             print(state, "TODO splitimage")
         else:
+            self.img_full = None
             print(state, "TODO nosplitimage")
+        self.init_data()
+        self.init_images()
         
         
     def single_correction(self, state):
@@ -815,20 +871,43 @@ class Main_Window(QtWidgets.QMainWindow):
             pitch (depends on the wavelength, and is set in the general 
             parameters). Saves the image patterns/latest.bmp and then reloads
             into the Pixmap for display. """
+        
+        if self.p.general["split_image"]:
+            l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
+                                                   self.flatfield[0],
+                                                   self.zernikes_all, 
+                                                   self.phase_tiptilt,
+                                                   self.phase_defocus]), 
+                                 self.p.left["phasewrap"])
+            r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
+                                                   self.flatfield[1],
+                                                   self.zernikes_all, 
+                                                   self.phase_tiptilt,
+                                                   self.phase_defocus]), 
+                                 self.p.right["phasewrap"])
+            self.img_data = pcalc.stitch_images(l * self.p.left["slm_range"],
+                                                r * self.p.right["slm_range"])
+            self.plt_frame.plot(pcalc.stitch_images(l, r))
+                    
+        else:
+            # TODO: implement proper SLM scaling. needs to be in params general now
+            print(np.shape(self.img_full.data),
+                  np.shape(pcalc.stitch_images(self.flatfield[0], self.flatfield[1])),
+                  np.shape(self.zernikes_all), 
+                  np.shape(self.phase_tiptilt), np.shape(self.phase_defocus))
             
-        l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
-                        self.flatfield[0], self.img_l.vort.tempscalegui.value() * self.zernikes_all, self.phase_tiptilt, self.phase_defocus]), self.p.left["phasewrap"])
-        r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
-                        self.flatfield[1], self.img_l.vort.tempscalegui.value() * self.zernikes_all, self.phase_tiptilt, self.phase_defocus]), self.p.right["phasewrap"])
-        
-        #print(np.max(self.zernikes_all), np.max(self.img_l.data), np.max(self.img_l.aberr.data))
-        # print("sum tip tilt", np.sum(self.phase_tiptilt), "sum zern", np.sum(self.zernikes_all), "sum defoc", np.sum(self.phase_defocus))
-        self.img_data = pcalc.stitch_images(l * self.p.left["slm_range"],
-                                            r * self.p.right["slm_range"])
-        
+            self.img_data = pcalc.phase_wrap(pcalc.add_images([self.img_full.data, 
+                                                               pcalc.stitch_images(self.flatfield[0], self.flatfield[1]), 
+                                                               self.zernikes_all, 
+                                                               self.phase_tiptilt,
+                                                               self.phase_defocus]), 
+                                             1)
+            
+            self.plt_frame.plot(self.img_data)
+            
         if self.slm != None:
             self.slm.update_image(np.uint8(self.img_data))
-        self.plt_frame.plot(pcalc.stitch_images(l, r))
+
  
     
     def open_SLMDisplay(self):
