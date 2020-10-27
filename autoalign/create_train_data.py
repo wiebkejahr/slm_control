@@ -81,7 +81,7 @@ def main(args):
         if args.mode == 'sted':
 
             img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
-            tiptilt = center(img)
+            tiptilt = center(img, multi=args.multi)
             img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
 
         elif args.mode == 'fluor':

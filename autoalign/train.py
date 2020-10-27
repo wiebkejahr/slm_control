@@ -146,7 +146,7 @@ def main(args):
     
     # tsfms = transforms.Compose([my_classes.Center(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(), my_classes.ToTensor()])
     # tsfms = transforms.Compose([my_classes.Noise(), my_classes.Center(), my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
-    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(bgnoise=2, poiss=350)])
+    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
     
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
     val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
@@ -170,7 +170,7 @@ def main(args):
     # way of choosing the model based on the features. For now just override, as below
     if args.multi:
         if args.offset:
-            model = my_models.MultiOffsetNet()
+            model = my_models.MultiOffsetNet13()
         else:
             model = my_models.MultiNet11()
     else:
