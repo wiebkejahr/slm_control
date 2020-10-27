@@ -167,3 +167,4 @@ autoalign/models/20.07.23_1D_offset_only_500_eps_15_lr_0.001_bs_64.pth
 autoalign/models/20.06.22_no_defocus_multi_20k_eps_25_lr_0.001_bs_64_ALEXNET.pth
 autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_25_lr_0.001_bs_64_ALEXNET.pth
 autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_25_lr_0.001_bs_64_ALEXNET_redo.pth
+*.pth
