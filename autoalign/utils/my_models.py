@@ -284,14 +284,14 @@ class OffsetNet13(nn.Module):
         x = self.fc3(x)
         return x
 
-class MultiOffsetNet14(nn.Module):
+class MultiOffsetNet13(nn.Module):
     """
     A simple CNN based on AlexNet
     Architecture modified from Zhang et. al, "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
     to include a multi-channelled image
     """
     def __init__(self):
-        super(MultiOffsetNet14, self).__init__()
+        super(MultiOffsetNet13, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, 5, padding=2)
         self.conv2 = nn.Conv2d(32, 32, 5, padding=2) 
         self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
@@ -300,7 +300,42 @@ class MultiOffsetNet14(nn.Module):
         
         self.fc1 = nn.Linear(8 * 8 * 64, 512)  # 64 channels, final img size 3x8x8
         self.fc2 = nn.Linear(512, 512)
-        self.fc3 = nn.Linear(512, 14)
+        self.fc3 = nn.Linear(512, 13)
+
+    def forward(self, x):
+        
+        x = x.float()
+        x = F.dropout(F.max_pool2d(F.relu(self.conv1(x)), (2, 2)), p=0.1)
+        x = F.dropout(F.max_pool2d(F.relu(self.conv2(x)), (2, 2)), p=0.1)
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        
+        x = F.max_pool2d(F.relu(self.conv5(x)), (2, 2))
+        # flatten
+        x = x.reshape(x.size(0), -1)
+        # x = x.view(-1, 64*8*8)
+        x = F.dropout(F.relu(self.fc1(x)), p=0.2)
+        x = F.dropout(F.relu(self.fc2(x)), p=0.2)
+        x = self.fc3(x)
+        return x
+
+class MultiOffsetNet13(nn.Module):
+    """
+    A simple CNN based on AlexNet
+    Architecture modified from Zhang et. al, "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
+    to include a multi-channelled image
+    """
+    def __init__(self):
+        super(MultiOffsetNet13, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 5, padding=2)
+        self.conv2 = nn.Conv2d(32, 32, 5, padding=2) 
+        self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
+        self.conv4 = nn.Conv2d(64, 64, 3, padding=1)
+        self.conv5 = nn.Conv2d(64, 64, 3, padding=1)
+        
+        self.fc1 = nn.Linear(8 * 8 * 64, 512)  # 64 channels, final img size 3x8x8
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, 13)
 
     def forward(self, x):
         

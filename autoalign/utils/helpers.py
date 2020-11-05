@@ -182,6 +182,9 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
 
 def center(xy, res=64, multi=True):
     """Returns the correction phasemask to counteract tiptilt present in given image"""
+    if multi:
+        xy = xy[0]
+    
     xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
     tiptilt = create_phase(coeffs=[xtilt, ytilt], num=[0,1])
     # corrected = get_sted_psf(coeffs=label, multi=multi, corrections=tiptilt)

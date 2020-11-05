@@ -84,9 +84,15 @@ mpl.rc('pdf', fonttype=42)
 # MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
 # MODEL_STORE_PATH="autoalign/models/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
-MODEL_STORE_PATH="autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64.pth"
+# MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_25_lr_0.001_bs_64_ALEXNET.pth"
+# MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_25_lr_0.001_bs_64_ALEXNET.pth"
+MODEL_STORE_PATH = "autoalign/models/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64.pth"
+
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -472,8 +478,8 @@ class Main_Window(QtWidgets.QMainWindow):
         # image = abberior.get_image()
         # _, new_img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
         # ITERATIVE LOOP #
-        multi=False
-        offset=False
+        multi=True
+        offset=True
         size = 2 * np.asarray(self.p.general["size_slm"])
         
         self.correct_tiptilt()
@@ -508,15 +514,14 @@ class Main_Window(QtWidgets.QMainWindow):
         # self.correct_tiptilt()
         # self.correct_defocus()
 
-
-    def automate(self, model_store_path=MODEL_STORE_PATH, num_its=100):
+    def automate(self, model_store_path=MODEL_STORE_PATH, num_its=2):
         multi=True
-        offset=False
+        offset=True
         px_size = 10
         i_start = 0
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []} 
-        path = 'D:/Data/20200814_Wiebke_Hope_Autoalign/20.07.22_multi_centered_11_dim_18k_eps_25_lr_0.001_bs_64_ALEXNET/'
+        path = 'D:/Data/20201027_Autoalign/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/'
         # NOTE: multi is meant to be hardcoded here, we only need the xy to return the config
         img, conf, msr, stats = abberior.get_image(multi=False, config=True)
         x_init = conf.parameters('ExpControl/scan/range/x/g_off')
@@ -633,7 +638,7 @@ class Main_Window(QtWidgets.QMainWindow):
             d['corr'].append(corr)
             name = path + str(ii+i_start) + "_corrected.msr"
             msr.save_as(name)
-            with open(path +'20.07.22_multi_centered_11_dim_18k_eps_25_lr_0.001_bs_64_ALEXNET' +str(i_start)+'.txt', 'w') as file:
+            with open(path +'20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64' +str(i_start)+'.txt', 'w') as file:
                 json.dump(d, file)
 
 

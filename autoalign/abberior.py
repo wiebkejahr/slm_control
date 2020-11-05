@@ -201,7 +201,7 @@ def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
 
         if multi:
             if offset:
-                model = my_models.MultiOffsetNet14()
+                model = my_models.MultiOffsetNet13()
             else:
                 model = my_models.MultiNet11()
         else:
@@ -211,7 +211,7 @@ def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
                 model = my_models.Net11()    
         
         # overriding model
-        model = models.alexnet(pretrained=False, num_classes=11)
+        # model = models.alexnet(pretrained=False, num_classes=11)
         # gets preds
         
         checkpoint = torch.load(model_store_path)
