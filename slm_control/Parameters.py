@@ -41,6 +41,9 @@ class param():
                     "flat_field"   : 0,
                     "single_aberr" : 0,
                     "double_pass"  : 0,
+                    "slm_range"    : 255,
+                    "phasewrap"    : 1,
+                    "cal1"         : "patterns/CAL_LSH0801768_780nm.bmp",
                     }
        
         self.left = {
@@ -128,18 +131,18 @@ class param():
         # values that cannot be changed via GUI are written read from the 
         # parameter files and written back in unchanged. Checkboxes from GUI 
         # are read out and updated in parameter files
-        splt_img = 0
-        if daddy.splt_img_state.checkState():
-            splt_img = 1
-        flt_fld = 0
-        if daddy.flt_fld_state.checkState():
-            flt_fld = 1
-        sngl_corr = 0
-        if daddy.sngl_corr_state.checkState():
-            sngl_corr = 1
-        dbl_ps = 0
-        if daddy.dbl_pass_state.checkState():
-            dbl_ps = 1
+        # splt_img = 0
+        # if daddy.splt_img_state.checkState():
+        #     splt_img = 1
+        # flt_fld = 0
+        # if daddy.flt_fld_state.checkState():
+        #     flt_fld = 1
+        # sngl_corr = 0
+        # if daddy.sngl_corr_state.checkState():
+        #     sngl_corr = 1
+        # dbl_ps = 0
+        # if daddy.dbl_pass_state.checkState():
+        #     dbl_ps = 1
         
         self.general = {
                     "display_mode" : daddy.p.general["display_mode"],
@@ -156,59 +159,86 @@ class param():
                     "cal0"         : daddy.p.general["cal0"],
                     "last_img_nm"  : daddy.p.general["last_img_nm"],
                     "modes"        : daddy.p.general["modes"],
-                    "split_image"  : splt_img,
-                    "flat_field"   : flt_fld,
-                    "single_aberr" : sngl_corr,
-                    "double_pass"  : dbl_ps,
+                    "split_image"  : daddy.p.general["split_image"],#splt_img,
+                    "flat_field"   : daddy.p.general["flat_field"],#flt_fld,
+                    "single_aberr" : daddy.p.general["single_aberr"],#sngl_corr,
+                    "double_pass"  : daddy.p.general["double_pass"],#dbl_ps,
+                    "slm_range"    : daddy.p.general["slm_range"],
+                    "phasewrap"    : daddy.p.general["phasewrap"],
+                    "cal1"         : daddy.p.general["cal1"],
                     }
 #        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.current_objective["name"]]["backaperture"], 
 
         
-        
-        d = daddy.img_l
-        self.left = {
-                    "sl"        : [d.gr.xgui.value(), d.gr.ygui.value()],
-                    "off"       : [d.off.xgui.value(), d.off.ygui.value()],
-                    "rot"       : d.vort.rotgui.value(),
-                    "radius"    : d.vort.radgui.value(),
-                    "phase"     : d.vort.phasegui.value(),
-                    "steps"     : d.vort.stepgui.value(),
-                    "defoc"     : d.defoc.defocgui.value(),
-                    "mode"      : d.vort.modegui.currentText(),
-                    "astig"     : [d.aberr.astig.xgui.value(), 
-                                   d.aberr.astig.ygui.value()],
-                    "coma"      : [d.aberr.coma.xgui.value(), 
-                                   d.aberr.coma.ygui.value()],
-                    "sphere"    : [d.aberr.sphere.xgui.value(), 
-                                   d.aberr.sphere.ygui.value()],
-                    "trefoil"   : [d.aberr.trefoil.xgui.value(), 
-                                   d.aberr.trefoil.ygui.value()],
-                    "slm_range" : daddy.p.left["slm_range"],
-                    "phasewrap" : daddy.p.left["phasewrap"],
-                    "cal1"      : daddy.p.left["cal1"],
-                    }
-        d = daddy.img_r
-        self.right = {
-                    "sl"        : [d.gr.xgui.value(), d.gr.ygui.value()],
-                    "off"       : [d.off.xgui.value(), d.off.ygui.value()],
-                    "rot"       : d.vort.rotgui.value(),
-                    "radius"    : d.vort.radgui.value(),
-                    "phase"     : d.vort.phasegui.value(),
-                    "steps"     : d.vort.stepgui.value(),
-                    "defoc"     : d.defoc.defocgui.value(),
-                    "mode"      : d.vort.modegui.currentText(),
-                    "astig"     : [d.aberr.astig.xgui.value(), 
-                                   d.aberr.astig.ygui.value()],
-                    "coma"      : [d.aberr.coma.xgui.value(), 
-                                   d.aberr.coma.ygui.value()],
-                    "sphere"    : [d.aberr.sphere.xgui.value(), 
-                                   d.aberr.sphere.ygui.value()],
-                    "trefoil"   : [d.aberr.trefoil.xgui.value(), 
-                                 d.aberr.trefoil.ygui.value()],
-                    "slm_range" : daddy.p.right["slm_range"],
-                    "phasewrap" : daddy.p.right["phasewrap"],
-                    "cal1"      : daddy.p.right["cal1"],
-                    }
+        if daddy.p.general["split_image"]:
+            d = daddy.img_l
+            self.left = {
+                        "sl"        : [d.gr.xgui.value(), d.gr.ygui.value()],
+                        "off"       : [d.off.xgui.value(), d.off.ygui.value()],
+                        "rot"       : d.vort.rotgui.value(),
+                        "radius"    : d.vort.radgui.value(),
+                        "phase"     : d.vort.phasegui.value(),
+                        "steps"     : d.vort.stepgui.value(),
+                        "defoc"     : d.defoc.defocgui.value(),
+                        "mode"      : d.vort.modegui.currentText(),
+                        "astig"     : [d.aberr.astig.xgui.value(), 
+                                       d.aberr.astig.ygui.value()],
+                        "coma"      : [d.aberr.coma.xgui.value(), 
+                                       d.aberr.coma.ygui.value()],
+                        "sphere"    : [d.aberr.sphere.xgui.value(), 
+                                       d.aberr.sphere.ygui.value()],
+                        "trefoil"   : [d.aberr.trefoil.xgui.value(), 
+                                       d.aberr.trefoil.ygui.value()],
+                        "slm_range" : daddy.p.left["slm_range"],
+                        "phasewrap" : daddy.p.left["phasewrap"],
+                        "cal1"      : daddy.p.left["cal1"],
+                        }
+            d = daddy.img_r
+            self.right = {
+                        "sl"        : [d.gr.xgui.value(), d.gr.ygui.value()],
+                        "off"       : [d.off.xgui.value(), d.off.ygui.value()],
+                        "rot"       : d.vort.rotgui.value(),
+                        "radius"    : d.vort.radgui.value(),
+                        "phase"     : d.vort.phasegui.value(),
+                        "steps"     : d.vort.stepgui.value(),
+                        "defoc"     : d.defoc.defocgui.value(),
+                        "mode"      : d.vort.modegui.currentText(),
+                        "astig"     : [d.aberr.astig.xgui.value(), 
+                                       d.aberr.astig.ygui.value()],
+                        "coma"      : [d.aberr.coma.xgui.value(), 
+                                       d.aberr.coma.ygui.value()],
+                        "sphere"    : [d.aberr.sphere.xgui.value(), 
+                                       d.aberr.sphere.ygui.value()],
+                        "trefoil"   : [d.aberr.trefoil.xgui.value(), 
+                                     d.aberr.trefoil.ygui.value()],
+                        "slm_range" : daddy.p.right["slm_range"],
+                        "phasewrap" : daddy.p.right["phasewrap"],
+                        "cal1"      : daddy.p.right["cal1"],
+                        }
+        else:
+            d = daddy.img_full
+            self.full = {
+                        "sl"        : [d.gr.xgui.value(), d.gr.ygui.value()],
+                        "off"       : [d.off.xgui.value(), d.off.ygui.value()],
+                        "rot"       : d.vort.rotgui.value(),
+                        "radius"    : d.vort.radgui.value(),
+                        "phase"     : d.vort.phasegui.value(),
+                        "steps"     : d.vort.stepgui.value(),
+                        "defoc"     : d.defoc.defocgui.value(),
+                        "mode"      : d.vort.modegui.currentText(),
+                        "astig"     : [d.aberr.astig.xgui.value(), 
+                                       d.aberr.astig.ygui.value()],
+                        "coma"      : [d.aberr.coma.xgui.value(), 
+                                       d.aberr.coma.ygui.value()],
+                        "sphere"    : [d.aberr.sphere.xgui.value(), 
+                                       d.aberr.sphere.ygui.value()],
+                        "trefoil"   : [d.aberr.trefoil.xgui.value(), 
+                                     d.aberr.trefoil.ygui.value()],
+                        "slm_range" : daddy.p.general["slm_range"],
+                        "phasewrap" : daddy.p.general["phasewrap"],
+                        "cal1"      : daddy.p.general["cal1"],
+                        }
+            
 #        d = daddy.img_aberr
 #        self.aberrations = {
 #                            "astig" : [d.astig.xgui.value(), d.astig.ygui.value()],

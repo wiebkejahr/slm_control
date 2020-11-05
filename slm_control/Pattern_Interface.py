@@ -21,9 +21,10 @@ class Half_Pattern(QtWidgets.QWidget):
         only in the Main Program. For fast offset calculation, images are 
         created at twice the size needed and then cropped differently when the 
         offset is changed. """
-    def __init__(self, params, parent = None):
+    def __init__(self, params, size, parent = None):
         super(Half_Pattern, self).__init__(parent)
-        self.size = np.asarray(params.general["size_slm"])
+        #self.size = np.asarray(params.general["size_slm"])
+        self.size = size
         self.full = np.zeros(self.size * 2)
         self.data = np.zeros(self.size)
         self.blockupdating = False
@@ -49,27 +50,27 @@ class Half_Pattern(QtWidgets.QWidget):
         self.offset = np.asarray(p_spec["off"])
         
         controls = QtWidgets.QGridLayout()
-        self.off = spat.Off_Pattern(p_gen)
+        self.off = spat.Off_Pattern(p_gen, self.size)
         self.off.call_daddy(self)
-        size = np.asarray(p_gen.general["size_full"])
+        offlim = [self.size[0], self.size[1]*2]
         controls.addLayout(self.off.create_gui(
                             p_spec["off"], 
-                            [[0, 1, -size[1]/4, size[1]/4],
-                            [0, 1, -size[0]/2, size[0]/2]]),
+                            [[0, 1, -offlim[1]/4, offlim[1]/4],
+                             [0, 1, -offlim[0]/2, offlim[0]/2]]),
                             0,0,2,2)
-        self.gr = spat.Sub_Pattern_Grid(p_gen)
+        self.gr = spat.Sub_Pattern_Grid(p_gen, self.size)
         self.gr.call_daddy(self)
         controls.addLayout(self.gr.create_gui(p_spec["sl"], 
                                               [[2, 0.1, -20, 20], [2, 0.1, -20, 20]]), 2,0,2,2)
         self.gr.compute_pattern(update = False)
         
-        self.defoc = spat.Sub_Pattern_Defoc(p_gen)
+        self.defoc = spat.Sub_Pattern_Defoc(p_gen, self.size)
         self.defoc.call_daddy(self)
         controls.addLayout(self.defoc.create_gui(p_spec["defoc"], 
                                                  [3, 0.1, -10, 10]), 4,0,1,2)
         self.defoc.compute_pattern(update = False)
         
-        self.vort = spat.Sub_Pattern_Vortex(p_gen)
+        self.vort = spat.Sub_Pattern_Vortex(p_gen, self.size)
         self.vort.call_daddy(self)
         controls.addLayout(self.vort.create_gui(p_gen.general["modes"], 
                                                 [p_spec["mode"], p_spec["radius"], 
@@ -77,7 +78,7 @@ class Half_Pattern(QtWidgets.QWidget):
                                                  p_spec["steps"]]), 5,0,5,2)
         self.vort.compute_pattern(update = False)
         
-        self.aberr = patzern.Aberr_Pattern(p_gen)
+        self.aberr = patzern.Aberr_Pattern(p_gen, self.size)
         self.aberr.call_daddy(self)
         controls.addLayout(self.aberr.create_gui(p_gen, p_spec), 10, 0, 4, 2)
         

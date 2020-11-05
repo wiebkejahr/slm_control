@@ -16,11 +16,13 @@ class Sub_Pattern(QtWidgets.QWidget):
     """ Parent Widget for all the subpattern widgets. Contains GUI, the image 
         data and a compute_pattern function that's executed upon changes in 
         any of the GUI elements. """
-    def __init__(self, params, parent = None):
+    def __init__(self, params, size, parent = None):
         super(Sub_Pattern, self).__init__(parent)
         #super().__init__()
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.size = np.asarray(params.general["size_slm"]) * 2
+        #self.size = np.asarray(params.general["size_slm"]) * 2
+        #TODO: Double check! here it's size * 2 ... for the grid and offset only size
+        self.size = size * 2
         self.data = np.zeros(self.size)
     
     def call_daddy(self, p):
@@ -67,14 +69,15 @@ class Sub_Pattern(QtWidgets.QWidget):
 class Off_Pattern(Sub_Pattern):
     """ Subpattern containg the GUI for setting the offsets. Calls the crop 
         function of the calling instance whenever the offset values are changed. """
-    def __init__(self, params, parent = None):
+    def __init__(self, params, size, parent = None):
         super(Sub_Pattern, self).__init__(parent)        
         #I don't get why, but it seems initializing the variables in the subclass
         # seems necessary
         # if only initialized in the super class, they are created as function,
         # not as variable        
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.size = params.general["size_slm"]
+        #self.size = params.general["size_slm"]
+        self.size = size
         self.value = [0,0]
 
     def compute_pattern(self, update = True):
@@ -93,14 +96,15 @@ class Sub_Pattern_Grid(Sub_Pattern):
     """ Subpattern containing the image data of the blazed gratings. Recalculates 
         the grating, and calls an update to the Half Pattern to recalculate the
         whole image data. """
-    def __init__(self, params, parent = None):
+    def __init__(self, params, size, parent = None):
         super(Sub_Pattern, self).__init__(parent)        
         #I don't get why, but it seems initializing the variables in the subclass
         # seems necessary
         # if only initialized in the super class, they are created as function
         # not as variable        
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.size = np.asarray(params.general["size_slm"])
+        #self.size = np.asarray(params.general["size_slm"])
+        self.size = size
         self.slm_px = params.general["slm_px"]
         self.data = np.zeros(self.size)
         
@@ -123,10 +127,11 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         number of steps. Recalculates the vortices based on the parameters 
         and calls an update to the Half Pattern to recalculate the whole 
         image data. """
-    def __init__(self, params, parent = None):
+    def __init__(self, params, size, parent = None):
         super(Sub_Pattern, self).__init__(parent) 
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.size = np.asarray(params.general["size_slm"]) * 2
+        #self.size = np.asarray(params.general["size_slm"]) * 2
+        self.size = size * 2
         self.data = np.zeros(self.size)
         self.path = params.general["path"]
         
@@ -147,7 +152,7 @@ class Sub_Pattern_Vortex(Sub_Pattern):
         self.modegui.activated.connect(lambda: self.compute_pattern())
         
         #TODO: added temporarily, needs to be removed later again
-        self.tempscalegui = self.double_spin(1, [2, 0.1, -10, 10], gui)
+        #self.tempscalegui = self.double_spin(1, [2, 0.1, -10, 10], gui)
         
         gui.setContentsMargins(0,0,0,0)
         
@@ -243,9 +248,10 @@ class Sub_Pattern_Defoc(Sub_Pattern):
     """ Subpattern containing the image data for defocus. GUI contains only the
         defocus parameter. Recalculates the defocus and calls an update to the 
         Half Pattern to recalculate the whole image data. """
-    def __init__(self, params, parent = None):
+    def __init__(self, params, size, parent = None):
         super(Sub_Pattern, self).__init__(parent)
-        self.size = np.asarray(params.general["size_slm"]) * 2
+        #self.size = np.asarray(params.general["size_slm"]) * 2
+        self.size = size * 2
         self.data = np.zeros(self.size)
         
     def create_gui(self, defval, setup):
