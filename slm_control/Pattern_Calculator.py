@@ -296,7 +296,9 @@ def correct_aberrations(size, ratios, orders, off = [0,0], radscale = 1):
 
 
 def blazed_grating(size, slope, slm_px):
-    """ Creates the blazed grating in the provided size, with the provided slope
+    """ DEPRECATED:
+        Blazed grating is now created using Zernike (-1,1) and (1,1).
+        Creates the blazed grating in the provided size, with the provided slope
         in x and y. Does so by calculating a tilted surface, then normalizing
         to the slm size and pixel size such, that the provided slopes are in 
         units of 1/mm. Phasewraps to create the blazed grating from the tilted
@@ -307,6 +309,7 @@ def blazed_grating(size, slope, slm_px):
     # different cases are necessary because arctan is ugly:
     # for gratings blazed only in one direction  (i.e. one of the slopes = 0)
     # division and multiplication through/by zero need to be caught
+    print("blazed grating called")
     if slope[0] != 0 and slope[1] != 0:
         # ensure that arctan is always calculated as ratio from large/small slope
         sx = np.min(np.abs(slope))
@@ -325,30 +328,67 @@ def blazed_grating(size, slope, slm_px):
     return surf
 
 
+def double_blazed_grating(size, drctn , phase = 1, amp = 1, radscale = 1):
+    dbl_blz = create_zernike(size, [1, drctn], amp, radscale)    
+    dbl_blz = phase_wrap(dbl_blz, phase)
+    mask = dbl_blz > phase / 2
+    dbl_blz[mask] = phase - dbl_blz[mask]
+    
+    return dbl_blz
+
+
+
+# def compute_pattern(self, update = True):
+#     if self.daddy.blockupdating == False:
+#         slope = [-self.xgui.value(), -self.ygui.value()]
+#         z = self.daddy.daddy.zernikes_normalized
+#         self.data = pcalc.add_images([z["tiptiltx"] * slope[0],
+#                                       z["tiptilty"] * slope[1]])
+        
+        
+
 # bunch of things left sitting around from testing
 if __name__ == "__main__":
     
     #size = np.asarray([600, 792])
-    size = np.asarray([100,100])
+    size = np.asarray([200,200])
     path = 'patterns/'
     imgname = 'test.bmp'
     rot = 0
     radius = 1
     amp = 1
     offset = [0,0]
-    phase = 10
+    phase = 1
     
+    sgl_blaze = crop(phase_wrap(create_zernike(size, [1, -1], amp, radius), phase) + 
+                     phase_wrap(create_zernike(size, [1,  1], amp, radius), phase),
+                                size)
+    
+    
+    dbl_blaze = double_blazed_grating(size, -1, phase, 3*amp, radius) + \
+                double_blazed_grating(size,  1, phase, 3*amp, radius)
+    dbl_blaze   = phase_wrap(crop(dbl_blaze,   size, offset), phase)
 
-    ring = create_rect(2*size, 0.01, 2, 30)
     plt.figure()
-    plt.imshow(crop(ring, size, offset))
+    plt.subplot(121)
+    plt.imshow(dbl_blaze, interpolation = 'None')
+    plt.subplot(122)
+    plt.imshow(sgl_blaze, interpolation = 'None')
 
+
+    # def compute_pattern(self, update = True):
+    #     if self.daddy.blockupdating == False:
+    #         slope = [-self.xgui.value(), -self.ygui.value()]
+    #         z = self.daddy.daddy.zernikes_normalized
+    #         self.data = pcalc.add_images([z["tiptiltx"] * slope[0],
+    #                                       z["tiptilty"] * slope[1]])
     
-    # plt.figure()
-    # plt.subplot(121)
-    # plt.imshow(crop(phase_wrap(create_coords(size*2)[0], phase), size), interpolation = 'Nearest', cmap = 'RdYlBu')#, clim = [-10, 10])
-    # plt.subplot(122)
-    # plt.imshow(crop(phase_wrap(create_coords(size*2)[1], phase), size), interpolation = 'Nearest', cmap = 'RdYlBu')#, clim = [-10, 10])
+    fig = plt.figure()
+    ax = fig.gca(projection = '3d')
+    X = np.arange(-size[0]//4, size[0]//4)
+    Y = np.arange(-size[1]//4, size[1]//4)
+    X, Y = np.meshgrid(X, Y)
+    surf = ax.plot_surface(X, Y, dbl_blaze, cmap = 'coolwarm')
     
     # orders = [[0,0],
     #           [1,-1], [1,1],
