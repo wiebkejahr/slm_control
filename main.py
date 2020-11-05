@@ -142,7 +142,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.p.load_file_general(self.param_path[0], self.param_path[1])
         self.current_objective = self.p.general["objective"]
         self.p.load_file_obj(self.param_path[0], self.current_objective, self.param_path[1])
-        
+                
         self.slm_radius = self.calc_slmradius(
             self.p.objectives[self.current_objective]["backaperture"],
             self.p.general["slm_mag"])
@@ -187,6 +187,7 @@ class Main_Window(QtWidgets.QMainWindow):
         #self.load_params(fname)
         #self.p = param()
         self.p.load_file_obj(fname[0], self.current_objective, fname[1])
+        print("params ", self.p.full["mode"])
         # print("left", self.p.left)
         # print("right", self.p.right)
         if self.p.general["split_image"]:
@@ -197,7 +198,8 @@ class Main_Window(QtWidgets.QMainWindow):
             self.phase_defocus = np.zeros_like(self.img_l.data)
         else:
             #TODO: general values, not left values
-            self.img_full.update_guivalues(self.p, self.p.left)
+            print("loading from file")
+            self.img_full.update_guivalues(self.p, self.p.full)
             self.zernikes_all = np.zeros_like(self.img_full.data)
             self.phase_tiptilt = np.zeros_like(self.img_full.data)
             self.phase_defocus = np.zeros_like(self.img_full.data)
@@ -249,6 +251,8 @@ class Main_Window(QtWidgets.QMainWindow):
             self.zernikes_all = np.zeros_like(self.img_l.data)
             self.phase_tiptilt = np.zeros_like(self.img_l.data)
             self.phase_defocus = np.zeros_like(self.img_l.data)
+            #print("left img ", self.img_l)
+            #print(self.p)
             
         else:
             self.img_full = PI.Half_Pattern(self.p, self.img_size)
@@ -257,7 +261,20 @@ class Main_Window(QtWidgets.QMainWindow):
             self.zernikes_all = np.zeros_like(self.img_full.data)
             self.phase_tiptilt = np.zeros_like(self.img_full.data)
             self.phase_defocus = np.zeros_like(self.img_full.data)
-
+            #print("full img ", self.img_full.data)
+            #print("full img ", self.img_full.radgui.value())
+            #print(self.p)
+        
+        
+        # images are created after startup
+        # then the gui is created, which also links all the defoc etc parameters into the half_pattern class
+        # how do I relink?!        
+        #if self.p.general["split_image"]:
+        #    c.addLayout(self.img_l.create_gui(self.p, self.p.left), 0, 1, 1, 2)
+        #    c.addLayout(self.img_r.create_gui(self.p, self.p.right), 0, 3, 1, 2)
+        #else:
+        #    #TODO: change this left; requires change for all objectives
+        #    c.addLayout(self.img_full.create_gui(self.p, self.p.left), 0, 1, 1, 2)
         
     def init_zernikes(self):
         """ Creates a dictionary containing all of the Zernike polynomials by
@@ -412,8 +429,7 @@ class Main_Window(QtWidgets.QMainWindow):
             c.addLayout(self.img_l.create_gui(self.p, self.p.left), 0, 1, 1, 2)
             c.addLayout(self.img_r.create_gui(self.p, self.p.right), 0, 3, 1, 2)
         else:
-            #TODO: change this left; requires change for all objectives
-            c.addLayout(self.img_full.create_gui(self.p, self.p.left), 0, 1, 1, 2)
+            c.addLayout(self.img_full.create_gui(self.p, self.p.full), 0, 1, 1, 2)
             
         c.setAlignment(QtCore.Qt.AlignRight)
         c.setContentsMargins(0,0,0,0)
@@ -800,10 +816,12 @@ class Main_Window(QtWidgets.QMainWindow):
         
         if state:
             #self.dbl_pass_state.setChecked(False)
-            print(state, "TODO splitimage")
+            print(state, "Currently not implemented. Please restart code and \
+                          set split image flag in parameters file.")
         else:
             self.img_full = None
-            print(state, "TODO nosplitimage")
+            print(state, "Currently not implemented. Please restart code and \
+                          set split image flag in parameters file.")
         self.init_data()
         self.init_images()
         
@@ -837,7 +855,7 @@ class Main_Window(QtWidgets.QMainWindow):
             if self.p.general["split_image"]:
                 self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
             else:
-                self.load_flat_field(self.p.general["cal1"], self.p.general["cal1"])
+                self.load_flat_field(self.p.full["cal1"], self.p.full["cal1"])
         
     
     def calc_slmradius(self, backaperture, mag):
@@ -916,9 +934,24 @@ class Main_Window(QtWidgets.QMainWindow):
                                                    self.phase_tiptilt,
                                                    self.phase_defocus]), 
                                  self.p.right["phasewrap"])
+            # this is hack:
+            # for preview display, do not scale with SLM range
+            # for SLM display, do scale ... scales may differ left / right
             self.img_data = pcalc.stitch_images(l * self.p.left["slm_range"],
                                                 r * self.p.right["slm_range"])
+            
+            
             self.plt_frame.plot(pcalc.stitch_images(l, r))
+            # plt.ion()
+            # plt.figure(1)
+            # plt.subplot(121)
+            # plt.imshow(l)
+            # plt.subplot(122)
+            # plt.imshow(r)
+            # plt.show()
+            # plt.pause(0.001)
+            
+            print("plotted preview lr")
                     
         else:            
             self.img_data = pcalc.phase_wrap(pcalc.add_images([self.img_full.data, 
@@ -928,6 +961,7 @@ class Main_Window(QtWidgets.QMainWindow):
                                                                self.phase_defocus]), 
                                              self.p.general["phasewrap"])
             self.plt_frame.plot(self.img_data)
+            print("plotted preview full")
             self.img_data = self.img_data * self.p.general["slm_range"]
             
         if self.slm != None:

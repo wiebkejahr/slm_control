@@ -10,7 +10,7 @@
     "rot": 0.0,
     "radius": 1.0,
     "phase": 1.0,
-    "steps": 1.0,
+    "steps": 0.0,
     "defoc": 0.0,
     "mode": "2D STED",
     "astig": [

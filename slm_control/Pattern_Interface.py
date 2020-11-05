@@ -83,9 +83,6 @@ class Half_Pattern(QtWidgets.QWidget):
         controls.addLayout(self.aberr.create_gui(p_gen, p_spec), 10, 0, 4, 2)
         
         self.aberr.update(update = False)
-
-        #self.aberr = self.daddy.img_aberr
-        #self.aberr.call_daddy(self)
         
         self.update(update = False)
 
@@ -118,8 +115,6 @@ class Half_Pattern(QtWidgets.QWidget):
    
         #self.daddy.obj_sel.setCurrentText(p_gen.general["objective"])
         
-        print("inside ", p_spec)
-        print("value", p_spec["sl"])
         self.off.xgui.setValue(p_spec["off"][0])
         self.off.ygui.setValue(p_spec["off"][1])
         self.gr.xgui.setValue(p_spec["sl"][0])
@@ -171,9 +166,7 @@ class Half_Pattern(QtWidgets.QWidget):
             self.defoc.compute_pattern(update = False)
             self.off.compute_pattern(update = False)
         
-        #TODO: tempscalegui.value needs to be removed
         self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.aberr.data])
-        #self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.vort.tempscalegui.value() * self.aberr.data])
         self.data = self.crop(update = False)
         
         if update:

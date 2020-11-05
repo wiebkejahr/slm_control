@@ -82,6 +82,25 @@ class param():
                     "cal1"      : "patterns/CAL_LSH0801768_780nm.bmp",
                     }
         
+        self.full = {
+                    "sl"        : [0,0],
+                    "off"       : [0,0],
+                    "rot"       : 0,
+                    "radius"    : 0.64,
+                    "phase"     : 0.5,
+                    "steps"     : 1,
+                    "defoc"     : 0,
+                    "mode"      : "3D STED",
+                    "astig"     : [0,0],
+                    "coma"      : [0,0],
+                    "sphere"    : [0,0],
+                    "trefoil"   : [0,0],
+                    "slm_range" : 255,
+                    "phasewrap" : 1,
+                    "cal1"      : "patterns/CAL_LSH0801768_780nm.bmp",
+                    }
+
+        
         self.objectives = {
                         "100xOil_NA_140": {
                                             "name": "100xOil_NA_140",
@@ -265,6 +284,8 @@ class param():
             json.dump(self.left, f, indent = 4)
         with open(path + obj_path + '_' + name_base + "_right.txt", 'w') as f:  
             json.dump(self.right, f, indent = 4)
+        with open(path + obj_path + '_' + name_base + "_full.txt", 'w') as f:
+            json.dump(self.full, f, indent =4)
                 
   
     def load_file_general(self, path, name_base):
@@ -280,6 +301,8 @@ class param():
             self.left = json.load(f)
         with open(path + obj_path + '_' + name_base + "_right.txt", 'r') as f:  
             self.right = json.load(f)
+        with open(path + obj_path + '_' + name_base + "_full.txt", 'r') as f:
+            self.full = json.load(f)
         return 
             
           
@@ -293,6 +316,8 @@ class param():
             self.left = json.load(f)
         with open(path + obj_path + '_' + name_base + "_right.txt", 'r') as f:  
             self.right = json.load(f)
+        with open(path + obj_path + '_' + name_base + "_right.txt", 'r') as f:
+            self.full = json.load(f)
 
 
     def get(self, param):
@@ -315,7 +340,7 @@ if __name__ == "__main__":
         here. """
     p = param()
     p.init_defaults()
-    path = ["parameters/", "params"]
+    path = ["../parameters/", "params"]
     objectives = ["100xOil_NA_140", "100xSil_NA_135", "60xWat_NA_120",
                   "20xAir_NA_070"]
     
