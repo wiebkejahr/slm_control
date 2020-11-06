@@ -148,7 +148,7 @@ def get_image(multi=False, config = False):
     else:
         return image
 
-def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
+def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
     
     # creates an instance of CNN
     # model = my_models.MultiNetCentered()
@@ -197,7 +197,7 @@ def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
     # image = image_xy
     best_coeffs = []
     best_corr = 0
-    for _ in range(5):
+    for _ in range(ii):
 
         if multi:
             if offset:
