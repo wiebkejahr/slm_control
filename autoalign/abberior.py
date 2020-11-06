@@ -139,51 +139,6 @@ def get_image(multi=False, config = False):
 
 def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
     
-    # creates an instance of CNN
-    # model = my_models.MultiNetCentered()
-    # model = my_models.NetCentered()
-    # model = my_models.MultiNetCat()
-    
-    
-    # model= my_models.MultiNet11()
-    # print(model)
-    # # acquire the image from Imspector
-    # # NOTE: from Imspector, must run Tools > Run Server for this to work
-    # im = sp.Imspector()
-
-    # # print Imspector host and version
-    # # print('Connected to Imspector {} on {}'.format(im.version(), im.host()))
-
-    # # get active measurement
-    # msr = im.active_measurement()
-    # try:
-    #     image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    # except:
-    #     print("Cannot find 'ExpControl Ch1 {1}' window")
-    #     exit()
-    # try:
-    #     image_xz = msr.stack('ExpControl Ch1 {13}').data()
-    # except:
-    #     print("Cannot find 'ExpControl Ch1 {13}' window")
-    #     exit()
-    # try:
-    #     image_yz = msr.stack('ExpControl Ch1 {15}').data()
-    # except:
-    #     print("Cannot find 'ExpControl Ch1 {15}' window")
-    #     exit()
-
-    # # takes off black edge, resizes to (64, 64) and standardizes
-    # image_xy = helpers.preprocess(image_xy) 
-    
-    # image_xz = helpers.preprocess(image_xz)
-
-    # image_yz = helpers.preprocess(image_yz)
-
-    # # ##################
-    # image = np.stack((image_xy,image_xz, image_yz), axis=0)
-
-    # # NOTE: this is a hack to make it 1D for now
-    # image = image_xy
     best_coeffs = []
     best_corr = 0
     for _ in range(ii):
@@ -200,15 +155,8 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
                 model = my_models.Net11()    
      
         # gets preds
-        
         checkpoint = torch.load(model_store_path)
-        # print(checkpoint['model_state_dict'])
-        # exit()
-
         model.load_state_dict(state_dict=checkpoint['model_state_dict'])
-
-        # mean = 0.1083
-        # std = 0.2225
 
         # Test the model
         model.eval()
@@ -223,12 +171,8 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
     
             outputs = model(input_image.float())
             coeffs = outputs.numpy().squeeze()
-            # image = image.numpy()
-            # correlation = helpers.corr_coeff(helpers.get_sted_psf(coeffs=labels.numpy().squeeze(), multi=False, \
-            #     corrections=[helpers.create_phase(coeffs=(-1.)*coeffs)]))
 
         # return coeffs
-
         if offset:
             zern = coeffs[:-2]
             offset_label = coeffs[-2:]
@@ -236,7 +180,6 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
             zern = coeffs
             offset_label = [0,0]
         reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=multi, defocus=False)
-        # print(np.shape(image), np.shape(reconstructed))
         corr = helpers.corr_coeff(image, reconstructed)
         if corr > best_corr:
             best_corr = corr

@@ -33,11 +33,10 @@ def log_images(logdir, images, coeffs):
     grid = torchvision.utils.make_grid(images)
     test_writer.add_image('GT Images', grid, 0)
     
-    preds = get_preds(coeffs)
-    preds = torch.from_numpy(preds).unsqueeze(3)
+    # preds = get_preds(coeffs)
+    # preds = torch.from_numpy(preds).unsqueeze(3)
 
-    test_writer.add_images('Predicted Images', preds, 0, dataformats='NHWC')
-    
+    # test_writer.add_images('Predicted Images', preds, 0, dataformats='NHWC')    
     test_writer.close()
 
     return None
@@ -58,6 +57,8 @@ def test(model, test_loader, logdir, model_store_path, multi, offset):
         images = sample['image']
         labels = sample['label']
         
+        
+        #log_images(logdir, images, labels)
         # print(images)#, images, labels)
         # exit()
         
@@ -66,30 +67,35 @@ def test(model, test_loader, logdir, model_store_path, multi, offset):
             
         ################
             
-            # gets preds
-            outputs = model(images)
-            if offset:
-                tmp = outputs.numpy().squeeze()
-                preds = tmp[:-2]
-                offset = tmp[-2:]
-            else:
-                preds = outputs.numpy().squeeze()
-                offset = [0,0]
-            print(preds, offset)
-            print(np.asarray(create_phase(coeffs=(-1.)*preds)).shape)
+            def get_preds(multi, offset):
+                # gets preds
+                outputs = model(images)
+                if offset:
+                    tmp = outputs.numpy().squeeze()
+                    preds = tmp[:-2]
+                    offset = tmp[-2:]
+                else:
+                    preds = outputs.numpy().squeeze()
+                    offset = [0,0]
+                return preds, offset
+            #print(preds, offset)
+            #print(np.asarray(create_phase(coeffs=(-1.)*preds)).shape)
             #exit()
-            
-            
+            print(multi, offset)
+            preds, offset = get_preds(multi, offset)
+            print(len(preds))
             reconstructed = get_sted_psf(coeffs=preds, multi=multi, offset_label=offset)
             corrected = get_sted_psf(coeffs=preds, multi=multi, offset_label=offset, corrections=[np.asarray(create_phase(coeffs=(-1.)*preds))])
             correlation = corr_coeff(corrected, multi=multi)
             
-            exit()
+            #exit()
             so_far = -1
             while correlation > so_far:
                 # while it is not optimized, if it comes accross a higher correlation, work down and switch out preds
-                new_preds = model(images).numpy().squeeze()[:-2]
-                new_corrected = get_sted_psf(coeffs=labels.numpy().squeeze()[:-2], multi=multi, \
+                new_preds, new_offset = get_preds(multi, offset)
+                print(len(new_preds))
+                exit()
+                new_corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=multi, offset_label=new_offset,\
                     corrections=[create_phase(coeffs=(-1.)*new_preds)])
                 new_correlation = corr_coeff(new_corrected, multi=multi)
                 if new_correlation > correlation:
@@ -129,7 +135,7 @@ def main(args):
         if args.offset:
             model = my_models.MultiOffsetNet13()
         else:
-            model = my_models.MultiNet()
+            model = my_models.MultiNet11()
     else:
         if args.offset:
             model = my_models.OffsetNet()
