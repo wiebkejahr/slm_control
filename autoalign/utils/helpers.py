@@ -267,7 +267,10 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res
     # zern represents the collective abberations that will be added to an ideal donut.
     # NOTE: This causes an error when tiptilt is not given
     if len(corrections) > 0 :
-        zern += corrections
+        for corr in corrections:
+            # print(zern.shape)
+            # print(corr.shape)
+            zern = np.add(zern, corr)
     # for i in range(len(corrections)):
     #     zern += corrections[i]
     # zern = zern + tiptilt

@@ -209,9 +209,7 @@ def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
                 model = my_models.OffsetNet13()
             else:
                 model = my_models.Net11()    
-        
-        # overriding model
-        # model = models.alexnet(pretrained=False, num_classes=11)
+     
         # gets preds
         
         checkpoint = torch.load(model_store_path)
@@ -262,37 +260,7 @@ def abberior_test(model_store_path, image, offset=False, multi=False, i=0):
     else:
         zern = best_coeffs 
         offset_label = [0,0]   
-    # so as to not break existing code
-    # TODO; make this not hideous
-    # helpers.plot_xsection_abber(image)
-    # old = 0
-    # new = 0
-    # while new >= old:
-    #     # gets preds
-    #     coeffs = test(model, image, model_store_path)
-    #     reconstructed = helpers.get_sted_psf(coeffs=coeffs, multi=False, defocus=False)
-    #     # plots it
-    #     plt.figure(1)
-    #     plt.imshow(image_xy, cmap='hot')
-    #     plt.figure(2)
-    #     plt.imshow(reconstructed, cmap='hot')
-    #     plt.show()
-        
-    #     # reassign lower threshold to be current correlation
-    #     old = new
-    #     # get new correlation coeff
-    #     new = helpers.corr_coeff(reconstructed)
-    #     print(new)
-    # plt.figure(1)
-    # plt.subplot(121)
-    # plt.imshow(image, cmap='hot')
-    # plt.suptitle('Iteration {}'.format(i))
-    # plt.subplot(122)
-    # plt.imshow(reconstructed, cmap='hot')
-    # plt.show()
-    
-    # fig = helpers.plot_xsection_abber(image, reconstructed)
-    # plt.show()
+   
     
 
     return zern, offset_label

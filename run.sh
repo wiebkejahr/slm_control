@@ -21,9 +21,9 @@ MODEL_DIR=$OUTPUT_DIR/models
 LOG_DIR=$OUTPUT_DIR/runs
 
 ####################### 1. MAKE DATASET #############################
-NUM_POINTS=18000 # will do 90/10 train/validation split
-TEST_NUM=20 # number of additional test samples to create
-NAME="20.10.22_3D_centered_18k_norm_dist_offset_no_noise"
+NUM_POINTS=2 # will do 90/10 train/validation split
+TEST_NUM=1 # number of additional test samples to create
+NAME="troubleshooting"
 # NAME="20.07.22_1D_offset_15k" # make this as descriptive as possible
 # don't touch this
 DATASET="${DATA_DIR}/${NAME}.hdf5"
@@ -93,6 +93,6 @@ fi
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-# python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --logdir ${LOGDIR}
+python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --multi --offset --logdir ${LOGDIR}
 
 # ./utils/tensorboard.sh
