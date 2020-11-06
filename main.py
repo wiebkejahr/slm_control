@@ -497,8 +497,14 @@ class Main_Window(QtWidgets.QMainWindow):
         px_size = 10
         i_start = 0
         # 0. creates data structure
-        d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []} 
-        path = 'D:/Data/20201027_Autoalign/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/'
+        d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []}
+        # for model name: drop everything from model path, drop extension
+        mdl_name = self.p.general["autodl_model_path"].split("/")[-1][:-4]
+        path = self.p.general["data_path"] + mdl_name
+        
+        if not os.path.isdir(path):
+            os.mkdir(path)
+        
         # NOTE: multi is meant to be hardcoded here, we only need the xy to return the config
         img, conf, msr, stats = abberior.get_image(multi=False, config=True)
         x_init = conf.parameters('ExpControl/scan/range/x/g_off')
@@ -615,7 +621,7 @@ class Main_Window(QtWidgets.QMainWindow):
             d['corr'].append(corr)
             name = path + str(ii+i_start) + "_corrected.msr"
             msr.save_as(name)
-            with open(path +'20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64' +str(i_start)+'.txt', 'w') as file:
+            with open(path + mdl_name +str(i_start)+'.txt', 'w') as file:
                 json.dump(d, file)
 
 
