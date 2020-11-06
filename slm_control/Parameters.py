@@ -44,6 +44,7 @@ class param():
                     "slm_range"    : 255,
                     "phasewrap"    : 1,
                     "cal1"         : "patterns/CAL_LSH0801768_780nm.bmp",
+                    "autodl_model_path" : "None"
                     }
        
         self.left = {
@@ -185,6 +186,7 @@ class param():
                     "slm_range"    : daddy.p.general["slm_range"],
                     "phasewrap"    : daddy.p.general["phasewrap"],
                     "cal1"         : daddy.p.general["cal1"],
+                    "autodl_model_path" : daddy.p.general["autodl_model_path"]
                     }
 #        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.current_objective["name"]]["backaperture"], 
 
