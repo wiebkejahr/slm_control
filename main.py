@@ -61,38 +61,6 @@ mpl.rc('font', family='serif')
 mpl.rc('pdf', fonttype=42)
 
 
-# TODO: add drop down window to select model w/ which to autoalign
-# NOTE: hardcoded for now:
-# MODEL_STORE_PATH="autoalign/models/08.01.20_corrected_pattern_calc_w_val_200_epochs_Adam_lr_0.001_batchsize_64_custom_loss.pth"
-# MODEL_STORE_PATH="autoalign/models/4.27.20_3d_offset_sted_20k_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.02.12_xsection_20k_15_epochs_Adam_lr_0.001_batchsize_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.05.04_larger_weight_range_20k_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.05.04_noise_20k_local_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_2.pth"
-# MODEL_STORE_PATH="autoalign/models/20.05.27_shift_invariant_15k_eps_15_lr_0.001_bs_64_2.pth"
-# MODEL_STORE_PATH="autoalign/models/20.16.06_1D_20k_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.16.06_1D_20k_eps_15_lr_0.001_bs_64_standardized_not_norm.pth"
-# MODEL_STORE_PATH="autoalign/models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_standardized.pth"
-# MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_15_lr_0.001_bs_64_precentered.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_5_lr_0.001_bs_64_concat.pth"
-# to try on 20.07.23: two noise models and an offset model
-# MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise_poiss1000.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise.pth"
-# MODEL_STORE_PATH='autoalign/models/20.07.12_no_defocus_1D_centered_20k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth'
-# MODEL_STORE_PATH="autoalign/models/20.07.22_1D_offset_15k_eps_15_lr_0.001_bs_64_offset.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.26_1D_centered_offset_18k_eps_15_lr_0.001_bs_64_noise_bg2poiss350.pth"
-# MODEL_STORE_PATH="autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_15_lr_0.001_bs_64.pth"
-# MODEL_STORE_PATH="autoalign/models/20.06.22_no_defocus_multi_20k_eps_25_lr_0.001_bs_64_ALEXNET.pth"
-# MODEL_STORE_PATH="autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_25_lr_0.001_bs_64_ALEXNET.pth"
-MODEL_STORE_PATH = "autoalign/models/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64.pth"
-
 class PlotCanvas(FigureCanvas):
     """ Provides a matplotlib canvas to be embedded into the widgets. "Native"
         matplotlib.pyplot doesn't work because it interferes with the Qt5
@@ -336,13 +304,9 @@ class Main_Window(QtWidgets.QMainWindow):
         hbox.addWidget(self.rad_but)
 
         vbox.addLayout(hbox)
-        # NOTE: I WROTE THIS
         self.crea_but(hbox, self.auto_align, "Auto Align")
-
         vbox.addLayout(hbox)
-        # NOTE: I WROTE THIS
         self.crea_but(hbox, self.correct_tiptilt, "Tip/Tilt")
-        #self.crea_but(hbox, self.correct_defocus, "Defocus")
         self.crea_but(hbox, self.automate, "Auto-test")
                     
         # doesn't do anything at the moment, could be used to set another path
@@ -377,8 +341,8 @@ class Main_Window(QtWidgets.QMainWindow):
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
 
-        # checkboxes for the different modes of operation: split image (currently
-        # full display operation is not supported), flatfield correction
+        # checkboxes for the different modes of operation: split image
+        # (currently not uptdating life), flatfield correction
         # and single correction and cross correction for double pass geometry
         # (as on the Abberior))
         hbox = QtWidgets.QHBoxLayout()
@@ -399,7 +363,6 @@ class Main_Window(QtWidgets.QMainWindow):
         self.plt_frame = PlotCanvas(self)      
         imgbox.addWidget(self.plt_frame)
 
-        # scale_img = QtWidgets.QVBoxLayout()
         
         # create the labels beneath image. Numeric controls are added in the
         # respective subfunctions.
@@ -442,44 +405,63 @@ class Main_Window(QtWidgets.QMainWindow):
         self.setCentralWidget(self.main_frame)
         
         
-    # NOTE: I wrote these fns
     def correct_defocus(self):
         self.defocus = abberior.correct_defocus()#(const=1/6.59371319)
-        # self.phase_defocus = self.phase_defocus + pcalc.crop((1.)*helpers.create_phase_defocus(self.defocus, res1=1200, res2=792, radscale = self.slm_radius), [600, 396], offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
-        self.phase_defocus = self.phase_defocus + pcalc.crop((1.)*helpers.create_phase(coeffs=[self.defocus], num=[2], res1=1200, res2=792, radscale = self.slm_radius), [600, 396], offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+        
+        size = 2 * np.asarray(self.p.general["size_slm"])   
+        off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]               
+        defoc_correct = pcalc.crop(helpers.create_phase(self.zernike, 
+                                                               num=[2], 
+                                                               res = size,
+                                                               radscale = self.slm_radius),
+                                          size/2, offset = off)
+        #TODO: Why is added defocus positive, not negative?
+        # and why is radscale w/o sqrt(2)?
+        self.phase_defocus = self.phase_defocus + defoc_correct
         self.recalc_images()
 
 
     def correct_tiptilt(self):
         self.tiptilt = abberior.correct_tip_tilt()
-        # self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase_tip_tilt(self.tiptilt, res1=600, res2=396, radscale = 2*self.rtiptilt)
-        # self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
-        self.phase_tiptilt = self.phase_tiptilt + (1.)*helpers.create_phase(coeffs=self.tiptilt, num=[0,1], res1=600, res2=396, radscale = 2*self.rtiptilt)
+        size = np.asarray(self.p.general["size_slm"])
+        tiptilt_correct = helpers.create_phase(coeffs=self.tiptilt, num=[0,1], 
+                                               res = size, radscale = 2*self.rtiptilt)
+        
+        self.phase_tiptilt = self.phase_tiptilt + tiptilt_correct
         self.recalc_images()
     
     
-    def corrective_loop(self, model_store_path=MODEL_STORE_PATH, image=None, offset=False, multi=False,  i=0):
+    def corrective_loop(self, image=None, offset=False, multi=False,  i=1):
+        """ Passes trained model and acquired image to abberior_predict to 
+            estimate zernike weights and offsets required to correct 
+            aberrations. Calculates new SLM pattern to acquire new image and 
+            calculates correlation coefficients. """
+        
         size = 2 * np.asarray(self.p.general["size_slm"])
         #TODO: code this properly
         scale = 26.6*2
         
-        self.zernike, self.offset = abberior.abberior_test(MODEL_STORE_PATH, image, offset=offset, multi=multi, i=i)
+        self.zernike, self.offset = abberior.abberior_predict(self.p.general["autodl_model_path"], 
+                                                           image, offset=offset, multi=multi, i=i)
         
-        # TODO: why is there a factor of sqrt(2) in the radscale?! added June 19th
-        # chaning the scale factor did not improve it
-        self.img_l.off.xgui.setValue(self.img_l.off.xgui.value()+self.offset[1]*scale)
-        self.img_l.off.ygui.setValue(self.img_l.off.ygui.value()-self.offset[0]*scale)
-        # print(self.offset, self.img_l.off.xgui.value(), self.img_l.off.ygui.value())
-
-        self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
-                radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
-        # self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
-        #         radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+        off = [self.img_l.off.xgui.value() + self.offset[1]*scale,
+               self.img_l.off.ygui.value() - self.offset[0]*scale]
+        
+        self.img_l.off.xgui.setValue(off[0])
+        self.img_l.off.ygui.setValue(off[1])
+        
+        zern_correct = pcalc.crop(helpers.create_phase(self.zernike, 
+                                                       num=np.arange(3, 14), 
+                                                       res = size, 
+                                                       radscale = np.sqrt(2)*self.slm_radius), 
+                                  size/2, offset = off)
+        self.zernikes_all = self.zernikes_all - zern_correct
+                            
         self.recalc_images()
-    
         self.correct_tiptilt()
         if multi:
             self.correct_defocus()
+            
         new_img = abberior.get_image(multi=multi)
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
@@ -487,13 +469,10 @@ class Main_Window(QtWidgets.QMainWindow):
         return self.zernike, new_img, correlation
 
 
-    def auto_align(self, model_store_path=MODEL_STORE_PATH):
+    def auto_align(self):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
         through a constructor for a param object"""
-        # self.correct_tiptilt()
-        # image = abberior.get_image()
-        # _, new_img, corr = self.corrective_loop(MODEL_STORE_PATH, image)
-        # ITERATIVE LOOP #
+        
         multi=True
         offset=True
         size = 2 * np.asarray(self.p.general["size_slm"])
@@ -501,13 +480,14 @@ class Main_Window(QtWidgets.QMainWindow):
         self.correct_tiptilt()
         if multi:
             self.correct_defocus()
-        so_far = -1
-        corr = 0                                                             
-        preds = np.zeros(11)
-        i = 1
+        so_far = -1 # correlation required to stop optimizing; -1 means it only executes once
+        corr = 0
+        #preds = np.zeros(11)
+        best_of = 5 # number of predictions to try for model
+        i = 0
         while corr >= so_far:
             image = abberior.get_image(multi=multi)                                                   
-            preds, image, new_corr = self.corrective_loop(MODEL_STORE_PATH, image, offset=offset, multi=multi, i=i)
+            preds, image, new_corr = self.corrective_loop(image, offset=offset, multi=multi, i=best_of)
             if new_corr > corr:
                 so_far = corr
                 corr = new_corr
@@ -516,10 +496,13 @@ class Main_Window(QtWidgets.QMainWindow):
             else:
                 print('final correlation: {}'.format(corr))
                 # REMOVING the last phase corrections from the SLM
-                # TODO: why is there a factor of sqrt(2) in the radscale?! added June 19th
-                # chaning the scale factor did not improve it
-                self.zernikes_all = self.zernikes_all - pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
-                    radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+                off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
+                zern_correct = pcalc.crop(helpers.create_phase(self.zernike, 
+                                                               num=np.arange(3, 14), 
+                                                               res = size, 
+                                                               radscale = np.sqrt(2)*self.slm_radius),
+                                          size/2, offset = off)
+                self.zernikes_all = self.zernikes_all + zern_correct
                 i -= 1
                 break
             # if i >= 0:
@@ -530,14 +513,21 @@ class Main_Window(QtWidgets.QMainWindow):
         # self.correct_tiptilt()
         # self.correct_defocus()
 
-    def automate(self, model_store_path=MODEL_STORE_PATH, num_its=2):
+    def automate(self, num_its=2):
         multi=True
         offset=True
         px_size = 10
         i_start = 0
+        best_of = 5
         # 0. creates data structure
-        d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []} 
-        path = 'D:/Data/20201027_Autoalign/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/'
+        d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []}
+        # for model name: drop everything from model path, drop extension
+        mdl_name = self.p.general["autodl_model_path"].split("/")[-1][:-4]
+        path = self.p.general["data_path"] + mdl_name
+        
+        if not os.path.isdir(path):
+            os.mkdir(path)
+        
         # NOTE: multi is meant to be hardcoded here, we only need the xy to return the config
         img, conf, msr, stats = abberior.get_image(multi=False, config=True)
         x_init = conf.parameters('ExpControl/scan/range/x/g_off')
@@ -631,8 +621,17 @@ class Main_Window(QtWidgets.QMainWindow):
             aberrs = helpers.gen_coeffs(11)
 
             size = 2 * np.asarray(self.p.general["size_slm"])
-            self.zernikes_all = self.zernikes_all - pcalc.crop(helpers.create_phase(aberrs, num=np.arange(3, 14), res1=size[0], res2=size[1], 
-                        radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
+            
+            off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
+            
+            phasemask_aberrs = pcalc.crop(helpers.create_phase(aberrs, 
+                                                       num=np.arange(3, 14), 
+                                                       res = size, 
+                                                       radscale = np.sqrt(2)*self.slm_radius), 
+                                          size/2, offset = off)
+            
+            
+            self.zernikes_all = self.zernikes_all - phasemask_aberrs
             self.recalc_images()
 
             d['gt'].append(aberrs)
@@ -649,12 +648,12 @@ class Main_Window(QtWidgets.QMainWindow):
             d['init_corr'].append(helpers.corr_coeff(img, multi=multi))
 
             # 6. single pass
-            self.zernike, _, corr = self.corrective_loop(model_store_path=model_store_path, offset=offset, multi=multi, image=img)
+            self.zernike, _, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
             d['preds'].append(self.zernike.tolist())
             d['corr'].append(corr)
             name = path + str(ii+i_start) + "_corrected.msr"
             msr.save_as(name)
-            with open(path +'20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64' +str(i_start)+'.txt', 'w') as file:
+            with open(path + mdl_name +str(i_start)+'.txt', 'w') as file:
                 json.dump(d, file)
 
 
@@ -677,20 +676,6 @@ class Main_Window(QtWidgets.QMainWindow):
                 fig.savefig(path + str(ii+i_start) + "_thumbnail.png")
             # d['offset'].append(self.offset.tolist())
         print('DONE with automated loop!', '\n', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
-
-
-
-        # NOTE: need to know from the model itself which model to use, maybe some kind of json like for
-        # the obejctives, but for now, can change manually 
-        # size = 2 * np.asarray(self.p.general["size_slm"])
-        #######################################
-        # self.zernike = abberior.abberior_multi(MODEL_STORE_PATH, image)
-        # self.zernikes_all = self.zernikes_all + pcalc.crop((-1.)*helpers.create_phase(self.zernike, num=np.arange(3, 14), res1=size[0], res2=size[1], 
-        #         radscale = np.sqrt(2)*self.slm_radius), size/2, offset = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()])
-        # self.recalc_images()
-        #######################################
-
-    # NOTE: end of my fns
 
 
     def crea_but(self, box, action, name, param = None):
