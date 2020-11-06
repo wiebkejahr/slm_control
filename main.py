@@ -411,9 +411,9 @@ class Main_Window(QtWidgets.QMainWindow):
         size = 2 * np.asarray(self.p.general["size_slm"])   
         off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]               
         defoc_correct = pcalc.crop(helpers.create_phase(self.zernike, 
-                                                               num=[2], 
-                                                               res = size,
-                                                               radscale = self.slm_radius),
+                                                        num=[2], 
+                                                        res = size,
+                                                        radscale = self.slm_radius),
                                           size/2, offset = off)
         #TODO: Why is added defocus positive, not negative?
         # and why is radscale w/o sqrt(2)?
@@ -469,21 +469,20 @@ class Main_Window(QtWidgets.QMainWindow):
         return self.zernike, new_img, correlation
 
 
-    def auto_align(self):
+    def auto_align(self, so_far = -1, best_of = 5, multi = True, offset = True):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
-        through a constructor for a param object"""
-        
-        multi=True
-        offset=True
+        through a constructor for a param object
+        so_far: correlation required to stop optimizing; -1 means it only executes once"""
+
         size = 2 * np.asarray(self.p.general["size_slm"])
         
+        # center the image before starting
         self.correct_tiptilt()
         if multi:
             self.correct_defocus()
-        so_far = -1 # correlation required to stop optimizing; -1 means it only executes once
+            
+        #preds = np.zeros(11) 
         corr = 0
-        #preds = np.zeros(11)
-        best_of = 5 # number of predictions to try for model
         i = 0
         while corr >= so_far:
             image = abberior.get_image(multi=multi)                                                   
@@ -505,8 +504,6 @@ class Main_Window(QtWidgets.QMainWindow):
                 self.zernikes_all = self.zernikes_all + zern_correct
                 i -= 1
                 break
-            # if i >= 0:
-            #     break
            
         self.recalc_images()
         # not needed?
@@ -546,7 +543,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 print("Interrupted because no signal. Stats: ", stats)
                 break
 
-            # 2. fits CoM
+            # 2.a fits CoM, for multi model: average from the two views
             if multi:
                 _, x_shape, y_shape = np.shape(img)
                 ####### xy ########
@@ -567,51 +564,57 @@ class Main_Window(QtWidgets.QMainWindow):
                 dx = np.average([dx_xy, dx_xz])
                 dy = np.average([dy_xy, dy_yz])
                 dz = np.average([dz_xz, dz_yz])
-
-
-                #d_obj = D/3/1000 # scaling
-                # print(dz, f, D, lambd)
+                
+            # 2.b fits CoM, for single model
             else:
                 x_shape, y_shape = np.shape(img)
                 b, a = helpers.get_CoM(img)
                 dx = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
                 dy = ((y_shape-1)/2-b)*1e-9*px_size
                 dz = 0
-
+                
+            # if CoM is more than 200 nm from center, skip and try againg
             lim = 160e-9
             if np.abs(dx) >= lim or np.abs(dy) >= lim or np.abs(dz)>=lim:
                 print('skipped', dx, dy, dz)
+                # fine, using galvo
                 conf.set_parameters('ExpControl/scan/range/x/g_off', x_init)
                 conf.set_parameters('ExpControl/scan/range/y/g_off', y_init)
                 conf.set_parameters('ExpControl/scan/range/z/g_off', z_init)
+                # coarse, using stage
+                # conf.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', x_init)
+                # conf.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', x_init)
+                # conf.set_parameters('ExpControl/scan/range/offsets/coarse/z/g_off', x_init)
                 continue
 
             # 3. centers using ImSpector
-            #coarse
+            # coarse: center using the stage. keep for reference
             #xo = conf.parameters('ExpControl/scan/range/offsets/coarse/x/g_off')
             #yo = conf.parameters('ExpControl/scan/range/offsets/coarse/y/g_off')
             #zo = conf.parameters('ExpControl/scan/range/offsets/coarse/z/g_off')
-            #fine
+            # fine: center using the galvos.
+            # get positions from Imspector
             xo = conf.parameters('ExpControl/scan/range/x/g_off')
             yo = conf.parameters('ExpControl/scan/range/y/g_off')
             zo = conf.parameters('ExpControl/scan/range/z/g_off')
             
+            # calculate new positions
             xPos = xo - dx
             yPos = yo - dy
             zPos = zo - dz
-
+            
+            # if overall, drift has been more then 800 um, reset.
+            # TODO: test again if this works
             # if np.abs(xPos) >= 800e-6 or np.abs(yPos) >= 800e-6:
             #     print('skipped', xPos, yPos)
+            #     # fine
             #     conf.set_parameters('ExpControl/scan/range/x/g_off', x_init)
             #     conf.set_parameters('ExpControl/scan/range/y/g_off', y_init)
             #     conf.set_parameters('ExpControl/scan/range/z/g_off', z_init)
             #     continue
-            #coarse
-            #conf.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', xPos)
-            #conf.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', yPos)
-            #conf.set_parameters('ExpControl/scan/range/offsets/coarse/z/g_off', zPos)
+
             
-            #fine
+            # write new offset values
             conf.set_parameters('ExpControl/scan/range/x/g_off', xPos)
             conf.set_parameters('ExpControl/scan/range/y/g_off', yPos)
             conf.set_parameters('ExpControl/scan/range/z/g_off', zPos)
@@ -636,18 +639,18 @@ class Main_Window(QtWidgets.QMainWindow):
 
             d['gt'].append(aberrs)
             
-            # 5. Center using tip tilt and defocus correction
+            # 5. Get image, center once more using tip tilt and defocus corrections
+            # save image and write correction coefficients to file
             img = abberior.get_image(multi=multi)
             self.correct_tiptilt()
             if multi:
                 self.correct_defocus()
             img = abberior.get_image(multi=multi)
-            #save image
             name = path + str(ii+i_start) + "_aberrated.msr"
             msr.save_as(name)
             d['init_corr'].append(helpers.corr_coeff(img, multi=multi))
 
-            # 6. single pass
+            # 6. single pass correction
             self.zernike, _, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
             d['preds'].append(self.zernike.tolist())
             d['corr'].append(corr)
@@ -656,7 +659,7 @@ class Main_Window(QtWidgets.QMainWindow):
             with open(path + mdl_name +str(i_start)+'.txt', 'w') as file:
                 json.dump(d, file)
 
-
+            # use matplotlib to plot and save data
             if multi:
                 minmax = [img.min(), img.max()]
                 fig = plt.figure()
