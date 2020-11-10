@@ -260,11 +260,8 @@ class Main_Window(QtWidgets.QMainWindow):
         # to determine correct size for tip/tilt. Extra factor of two is because
         # patterns are created at double size, then cropped.
 
-        #size = 2 * np.asarray(self.p.general["size_slm"])
-        #size = 2 * self.img_size
-        
         self.rtiptilt = 2 * pcalc.normalize_radius(1, 1, self.p.general["slm_px"], 
-                                              self.img_size)#self.p.general["size_slm"])
+                                                    self.p.general["size_slm"])
         
         self.zernikes_normalized = {
             "tiptiltx" : pcalc.create_zernike(2 * self.img_size, [ 1,  1], 1, self.rtiptilt),
@@ -657,9 +654,9 @@ class Main_Window(QtWidgets.QMainWindow):
             self.zernike, _, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
             d['preds'].append(self.zernike.tolist())
             d['corr'].append(corr)
-            name = path + str(ii+i_start) + "_corrected.msr"
+            name = path + '/' + str(ii+i_start) + "_corrected.msr"
             msr.save_as(name)
-            with open(path + mdl_name +str(i_start)+'.txt', 'w') as file:
+            with open(path + '/' + mdl_name +str(i_start)+'.txt', 'w') as file:
                 json.dump(d, file)
 
             # use matplotlib to plot and save data
@@ -679,7 +676,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 plt.imshow(img[1], clim = minmax, cmap = 'inferno')
                 plt.subplot(236); plt.axis('off')
                 plt.imshow(img[2], clim = minmax, cmap = 'inferno')
-                fig.savefig(path + str(ii+i_start) + "_thumbnail.png")
+                fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
             # d['offset'].append(self.offset.tolist())
         print('DONE with automated loop!', '\n', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
 
