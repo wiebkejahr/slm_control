@@ -187,7 +187,7 @@ class param():
                     "slm_range"    : daddy.p.general["slm_range"],
                     "phasewrap"    : daddy.p.general["phasewrap"],
                     "cal1"         : daddy.p.general["cal1"],
-                    "autodl_model_path" : daddy.p.general["autodl_model_path"]
+                    "autodl_model_path" : daddy.p.general["autodl_model_path"],
                     "data_path"    : daddy.p.general["data_path"]
                     }
 #        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.current_objective["name"]]["backaperture"], 
