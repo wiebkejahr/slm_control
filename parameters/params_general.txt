@@ -1,5 +1,5 @@
 {
-    "display_mode": "external",
+    "display_mode": "imspector",
     "data_source": "imspector",
     "size_slm_mm": [
         7.5,
@@ -37,6 +37,6 @@
     "slm_range": 255,
     "phasewrap": 1,
     "cal1": "patterns/CAL_LSH0801768_780nm.bmp",
-    "autodl_model_path" : "autoalign/models/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64.pth",
-    "data_path" : "D:/Data/20201110_Autoalign/"
+    "autodl_model_path": "autoalign/models/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64.pth",
+    "data_path": "D:/Data/20201110_Autoalign/"
 }

@@ -410,9 +410,9 @@ class Main_Window(QtWidgets.QMainWindow):
         
         size = 2 * np.asarray(self.p.general["size_slm"])   
         off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]               
-        defoc_correct = pcalc.crop(helpers.create_phase(self.zernike, 
+        defoc_correct = pcalc.crop(helpers.create_phase(self.defocus, 
                                                         num=[2], 
-                                                        res = size,
+                                                        size = size,
                                                         radscale = self.slm_radius),
                                           size/2, offset = off)
         #TODO: Why is added defocus positive, not negative?
@@ -425,7 +425,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.tiptilt = abberior.correct_tip_tilt()
         size = np.asarray(self.p.general["size_slm"])
         tiptilt_correct = helpers.create_phase(coeffs=self.tiptilt, num=[0,1], 
-                                               res = size, radscale = 2*self.rtiptilt)
+                                               size = size, radscale = 2*self.rtiptilt)
         
         self.phase_tiptilt = self.phase_tiptilt + tiptilt_correct
         self.recalc_images()
@@ -452,7 +452,7 @@ class Main_Window(QtWidgets.QMainWindow):
         
         zern_correct = pcalc.crop(helpers.create_phase(self.zernike, 
                                                        num=np.arange(3, 14), 
-                                                       res = size, 
+                                                       size = size, 
                                                        radscale = np.sqrt(2)*self.slm_radius), 
                                   size/2, offset = off)
         self.zernikes_all = self.zernikes_all - zern_correct
@@ -498,7 +498,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
                 zern_correct = pcalc.crop(helpers.create_phase(self.zernike, 
                                                                num=np.arange(3, 14), 
-                                                               res = size, 
+                                                               size = size, 
                                                                radscale = np.sqrt(2)*self.slm_radius),
                                           size/2, offset = off)
                 self.zernikes_all = self.zernikes_all + zern_correct
@@ -510,33 +510,35 @@ class Main_Window(QtWidgets.QMainWindow):
         # self.correct_tiptilt()
         # self.correct_defocus()
 
-    def automate(self, num_its=2):
+    def automate(self):
         multi=True
         offset=True
+        num_its=2
         px_size = 10
         i_start = 0
         best_of = 5
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []}
+        
         # for model name: drop everything from model path, drop extension
         mdl_name = self.p.general["autodl_model_path"].split("/")[-1][:-4]
         path = self.p.general["data_path"] + mdl_name
-        
-        if not os.path.isdir(path):
-            os.mkdir(path)
+        if not os.path.isdir(self.p.general["data_path"]):
+            os.mkdir(self.p.general["data_path"])
+            if not os.path.isdir(path):
+                os.mkdir(path)
         
         # NOTE: multi is meant to be hardcoded here, we only need the xy to return the config
         img, conf, msr, stats = abberior.get_image(multi=False, config=True)
         x_init = conf.parameters('ExpControl/scan/range/x/g_off')
         y_init = conf.parameters('ExpControl/scan/range/y/g_off')
         z_init = conf.parameters('ExpControl/scan/range/z/g_off')
-
         for ii in range(num_its):
             # 1. zeroes SLM
             self.reload_params(self.param_path)
             # get image from Abberior
             img, conf, msr, stats = abberior.get_image(multi=multi, config=True)
-
+        
             #TODO: Which values are good will depend on the system & acquisition parameters. Needs to be tested
             #IMPORTANT: should also stop acquisition, potentially shut down Imspector?
             if stats[2] < 25:
@@ -629,7 +631,7 @@ class Main_Window(QtWidgets.QMainWindow):
             
             phasemask_aberrs = pcalc.crop(helpers.create_phase(aberrs, 
                                                        num=np.arange(3, 14), 
-                                                       res = size, 
+                                                       size = size, 
                                                        radscale = np.sqrt(2)*self.slm_radius), 
                                           size/2, offset = off)
             
