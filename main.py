@@ -408,9 +408,10 @@ class Main_Window(QtWidgets.QMainWindow):
     def correct_defocus(self):
         self.defocus = abberior.correct_defocus()#(const=1/6.59371319)
         
+        
         size = 2 * np.asarray(self.p.general["size_slm"])   
         off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]               
-        defoc_correct = pcalc.crop(helpers.create_phase(self.defocus, 
+        defoc_correct = pcalc.crop(helpers.create_phase([self.defocus], 
                                                         num=[2], 
                                                         size = size,
                                                         radscale = self.slm_radius),
@@ -442,7 +443,7 @@ class Main_Window(QtWidgets.QMainWindow):
         scale = 26.6*2
         
         self.zernike, self.offset = abberior.abberior_predict(self.p.general["autodl_model_path"], 
-                                                           image, offset=offset, multi=multi, i=i)
+                                                           image, offset=offset, multi=multi, ii=i)
         
         off = [self.img_l.off.xgui.value() + self.offset[1]*scale,
                self.img_l.off.ygui.value() - self.offset[0]*scale]
@@ -648,7 +649,7 @@ class Main_Window(QtWidgets.QMainWindow):
             if multi:
                 self.correct_defocus()
             img = abberior.get_image(multi=multi)
-            name = path + str(ii+i_start) + "_aberrated.msr"
+            name = path + '/' + str(ii+i_start) + "_aberrated.msr"
             msr.save_as(name)
             d['init_corr'].append(helpers.corr_coeff(img, multi=multi))
 
@@ -932,17 +933,7 @@ class Main_Window(QtWidgets.QMainWindow):
             
             
             self.plt_frame.plot(pcalc.stitch_images(l, r))
-            # plt.ion()
-            # plt.figure(1)
-            # plt.subplot(121)
-            # plt.imshow(l)
-            # plt.subplot(122)
-            # plt.imshow(r)
-            # plt.show()
-            # plt.pause(0.001)
-            
-            print("plotted preview lr")
-                    
+                                
         else:            
             self.img_data = pcalc.phase_wrap(pcalc.add_images([self.img_full.data, 
                                                                pcalc.stitch_images(self.flatfield[0], self.flatfield[1]), 
@@ -951,7 +942,6 @@ class Main_Window(QtWidgets.QMainWindow):
                                                                self.phase_defocus]), 
                                              self.p.general["phasewrap"])
             self.plt_frame.plot(self.img_data)
-            print("plotted preview full")
             self.img_data = self.img_data * self.p.general["slm_range"]
             
         if self.slm != None:

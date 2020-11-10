@@ -252,7 +252,9 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), size=[64, 64
     
     # sanity checks
     # assert(len(coeffs) == len(orders)) # should both be 12
-    assert(len(coeffs) == len(num))
+    #print(np.size(coeffs))
+    #print(len(num))
+    assert(np.size(coeffs) == len(num))
     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
 
@@ -294,7 +296,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     else:
         offset_label = np.asarray([0,0])
 
-    zern = create_phase(coeffs, num=nums, res1=res, res2=res)
+    zern = create_phase(coeffs, num=nums, size = [res, res])
     
     if multi:
         plane = 'all'
@@ -314,7 +316,7 @@ def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi
     else:
         nums = np.arange(3, 14)
     
-    zern = create_phase(coeffs=coeffs,num=nums, res1=res,res2=res, corrections=corrections)
+    zern = create_phase(coeffs=coeffs,num=nums, size = [res, res], corrections=corrections)
     
     if multi:
         plane = 'all'
