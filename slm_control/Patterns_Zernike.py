@@ -17,10 +17,10 @@ class Sub_Pattern_Zernike(Sub_Pattern):
         weights, usually of the two orthogonal Zernike modes (primary and 
         secondary for spherical). Recalculates the aberration and calls an 
         update to the Aberr_Pattern instance to recalculate aberrations. """
-    def __init__(self, params, name, parent = None):
+    def __init__(self, params, size, name, parent = None):
         super(Sub_Pattern, self).__init__(parent)
-        self.size = np.asarray(params.general["size_slm"]) * 2
-
+        #self.size = np.asarray(params.general["size_slm"]) * 2
+        self.size = size * 2
         self.data = np.zeros(self.size)
         self.coeff = [0,0]
         
@@ -80,9 +80,10 @@ class Aberr_Pattern(QtWidgets.QWidget):
         according to the parameters. Calls an update to the Half Pattern to 
         recalculate the whole image data. """
         
-    def __init__(self, params, parent = None):
+    def __init__(self, params, size, parent = None):
         super(Aberr_Pattern, self).__init__(parent)
-        self.size = np.asarray(params.general["size_slm"]) * 2
+        #self.size = np.asarray(params.general["size_slm"]) * 2
+        self.size = size * 2
         self.data = np.zeros(self.size)
 
     def call_daddy(self, p):        
@@ -101,22 +102,22 @@ class Aberr_Pattern(QtWidgets.QWidget):
         defset = [[3, 0.1, -10, 10], [3, 0.1, -10, 10]]         
         
         gui = QtWidgets.QGridLayout()
-        self.astig = Sub_Pattern_Zernike(p, "astig")
+        self.astig = Sub_Pattern_Zernike(p, self.size, "astig")
         gui.addLayout(self.astig.create_gui(p_abberation["astig"], defset, layout = 'h'), 0,0,1,2)
         self.astig.call_daddy(self)
         self.astig.compute_pattern(update = False)
         
-        self.coma = Sub_Pattern_Zernike(p, "coma")
+        self.coma = Sub_Pattern_Zernike(p, self.size, "coma")
         gui.addLayout(self.coma.create_gui(p_abberation["coma"], defset, layout = 'h'), 1,0,1,2)  
         self.coma.call_daddy(self)
         self.coma.compute_pattern(update = False)
         
-        self.sphere = Sub_Pattern_Zernike(p, "sphere")
+        self.sphere = Sub_Pattern_Zernike(p, self.size, "sphere")
         gui.addLayout(self.sphere.create_gui(p_abberation["sphere"], defset, layout = 'h'), 2,0,1,2)
         self.sphere.call_daddy(self)
         self.sphere.compute_pattern(update = False)
         
-        self.trefoil = Sub_Pattern_Zernike(p, "trefoil")
+        self.trefoil = Sub_Pattern_Zernike(p, self.size, "trefoil")
         gui.addLayout(self.trefoil.create_gui(p_abberation["trefoil"], defset, layout = 'h'), 3,0,1,2)
         self.trefoil.call_daddy(self)
         self.trefoil.compute_pattern(update = False)

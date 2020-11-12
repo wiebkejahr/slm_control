@@ -33,17 +33,16 @@ def log_images(logdir, images, coeffs):
     grid = torchvision.utils.make_grid(images)
     test_writer.add_image('GT Images', grid, 0)
     
-    preds = get_preds(coeffs)
-    preds = torch.from_numpy(preds).unsqueeze(3)
+    # preds = get_preds(coeffs)
+    # preds = torch.from_numpy(preds).unsqueeze(3)
 
-    test_writer.add_images('Predicted Images', preds, 0, dataformats='NHWC')
-    
+    # test_writer.add_images('Predicted Images', preds, 0, dataformats='NHWC')    
     test_writer.close()
 
     return None
 
 
-def test(model, test_loader, logdir, model_store_path):
+def test(model, test_loader, logdir, model_store_path, multi, offset):
     
     # logdir_test = logdir + '/test'
     # test_writer = SummaryWriter(log_dir=logdir_test)
@@ -54,29 +53,51 @@ def test(model, test_loader, logdir, model_store_path):
     correlations = []
     MSE = []
     
-    for i, (images, labels) in enumerate(test_loader): # i is 0 when batch_size is 1
-    
+    for i, sample in enumerate(test_loader): # i is 0 when batch_size is 1
+        images = sample['image']
+        labels = sample['label']
+        
+        
+        #log_images(logdir, images, labels)
+        # print(images)#, images, labels)
+        # exit()
+        
         with torch.no_grad(): # drastically increases computation speed and reduces memory usage
 
             
         ################
             
-            # gets preds
-            outputs = model(images)
-            preds = outputs.numpy().squeeze()
+            def get_preds(multi, offset):
+                # gets preds
+                outputs = model(images)
+                if offset:
+                    tmp = outputs.numpy().squeeze()
+                    preds = tmp[:-2]
+                    offset = tmp[-2:]
+                else:
+                    preds = outputs.numpy().squeeze()
+                    offset = [0,0]
+                return preds, offset
+            #print(preds, offset)
+            #print(np.asarray(create_phase(coeffs=(-1.)*preds)).shape)
+            #exit()
+            print(multi, offset)
+            preds, offset = get_preds(multi, offset)
+            print(len(preds))
+            reconstructed = get_sted_psf(coeffs=preds, multi=multi, offset_label=offset)
+            corrected = get_sted_psf(coeffs=preds, multi=multi, offset_label=offset, corrections=[np.asarray(create_phase(coeffs=(-1.)*preds))])
+            correlation = corr_coeff(corrected, multi=multi)
             
-            reconstructed = get_sted_psf(coeffs=preds, multi=True)
-            corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=True, \
-                corrections=[create_phase(coeffs=(-1.)*preds)])
-            correlation = corr_coeff(corrected, multi=True)
-            
+            #exit()
             so_far = -1
             while correlation > so_far:
                 # while it is not optimized, if it comes accross a higher correlation, work down and switch out preds
-                new_preds = model(images).numpy().squeeze()
-                new_corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=True, \
+                new_preds, new_offset = get_preds(multi, offset)
+                print(len(new_preds))
+                exit()
+                new_corrected = get_sted_psf(coeffs=labels.numpy().squeeze(), multi=multi, offset_label=new_offset,\
                     corrections=[create_phase(coeffs=(-1.)*new_preds)])
-                new_correlation = corr_coeff(new_corrected, multi=True)
+                new_correlation = corr_coeff(new_corrected, multi=multi)
                 if new_correlation > correlation:
                     so_far = correlation
                     correlation = new_correlation
@@ -101,55 +122,26 @@ def test(model, test_loader, logdir, model_store_path):
     print(np.mean(MSE))
 
 
-            
-
-               
-            # old way
-            # remaining = labels.numpy().squeeze() - preds
-
-            # corrected_old = get_sted_psf(coeffs=remaining, multi=True)
-
-            # plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
-            
-            # plot_xsection(corrected_old, name='old way')
-            # fig2 = plot_xsection_eval(images.numpy().squeeze(), reconstructed, corrected)
-            # plt.show()
-
-            ###########
-            
-
+        
 
 
 def main(args):
     data_path = args.test_dataset_dir
     logdir = args.logdir
     model_store_path = args.model_store_path
-    # print(model_store_path) 
-    # exit()
+
+
     if args.multi:
         if args.offset:
-            model = my_models.MultiOffsetNet()
+            model = my_models.MultiOffsetNet13()
         else:
-            model = my_models.MultiNet()
+            model = my_models.MultiNet11()
     else:
         if args.offset:
             model = my_models.OffsetNet()
         else:
             model = my_models.Net()
     
-    # model = my_models.NetCentered()
-    # model = my_models.MultiNetCentered()
-    # model = my_models.MultiNetCat()
-    # print(model)
-
-    
-    # NOTE: this part needs work. determine which model to use from loading the data and checking the shape
-    # multi = args.multi   
-    # if multi:
-    #     model = my_models.MultiNet()
-    # else:
-    #     model = my_models.OffsetNet()
-
 
     checkpoint = torch.load(model_store_path)
     model.load_state_dict(checkpoint['model_state_dict'])
@@ -161,8 +153,11 @@ def main(args):
     test_loader = DataLoader(dataset=test_dataset, batch_size=1, \
         shuffle=False, num_workers=0)
 
+    # print(next(iter(test_loader)))
+    # exit()
 
-    test(model, test_loader, logdir, model_store_path)
+
+    test(model, test_loader, logdir, model_store_path, args.multi, args.offset)
 
 
 

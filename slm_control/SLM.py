@@ -92,7 +92,7 @@ class SLM_Display(QtWidgets.QWidget):
         
         
         elif self.display == "imspector":
-            print("display imspector")
+            #print("display imspector")
             try:
                 self.stk.data()[:] = data / 255
                 self.meas.update()

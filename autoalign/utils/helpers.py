@@ -182,6 +182,9 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
 
 def center(xy, res=64, multi=True):
     """Returns the correction phasemask to counteract tiptilt present in given image"""
+    if multi:
+        xy = xy[0]
+    
     xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
     tiptilt = create_phase(coeffs=[xtilt, ytilt], num=[0,1])
     # corrected = get_sted_psf(coeffs=label, multi=multi, corrections=tiptilt)
@@ -220,7 +223,7 @@ def corr_coeff(img1, img2=[], multi=False):
     return np.corrcoef(img1.flat, img2.flat)[0,1]
 
 
-def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res2=64, radscale = 2, corrections = []):
+def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), size=[64, 64], radscale = 2, corrections = []):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -249,8 +252,9 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res
     
     # sanity checks
     # assert(len(coeffs) == len(orders)) # should both be 12
-    assert(len(coeffs) == len(num))
-    size=np.asarray([res1, res2]) 
+    #print(np.size(coeffs))
+    #print(len(num))
+    assert(np.size(coeffs) == len(num))
     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
 
@@ -264,7 +268,10 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), res1=64, res
     # zern represents the collective abberations that will be added to an ideal donut.
     # NOTE: This causes an error when tiptilt is not given
     if len(corrections) > 0 :
-        zern += corrections
+        for corr in corrections:
+            # print(zern.shape)
+            # print(corr.shape)
+            zern = np.add(zern, corr)
     # for i in range(len(corrections)):
     #     zern += corrections[i]
     # zern = zern + tiptilt
@@ -289,7 +296,7 @@ def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
     else:
         offset_label = np.asarray([0,0])
 
-    zern = create_phase(coeffs, num=nums, res1=res, res2=res)
+    zern = create_phase(coeffs, num=nums, size = [res, res])
     
     if multi:
         plane = 'all'
@@ -309,7 +316,7 @@ def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi
     else:
         nums = np.arange(3, 14)
     
-    zern = create_phase(coeffs=coeffs,num=nums, res1=res,res2=res, corrections=corrections)
+    zern = create_phase(coeffs=coeffs,num=nums, size = [res, res], corrections=corrections)
     
     if multi:
         plane = 'all'
