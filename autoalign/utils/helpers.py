@@ -191,15 +191,16 @@ def center(xy, res=64, multi=True):
     return tiptilt
     # return corrected
 
-def gen_offset():
+def gen_offset(obj_dia = 5.04, scale = 0.1):
     """A function to generate an offset [x, y] to displace the STED psf. 
     Returns an 1d array of 2 ints"""
-    x, y = np.random.normal(0,0.1*5.04/2, 2)
+
+    x, y = np.random.normal(0,scale*obj_dia/2, 2)
     x = np.round(x, 3)
     y = np.round(y, 3)
     return [x,y]
 
-def gen_coeffs(num=11):
+def gen_coeffs(num=11, scale = 0.1):
     """ Generates a random set of Zernike coefficients given piecewise constraints
     from Zhang et al's paper.
     1st-3rd: [0]   |  4th-6th: [+/- 1.4]  | 7th-10th: [+/- 0.8]  |  11th-15th: [+/- 0.6] 
@@ -207,11 +208,12 @@ def gen_coeffs(num=11):
     For physical intuition's sake, I'm creating a 15 dim vector, but only returning the 12 values that are non-zero.
     NOTE: this could be modified to accomodate further Zernike terms, but CNN code would have to be adjusted as well
     """
+
     c = np.zeros(num)
     # c[3:6] = [random.uniform(-1.4, 1.4) for i in c[3:6]]
     # c[6:10] = [random.uniform(-0.8, 0.8) for i in c[6:10]]
     # c[10:] = [random.uniform(-0.6, 0.6) for i in c[10:]]
-    c = [round(np.random.normal(0,0.1), 3) for i in c]
+    c = [round(np.random.normal(0,scale), 3) for i in c]
     # c = [round(random.uniform(-0.2, 0.2), 3) for i in c]
     return c
 

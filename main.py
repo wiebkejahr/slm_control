@@ -407,7 +407,8 @@ class Main_Window(QtWidgets.QMainWindow):
         
         
         size = 2 * np.asarray(self.p.general["size_slm"])   
-        off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]               
+        off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]  
+        
         defoc_correct = pcalc.crop(helpers.create_phase([self.defocus], 
                                                         num=[2], 
                                                         size = size,
@@ -429,7 +430,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.recalc_images()
     
     
-    def corrective_loop(self, image=None, offset=False, multi=False,  i=1):
+    def corrective_loop(self, image=None, offset=False, multi=False,  ortho_sec=False, i=1):
         """ Passes trained model and acquired image to abberior_predict to 
             estimate zernike weights and offsets required to correct 
             aberrations. Calculates new SLM pattern to acquire new image and 
@@ -444,27 +445,31 @@ class Main_Window(QtWidgets.QMainWindow):
         
         off = [self.img_l.off.xgui.value() + self.offset[1]*scale,
                self.img_l.off.ygui.value() - self.offset[0]*scale]
-        
-        self.img_l.off.xgui.setValue(off[0])
-        self.img_l.off.ygui.setValue(off[1])
-        
+        self.img_l.off.xgui.setValue(np.round(off[0]))
+        self.img_l.off.ygui.setValue(np.round(off[1]))
+            
         zern_correct = pcalc.crop(helpers.create_phase(self.zernike, 
                                                        num=np.arange(3, 14), 
                                                        size = size, 
                                                        radscale = np.sqrt(2)*self.slm_radius), 
                                   size/2, offset = off)
-        self.zernikes_all = self.zernikes_all - zern_correct
-                            
+        
+        #self.zernikes_all = self.zernikes_all - zern_correct
+        #TODO: needs to be changed when using offset + zernike model
+        #self.zernikes_all = self.zernikes_all - phasemask_aberrs
+        #HOTFIX for offset only
+        self.zernikes_all = zern_correct                    
+
         self.recalc_images()
         self.correct_tiptilt()
-        if multi:
+        if ortho_sec:
             self.correct_defocus()
             
         new_img = abberior.get_image(multi=multi)
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
         
-        return self.zernike, new_img, correlation
+        return self.zernike, self.offset*scale, new_img, correlation
 
 
     def auto_align(self, so_far = -1, best_of = 5, multi = True, offset = True):
@@ -484,7 +489,7 @@ class Main_Window(QtWidgets.QMainWindow):
         i = 0
         while corr >= so_far:
             image = abberior.get_image(multi=multi)                                                   
-            preds, image, new_corr = self.corrective_loop(image, offset=offset, multi=multi, i=best_of)
+            preds, off_pred, image, new_corr = self.corrective_loop(image, offset=offset, multi=multi, i=best_of)
             if new_corr > corr:
                 so_far = corr
                 corr = new_corr
@@ -509,12 +514,15 @@ class Main_Window(QtWidgets.QMainWindow):
         # self.correct_defocus()
 
     def automate(self):
-        multi=True
+        multi=False
+        ortho_sec = True
         offset=True
-        num_its=2
+        num_its=500
         px_size = 10
         i_start = 0
         best_of = 5
+        print("save path: ", self.p.general["data_path"])
+        print("used model: ", self.p.general["autodl_model_path"])
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []}
         
@@ -535,7 +543,7 @@ class Main_Window(QtWidgets.QMainWindow):
             # 1. zeroes SLM
             self.reload_params(self.param_path)
             # get image from Abberior
-            img, conf, msr, stats = abberior.get_image(multi=multi, config=True)
+            img, conf, msr, stats = abberior.get_image(multi=ortho_sec, config=True)
         
             #TODO: Which values are good will depend on the system & acquisition parameters. Needs to be tested
             #IMPORTANT: should also stop acquisition, potentially shut down Imspector?
@@ -544,7 +552,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 break
 
             # 2.a fits CoM, for multi model: average from the two views
-            if multi:
+            if ortho_sec:
                 _, x_shape, y_shape = np.shape(img)
                 ####### xy ########
                 b, a = helpers.get_CoM(img[0])
@@ -614,53 +622,69 @@ class Main_Window(QtWidgets.QMainWindow):
             #     continue
 
             
-            # write new offset values
+            # write new position values
             conf.set_parameters('ExpControl/scan/range/x/g_off', xPos)
             conf.set_parameters('ExpControl/scan/range/y/g_off', yPos)
             conf.set_parameters('ExpControl/scan/range/z/g_off', zPos)
 
             
             # 4. dials in random aberrations and sends them to SLM
-            aberrs = helpers.gen_coeffs(11)
-
+            #aberrs = helpers.gen_coeffs(11)
+            aberrs = [0 for c in range(11)]
+            #TODO: pass in obj_dia and weight as arguments
+            scale = 26.6*2
+            off_aberr = [np.round(scale*x) for x in helpers.gen_offset()]
+            #np.round(np.asarray(helpers.gen_offset()) * scale)
             size = 2 * np.asarray(self.p.general["size_slm"])
+            #off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
+            off = [self.img_l.off.xgui.value() - off_aberr[1],
+                   self.img_l.off.ygui.value() + off_aberr[0]]
             
-            off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
-            
+            self.img_l.off.xgui.setValue(off[0])
+            self.img_l.off.ygui.setValue(off[1])
+            #TODO: create random offset and add to values
+            #TODO: retest offset + zernike model!
+            #TODO: sanity check that offsets are within boundaries
             phasemask_aberrs = pcalc.crop(helpers.create_phase(aberrs, 
                                                        num=np.arange(3, 14), 
                                                        size = size, 
                                                        radscale = np.sqrt(2)*self.slm_radius), 
                                           size/2, offset = off)
             
-            
-            self.zernikes_all = self.zernikes_all - phasemask_aberrs
+            #TODO: needs to be changed when using offset + zernike model
+            #self.zernikes_all = self.zernikes_all - phasemask_aberrs
+            #HOTFIX for offset only
+            self.zernikes_all = phasemask_aberrs
             self.recalc_images()
-
+            #TODO append both aberrs and off_aberr
             d['gt'].append(aberrs)
+            d['gt'].append(off_aberr)
             
             # 5. Get image, center once more using tip tilt and defocus corrections
             # save image and write correction coefficients to file
-            img = abberior.get_image(multi=multi)
+            img = abberior.get_image(multi=ortho_sec)
             self.correct_tiptilt()
-            if multi:
+            if ortho_sec:
                 self.correct_defocus()
             img = abberior.get_image(multi=multi)
             name = path + '/' + str(ii+i_start) + "_aberrated.msr"
             msr.save_as(name)
             d['init_corr'].append(helpers.corr_coeff(img, multi=multi))
-
+            
             # 6. single pass correction
-            self.zernike, _, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
+            self.zernike, off_pred, _, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
+            
             d['preds'].append(self.zernike.tolist())
+            d['preds'].append(off_pred.tolist())
             d['corr'].append(corr)
             name = path + '/' + str(ii+i_start) + "_corrected.msr"
             msr.save_as(name)
             with open(path + '/' + mdl_name +str(i_start)+'.txt', 'w') as file:
                 json.dump(d, file)
 
+
             # use matplotlib to plot and save data
-            if multi:
+            if ortho_sec and multi:
                 minmax = [img.min(), img.max()]
                 fig = plt.figure()
                 plt.subplot(231); plt.axis('off')
@@ -677,6 +701,18 @@ class Main_Window(QtWidgets.QMainWindow):
                 plt.subplot(236); plt.axis('off')
                 plt.imshow(img[2], clim = minmax, cmap = 'inferno')
                 fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
+            elif ortho_sec and not multi:
+                minmax = [img.min(), img.max()]
+                fig = plt.figure()
+                plt.subplot(121); plt.axis('off')
+                plt.imshow(img, clim = minmax, cmap = 'inferno')
+                
+                img = abberior.get_image(multi = ortho_sec)
+                plt.subplot(122); plt.axis('off')
+                plt.imshow(img[0], clim = minmax, cmap = 'inferno')
+                fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
+            #TODO add missing logic blocks
+
             # d['offset'].append(self.offset.tolist())
         print('DONE with automated loop!', '\n', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
 

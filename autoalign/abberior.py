@@ -143,21 +143,24 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
     best_corr = 0
     for _ in range(ii):
 
-        # if multi:
-        #     if offset:
-        #         model = my_models.MultiOffsetNet13()
-        #     else:
-        #         model = my_models.MultiNet11()
-        # else:
-        #     if offset:
-        #         model = my_models.OffsetNet13()
-        #     else:
-        #         model = my_models.Net11()    
+        if multi:
+            if offset:
+                model = my_models.MultiOffsetNet13()
+            else:
+                model = my_models.MultiNet11()
+        else:
+            if offset:
+                model = my_models.OffsetNet13()
+            else:
+                model = my_models.Net11()    
+
+        #NOTE: temporary!
+        model = my_models.OffsetNet2()
      
-        # # gets preds
-        # checkpoint = torch.load(model_store_path)
-        # model.load_state_dict(state_dict=checkpoint['model_state_dict'])
-        model = torch.load(model_store_path)
+        # gets preds
+        checkpoint = torch.load(model_store_path)
+        model.load_state_dict(state_dict=checkpoint['model_state_dict'])
+        #model = torch.load(model_store_path)
 
         # Test the model
         model.eval()
@@ -173,26 +176,29 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
             outputs = model(input_image.float())
             coeffs = outputs.numpy().squeeze()
 
+        
+        #NOTE: temporary!
+        zern = np.asarray([0.0]*11)
+        offset_label = coeffs
         # return coeffs
-        if offset:
-            zern = coeffs[:-2]
-            offset_label = coeffs[-2:]
-        else:
-            zern = coeffs
-            offset_label = [0,0]
+        # if offset:
+        #     zern = coeffs[:-2]
+        #     offset_label = coeffs[-2:]
+        # else:
+        #     zern = coeffs
+        #     offset_label = [0,0]
         reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=multi, defocus=False)
         corr = helpers.corr_coeff(image, reconstructed)
         if corr > best_corr:
             best_corr = corr
             best_coeffs = coeffs
 
-
-    if offset:
-        zern = best_coeffs[:-2]
-        offset_label = best_coeffs[-2:]
-    else:
-        zern = best_coeffs 
-        offset_label = [0,0]   
+    # if offset:
+    #     zern = best_coeffs[:-2]
+    #     offset_label = best_coeffs[-2:]
+    # else:
+    #     zern = best_coeffs 
+    #     offset_label = [0,0]   
    
     
 
