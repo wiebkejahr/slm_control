@@ -143,20 +143,21 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
     best_corr = 0
     for _ in range(ii):
 
-        if multi:
-            if offset:
-                model = my_models.MultiOffsetNet13()
-            else:
-                model = my_models.MultiNet11()
-        else:
-            if offset:
-                model = my_models.OffsetNet13()
-            else:
-                model = my_models.Net11()    
+        # if multi:
+        #     if offset:
+        #         model = my_models.MultiOffsetNet13()
+        #     else:
+        #         model = my_models.MultiNet11()
+        # else:
+        #     if offset:
+        #         model = my_models.OffsetNet13()
+        #     else:
+        #         model = my_models.Net11()    
      
-        # gets preds
-        checkpoint = torch.load(model_store_path)
-        model.load_state_dict(state_dict=checkpoint['model_state_dict'])
+        # # gets preds
+        # checkpoint = torch.load(model_store_path)
+        # model.load_state_dict(state_dict=checkpoint['model_state_dict'])
+        model = torch.load(model_store_path)
 
         # Test the model
         model.eval()

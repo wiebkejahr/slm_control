@@ -160,9 +160,9 @@ if __name__ == '__main__':
         help='path to where you want the dataset stored.')
     parser.add_argument('-r','--resolution', type=int, default=64, \
         help='resolution of training example image. Default is 64 x 64')
-    parser.add_argument('--multi', action='store_true', \
+    parser.add_argument('--multi', type=int, default=0, \
         help='whether or not to use cross-sections')  
-    parser.add_argument('--offset', action='store_true', \
+    parser.add_argument('--offset', type=int, default=0, \
         help='whether or not to incorporate offset')  
     parser.add_argument('--mode', type=str, choices=['fluor', 'sted', 'z-sted'],\
         help='which mode of data to create') 

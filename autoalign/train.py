@@ -83,12 +83,12 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 running_loss = 0.0
 
         # saving model state parameters so I can return to training later if necessary
-        torch.save({
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict()
-                }, model_store_path)
-        
+        # torch.save({
+        #         'epoch': epoch,
+        #         'model_state_dict': model.state_dict(),
+        #         'optimizer_state_dict': optimizer.state_dict()
+        #         }, model_store_path)
+        torch.save(model, model_store_path) 
         
         # VALIDATION LOOP   
         model.eval()
@@ -181,7 +181,6 @@ def main(args):
         else:
             model = my_models.Net11()
 
-
     print(model)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -204,9 +203,9 @@ if __name__ == '__main__':
     
     parser.add_argument('dataset', type=str, help='path to dataset on which to train')
     parser.add_argument('model_store_path', type=str, help='path to where you want to save model checkpoints')
-    parser.add_argument('--multi', action='store_true', \
+    parser.add_argument('--multi', type=int, default=0, \
         help='whether or not to use cross-sections')  
-    parser.add_argument('--offset', action='store_true', \
+    parser.add_argument('--offset', type=int, default=0, \
         help='whether or not to incorporate offset') 
     parser.add_argument('--logdir', type=str, help='path to logging dir for optional tensorboard visualization')
     parser.add_argument('--warm_start', type=str, help='path to a previous checkpoint dir for a warm start')     

@@ -78,9 +78,7 @@ def test(model, test_loader, logdir, model_store_path, multi, offset):
                     preds = outputs.numpy().squeeze()
                     offset = [0,0]
                 return preds, offset
-            #print(preds, offset)
-            #print(np.asarray(create_phase(coeffs=(-1.)*preds)).shape)
-            #exit()
+
             print(multi, offset)
             preds, offset = get_preds(multi, offset)
             print(len(preds))
@@ -131,20 +129,21 @@ def main(args):
     model_store_path = args.model_store_path
 
 
-    if args.multi:
-        if args.offset:
-            model = my_models.MultiOffsetNet13()
-        else:
-            model = my_models.MultiNet11()
-    else:
-        if args.offset:
-            model = my_models.OffsetNet()
-        else:
-            model = my_models.Net()
+    # if args.multi:
+    #     if args.offset:
+    #         model = my_models.MultiOffsetNet13()
+    #     else:
+    #         model = my_models.MultiNet11()
+    # else:
+    #     if args.offset:
+    #         model = my_models.OffsetNet()
+    #     else:
+    #         model = my_models.Net()
     
 
-    checkpoint = torch.load(model_store_path)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    # checkpoint = torch.load(model_store_path)
+    # model.load_state_dict(checkpoint['model_state_dict'])
+    model = torch.load(model_store_path)
     
     mean, std = get_stats(data_path, batch_size=10, mode='test')
     test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='test', transform=transforms.Compose([
