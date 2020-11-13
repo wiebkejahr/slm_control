@@ -531,8 +531,8 @@ class Main_Window(QtWidgets.QMainWindow):
         path = self.p.general["data_path"] + mdl_name
         if not os.path.isdir(self.p.general["data_path"]):
             os.mkdir(self.p.general["data_path"])
-            if not os.path.isdir(path):
-                os.mkdir(path)
+        if not os.path.isdir(path):
+            os.mkdir(path)
         
         # NOTE: multi is meant to be hardcoded here, we only need the xy to return the config
         img, conf, msr, stats = abberior.get_image(multi=False, config=True)
@@ -666,6 +666,8 @@ class Main_Window(QtWidgets.QMainWindow):
             self.correct_tiptilt()
             if ortho_sec:
                 self.correct_defocus()
+            #TODO: change abberior.get_image to return always array, then always use img[0]
+            img = abberior.get_image(multi=ortho_sec)
             img = abberior.get_image(multi=multi)
             name = path + '/' + str(ii+i_start) + "_aberrated.msr"
             msr.save_as(name)
