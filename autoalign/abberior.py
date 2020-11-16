@@ -63,15 +63,40 @@ def correct_defocus():
         print("Cannot find 'ExpControl Ch1 {15}' window")
     return helpers.calc_defocus(image_xz, image_yz)
 
+def get_config():
+    im = sp.Imspector()
+    msr_names = im.measurement_names()
+    msr = im.active_measurement()
+    config = msr.active_configuration()
+    return im, msr_names, msr, config
 
-def get_image(multi=False):
+def grab_image(msr, window = 'ExpControl Ch1 {1}'):
+    # if not multi: grabs the latest image from Imspector without acquiring
+    # for xy models: assumption that acquisition is running constantly
+    # grabs measurment setup, stats etc
+    #im = sp.Imspector()
+    #msr = im.active_measurement()
+    try:
+        img = msr.stack(window).data() # converts it to a numpy array
+        stats = [np.max(img), np.min(img), np.std(img)]
+        # takes off black edge, resizes to (64, 64) and standardizes
+        img_p = helpers.preprocess(img)
+    except:
+        print("Cannot find ", window, " window")
+    #         exit()
+    return img_p, stats
+
+
+def acquire_image(im, multi=False):
     """" Acquires xy, xz and yz images in Imspector, returns some stats 
         and the active configurations"""
         
-    im = sp.Imspector()
-    msr = im.active_measurement()
-    configuration = msr.active_configuration()
-
+    #im = sp.Imspector()
+    #msr = im.active_measurement()
+    #configuration = msr.active_configuration()
+    
+    #im, msr_names, msr, configuration = get_config()
+    
     # acquires xy view
     # configuration names and measurements names are hard coded
         
@@ -82,18 +107,14 @@ def get_image(multi=False):
         im.start(x)
         time.sleep(3)
         im.pause(x)
-        image_xy = x.stack('ExpControl Ch1 {1}').data()
-        stats = [np.max(image_xy), np.min(image_xy), np.std(image_xy)]
+        #image_xy = x.stack('ExpControl Ch1 {1}').data()
+        image_xy, stats = grab_image(x, window = 'ExpControl Ch1 {1}')
         # takes off black edge, resizes to (64, 64) and standardizes
         image_xy = helpers.preprocess(image_xy)
     except:
         print("cannot find xy2d config or 'ExpControl Ch1 {1}' window")
         exit()
-    time.sleep(0.5)
-
-    # initialize empty arrays for the other two views
-    #image_xz = np.zeros_like(image_xy)
-    #image_yz = np.zeros_like(image_xy)    
+    time.sleep(0.5)  
 
     if multi:
         # acquires the other two vies and stacks them
@@ -102,7 +123,7 @@ def get_image(multi=False):
             im.start(x)
             time.sleep(3)
             im.pause(x)
-            image_xz = x.stack('ExpControl Ch1 {13}').data()
+            image_xz, _ = grab_image(x, window = 'ExpControl Ch1 {13}')
             # takes off black edge, resizes to (64, 64) and standardizes
             image_xz = helpers.preprocess(image_xz)
         except:
@@ -115,7 +136,7 @@ def get_image(multi=False):
             im.start(x)
             time.sleep(3)
             im.pause(x)
-            image_yz = x.stack('ExpControl Ch1 {15}').data()
+            image_yz, _ = grab_image(x, window = 'ExpControl Ch15 {1}')
             # takes off black edge, resizes to (64, 64) and standardizes
             image_yz = helpers.preprocess(image_yz)
         except:
@@ -126,21 +147,12 @@ def get_image(multi=False):
     else:
         image = image_xy
     
-    # else:
-    #     # if not multi: grabs the latest image from Imspector without acquiring
-    #     # for xy models: assumption that acquisition is running constantly
-    #     # grabs measurment setup, stats etc
-    #     try:
-    #         image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    #         stats = [np.max(image_xy), np.min(image_xy), np.std(image_xy)]
-    #         # takes off black edge, resizes to (64, 64) and standardizes
-    #         image = helpers.preprocess(image_xy)
-    #     except:
-    #         print("Cannot find 'ExpControl Ch1 {1}' window")
-    #         exit()
+    return image, stats
 
-    return image, configuration, msr, stats
 
+
+    
+    
 
 def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
     
