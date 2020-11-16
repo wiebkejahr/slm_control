@@ -161,14 +161,14 @@ class Main_Window(QtWidgets.QMainWindow):
         if self.p.general["split_image"]:
             self.img_l.update_guivalues(self.p, self.p.left)
             self.img_r.update_guivalues(self.p, self.p.right)
-            self.zernikes_all = np.zeros_like(self.img_l.data)
+            self.phase_zern = np.zeros_like(self.img_l.data)
             self.phase_tiptilt = np.zeros_like(self.img_l.data)
             self.phase_defocus = np.zeros_like(self.img_l.data)
         else:
             #TODO: general values, not left values
             print("loading from file")
             self.img_full.update_guivalues(self.p, self.p.full)
-            self.zernikes_all = np.zeros_like(self.img_full.data)
+            self.phase_zern = np.zeros_like(self.img_full.data)
             self.phase_tiptilt = np.zeros_like(self.img_full.data)
             self.phase_defocus = np.zeros_like(self.img_full.data)
 
@@ -202,7 +202,7 @@ class Main_Window(QtWidgets.QMainWindow):
         # self.img_r = None
         # self.img_full = None
         # #self.flatfield_orig = None
-        # self.zernikes_all = None
+        # self.phase_zern = None
         # self.phase_tiptilt = None
         # self.phase_defocs = None
         
@@ -216,7 +216,7 @@ class Main_Window(QtWidgets.QMainWindow):
             self.img_r.call_daddy(self)
             self.img_r.set_name("img_r")
     
-            self.zernikes_all = np.zeros_like(self.img_l.data)
+            self.phase_zern = np.zeros_like(self.img_l.data)
             self.phase_tiptilt = np.zeros_like(self.img_l.data)
             self.phase_defocus = np.zeros_like(self.img_l.data)
             #print("left img ", self.img_l)
@@ -226,7 +226,7 @@ class Main_Window(QtWidgets.QMainWindow):
             self.img_full = PI.Half_Pattern(self.p, self.img_size)
             self.img_full.call_daddy(self)
             self.img_full.set_name("full")
-            self.zernikes_all = np.zeros_like(self.img_full.data)
+            self.phase_zern = np.zeros_like(self.img_full.data)
             self.phase_tiptilt = np.zeros_like(self.img_full.data)
             self.phase_defocus = np.zeros_like(self.img_full.data)
             #print("full img ", self.img_full.data)
@@ -403,13 +403,13 @@ class Main_Window(QtWidgets.QMainWindow):
         
         
     def correct_defocus(self):
-        self.defocus = abberior.correct_defocus()#(const=1/6.59371319)
+        self.defocus_weights_corr = abberior.correct_defocus()#(const=1/6.59371319)
         
         
         size = 2 * np.asarray(self.p.general["size_slm"])   
         off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]  
         
-        defoc_correct = pcalc.crop(helpers.create_phase([self.defocus], 
+        defoc_correct = pcalc.crop(helpers.create_phase([self.defocus_weights_corr], 
                                                         num=[2], 
                                                         size = size,
                                                         radscale = self.slm_radius),
@@ -421,9 +421,9 @@ class Main_Window(QtWidgets.QMainWindow):
 
 
     def correct_tiptilt(self):
-        self.tiptilt = abberior.correct_tip_tilt()
+        self.tiptilt_weights_corr = abberior.correct_tip_tilt()
         size = np.asarray(self.p.general["size_slm"])
-        tiptilt_correct = helpers.create_phase(coeffs=self.tiptilt, num=[0,1], 
+        tiptilt_correct = helpers.create_phase(coeffs=self.tiptilt_weights_corr, num=[0,1], 
                                                size = size, radscale = 2*self.rtiptilt)
         
         self.phase_tiptilt = self.phase_tiptilt + tiptilt_correct
@@ -439,25 +439,25 @@ class Main_Window(QtWidgets.QMainWindow):
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
         
-        self.zernike, self.offset = abberior.abberior_predict(self.p.general["autodl_model_path"], 
+        self.zern_weights_corr, self.off_corr = abberior.abberior_predict(self.p.general["autodl_model_path"], 
                                                            image, offset=offset, multi=multi, ii=i)
-        
-        off = [self.img_l.off.xgui.value() + self.offset[1]*scale,
-               self.img_l.off.ygui.value() - self.offset[0]*scale]
+        self.off_corr = self.off_corr * scale
+        off = [self.img_l.off.xgui.value() + self.off_corr[1],
+               self.img_l.off.ygui.value() - self.off_corr[0]]
         self.img_l.off.xgui.setValue(np.round(off[0]))
         self.img_l.off.ygui.setValue(np.round(off[1]))
             
-        zern_correct = pcalc.crop(helpers.create_phase(self.zernike, 
+        phase_correct = pcalc.crop(helpers.create_phase(self.zern_weights_corr, 
                                                        num=np.arange(3, 14), 
                                                        size = size, 
                                                        radscale = np.sqrt(2)*self.slm_radius), 
                                   size/2, offset = off)
         
-        #self.zernikes_all = self.zernikes_all - zern_correct
+        #self.phase_zern = self.phase_zern - phase_correct
         #TODO: needs to be changed when using offset + zernike model
-        #self.zernikes_all = self.zernikes_all - phasemask_aberrs
+        #self.phase_zern = self.phase_zern - phasemask_aberrs
         #HOTFIX for offset only
-        self.zernikes_all = zern_correct                    
+        self.phase_zern = phase_correct                    
 
         self.recalc_images()
         self.correct_tiptilt()
@@ -468,8 +468,8 @@ class Main_Window(QtWidgets.QMainWindow):
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
         
-        return self.zernike, self.offset*scale, new_img, correlation
-
+        #return self.zern_weights_corr, self.off_corr*scale, new_img, correlation
+        return new_img, correlation
 
     def auto_align(self, so_far = -1, best_of = 5, multi = True, offset = True):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
@@ -488,7 +488,7 @@ class Main_Window(QtWidgets.QMainWindow):
         i = 0
         while corr >= so_far:
             image = abberior.acquire_image(multi=multi)[0]                                              
-            preds, off_pred, image, new_corr = self.corrective_loop(image, offset=offset, multi=multi, i=best_of)
+            image, new_corr = self.corrective_loop(image, offset=offset, multi=multi, i=best_of)
             if new_corr > corr:
                 so_far = corr
                 corr = new_corr
@@ -498,12 +498,12 @@ class Main_Window(QtWidgets.QMainWindow):
                 print('final correlation: {}'.format(corr))
                 # REMOVING the last phase corrections from the SLM
                 off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
-                zern_correct = pcalc.crop(helpers.create_phase(self.zernike, 
+                phase_correct = pcalc.crop(helpers.create_phase(self.zern_weights_corr, 
                                                                num=np.arange(3, 14), 
                                                                size = size, 
                                                                radscale = np.sqrt(2)*self.slm_radius),
                                           size/2, offset = off)
-                self.zernikes_all = self.zernikes_all + zern_correct
+                self.phase_zern = self.phase_zern + phase_correct
                 i -= 1
                 break
            
@@ -522,6 +522,7 @@ class Main_Window(QtWidgets.QMainWindow):
         best_of = 5
         print("save path: ", self.p.general["data_path"])
         print("used model: ", self.p.general["autodl_model_path"])
+        size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []}
@@ -630,12 +631,14 @@ class Main_Window(QtWidgets.QMainWindow):
             
             # 4. dials in random aberrations and sends them to SLM
             #aberrs = helpers.gen_coeffs(11)
+            # TODO 
             aberrs = [0 for c in range(11)]
-            #TODO: pass in obj_dia and weight as arguments
-            off_aberr = [np.round(scale*x) for x in helpers.gen_offset()]
-            #np.round(np.asarray(helpers.gen_offset()) * scale)
-            size = 2 * np.asarray(self.p.general["size_slm"])
-            #off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
+            
+            off_aberr = [np.round(scale*x) for x in 
+                         helpers.gen_offset(self.p.objectives[self.current_objective]["backaperture"],
+                                            0.1)]
+
+            # calculate new offsets and write to GUI
             off = [self.img_l.off.xgui.value() - off_aberr[1],
                    self.img_l.off.ygui.value() + off_aberr[0]]
             
@@ -650,9 +653,9 @@ class Main_Window(QtWidgets.QMainWindow):
                                           size/2, offset = off)
             
             #TODO: needs to be changed when using offset + zernike model
-            #self.zernikes_all = self.zernikes_all - phasemask_aberrs
+            #self.phase_zern = self.phase_zern - phasemask_aberrs
             #HOTFIX for offset only
-            self.zernikes_all = phasemask_aberrs
+            self.phase_zern = phasemask_aberrs
             self.recalc_images()
             d['gt'].append(aberrs)
             d['gt'].append(off_aberr)
@@ -670,10 +673,10 @@ class Main_Window(QtWidgets.QMainWindow):
             d['init_corr'].append(helpers.corr_coeff(img, multi=multi))
             
             # 6. single pass correction
-            self.zernike, off_pred, _, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
+            img, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
             
-            d['preds'].append(self.zernike.tolist())
-            d['preds'].append(off_pred.tolist())
+            d['preds'].append(self.zern_weights_corr.tolist())
+            d['preds'].append(self.off_corr.tolist())
             d['corr'].append(corr)
             name = path + '/' + str(ii+i_start) + "_corrected.msr"
             active_msr.save_as(name)
@@ -711,7 +714,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
             #TODO add missing logic blocks
 
-            # d['offset'].append(self.offset.tolist())
+            # d['offset'].append(self.off_corr.tolist())
         print('DONE with automated loop!', '\n', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
 
 
@@ -946,13 +949,13 @@ class Main_Window(QtWidgets.QMainWindow):
         if self.p.general["split_image"]:
             l = pcalc.phase_wrap(pcalc.add_images([self.img_l.data, 
                                                    self.flatfield[0],
-                                                   self.zernikes_all, 
+                                                   self.phase_zern, 
                                                    self.phase_tiptilt,
                                                    self.phase_defocus]), 
                                  self.p.left["phasewrap"])
             r = pcalc.phase_wrap(pcalc.add_images([self.img_r.data,
                                                    self.flatfield[1],
-                                                   self.zernikes_all, 
+                                                   self.phase_zern, 
                                                    self.phase_tiptilt,
                                                    self.phase_defocus]), 
                                  self.p.right["phasewrap"])
@@ -968,7 +971,7 @@ class Main_Window(QtWidgets.QMainWindow):
         else:            
             self.img_data = pcalc.phase_wrap(pcalc.add_images([self.img_full.data, 
                                                                pcalc.stitch_images(self.flatfield[0], self.flatfield[1]), 
-                                                               self.zernikes_all, 
+                                                               self.phase_zern, 
                                                                self.phase_tiptilt,
                                                                self.phase_defocus]), 
                                              self.p.general["phasewrap"])
