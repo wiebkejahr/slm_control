@@ -437,8 +437,7 @@ class Main_Window(QtWidgets.QMainWindow):
             calculates correlation coefficients. """
         
         size = 2 * np.asarray(self.p.general["size_slm"])
-        #TODO: code this properly
-        scale = 26.6*2
+        scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
         
         self.zernike, self.offset = abberior.abberior_predict(self.p.general["autodl_model_path"], 
                                                            image, offset=offset, multi=multi, ii=i)
@@ -523,6 +522,7 @@ class Main_Window(QtWidgets.QMainWindow):
         best_of = 5
         print("save path: ", self.p.general["data_path"])
         print("used model: ", self.p.general["autodl_model_path"])
+        scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []}
         
@@ -632,7 +632,6 @@ class Main_Window(QtWidgets.QMainWindow):
             #aberrs = helpers.gen_coeffs(11)
             aberrs = [0 for c in range(11)]
             #TODO: pass in obj_dia and weight as arguments
-            scale = 26.6*2
             off_aberr = [np.round(scale*x) for x in helpers.gen_offset()]
             #np.round(np.asarray(helpers.gen_offset()) * scale)
             size = 2 * np.asarray(self.p.general["size_slm"])

@@ -81,6 +81,19 @@ def normalize_radius(obj_ba, mag, slm_px, size_slm):
     print("radius_slm ", radius_slm, "mag ", mag)
     return radius_slm
 
+def get_mm2px(slm_px, M):
+    """" Converts mm in objective backaperture into px on SLM.
+        Needed eg when scaling offsets. 
+        Inputs:
+            aperture diameter in mm,
+            slm_px size in mm / px, 
+            M optical magnification
+        objective_backaperture (in px, on SLM) = d_obj / slm_px / M
+        1 mm (objective backaperture) => objective_backaperture (in px, on SLM) / d_obj
+        1 mm (objective backaperture) => 1 / (slm_px * M)"""
+    
+    mm = 1 / (slm_px * M)
+    return mm
 
 def bfp_radius(M, NA, f_TL):
     """ Takes magnification M and NA of the objective, as well as focal length
