@@ -488,7 +488,7 @@ class Main_Window(QtWidgets.QMainWindow):
         corr = 0
         i = 0
         while corr >= so_far:
-            image = abberior.get_image(multi=multi)                                                   
+            image = abberior.get_image(multi=multi)[0]                                              
             preds, off_pred, image, new_corr = self.corrective_loop(image, offset=offset, multi=multi, i=best_of)
             if new_corr > corr:
                 so_far = corr
@@ -535,7 +535,7 @@ class Main_Window(QtWidgets.QMainWindow):
             os.mkdir(path)
         
         # NOTE: multi is meant to be hardcoded here, we only need the xy to return the config
-        img, conf, msr, stats = abberior.get_image(multi=False, config=True)
+        img, conf, msr, stats = abberior.get_image(multi=False)
         x_init = conf.parameters('ExpControl/scan/range/x/g_off')
         y_init = conf.parameters('ExpControl/scan/range/y/g_off')
         z_init = conf.parameters('ExpControl/scan/range/z/g_off')
@@ -543,7 +543,7 @@ class Main_Window(QtWidgets.QMainWindow):
             # 1. zeroes SLM
             self.reload_params(self.param_path)
             # get image from Abberior
-            img, conf, msr, stats = abberior.get_image(multi=ortho_sec, config=True)
+            img, conf, msr, stats = abberior.get_image(multi=ortho_sec)
         
             #TODO: Which values are good will depend on the system & acquisition parameters. Needs to be tested
             #IMPORTANT: should also stop acquisition, potentially shut down Imspector?
@@ -642,7 +642,6 @@ class Main_Window(QtWidgets.QMainWindow):
             
             self.img_l.off.xgui.setValue(off[0])
             self.img_l.off.ygui.setValue(off[1])
-            #TODO: create random offset and add to values
             #TODO: retest offset + zernike model!
             #TODO: sanity check that offsets are within boundaries
             phasemask_aberrs = pcalc.crop(helpers.create_phase(aberrs, 
@@ -656,19 +655,18 @@ class Main_Window(QtWidgets.QMainWindow):
             #HOTFIX for offset only
             self.zernikes_all = phasemask_aberrs
             self.recalc_images()
-            #TODO append both aberrs and off_aberr
             d['gt'].append(aberrs)
             d['gt'].append(off_aberr)
             
             # 5. Get image, center once more using tip tilt and defocus corrections
             # save image and write correction coefficients to file
-            img = abberior.get_image(multi=ortho_sec)
+            img = abberior.get_image(multi=ortho_sec)[0]
             self.correct_tiptilt()
             if ortho_sec:
                 self.correct_defocus()
             #TODO: change abberior.get_image to return always array, then always use img[0]
-            img = abberior.get_image(multi=ortho_sec)
-            img = abberior.get_image(multi=multi)
+            img = abberior.get_image(multi=ortho_sec)[0]
+            img = abberior.get_image(multi=multi)[0]
             name = path + '/' + str(ii+i_start) + "_aberrated.msr"
             msr.save_as(name)
             d['init_corr'].append(helpers.corr_coeff(img, multi=multi))
@@ -695,7 +693,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 plt.imshow(img[1], clim = minmax, cmap = 'inferno')
                 plt.subplot(233); plt.axis('off')
                 plt.imshow(img[1], clim = minmax, cmap = 'inferno')
-                img = abberior.get_image(multi = multi)
+                img = abberior.get_image(multi = multi)[0]
                 plt.subplot(234); plt.axis('off')
                 plt.imshow(img[0], clim = minmax, cmap = 'inferno')
                 plt.subplot(235); plt.axis('off')
@@ -709,7 +707,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 plt.subplot(121); plt.axis('off')
                 plt.imshow(img, clim = minmax, cmap = 'inferno')
                 
-                img = abberior.get_image(multi = ortho_sec)
+                img = abberior.get_image(multi = ortho_sec)[0]
                 plt.subplot(122); plt.axis('off')
                 plt.imshow(img[0], clim = minmax, cmap = 'inferno')
                 fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")

@@ -64,7 +64,7 @@ def correct_defocus():
     return helpers.calc_defocus(image_xz, image_yz)
 
 
-def get_image(multi=False, config = False):
+def get_image(multi=False):
     """" Acquires xy, xz and yz images in Imspector, returns some stats 
         and the active configurations"""
         
@@ -122,6 +122,9 @@ def get_image(multi=False, config = False):
         time.sleep(0.5)
 
     else:
+        # if not multi: grabs the latest image from Imspector without acquiring
+        # for xy models: assumption that acquisition is running constantly
+        # grabs measurment setup, stats etc
         try:
             image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
             stats = [np.max(image_xy), np.min(image_xy), np.std(image_xy)]
@@ -131,11 +134,8 @@ def get_image(multi=False, config = False):
             print("Cannot find 'ExpControl Ch1 {1}' window")
             exit() 
 
+    return image, configuration, msr, stats
     
-    if config:
-        return image, configuration, msr, stats
-    else:
-        return image
 
 def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
     
