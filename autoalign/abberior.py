@@ -72,26 +72,31 @@ def get_image(multi=False):
     msr = im.active_measurement()
     configuration = msr.active_configuration()
 
-    if multi:
-        # acquires all three views and stacks them
-        # configuration names and measurements names are hard coded
+    # acquires xy view
+    # configuration names and measurements names are hard coded
         
-        x = im.measurement(im.measurement_names()[0])
-        im.activate(x)
-        try:
-            x.activate(x.configuration('xy2d'))
-            im.start(x)
-            time.sleep(3)
-            im.pause(x)
-            image_xy = x.stack('ExpControl Ch1 {1}').data()
-            stats = [np.max(image_xy), np.min(image_xy), np.std(image_xy)]
-            # takes off black edge, resizes to (64, 64) and standardizes
-            image_xy = helpers.preprocess(image_xy)
-        except:
-            print("cannot find xy2d config or 'ExpControl Ch1 {1}' window")
-            exit()
-        time.sleep(0.5)
-            
+    x = im.measurement(im.measurement_names()[0])
+    im.activate(x)
+    try:
+        x.activate(x.configuration('xy2d'))
+        im.start(x)
+        time.sleep(3)
+        im.pause(x)
+        image_xy = x.stack('ExpControl Ch1 {1}').data()
+        stats = [np.max(image_xy), np.min(image_xy), np.std(image_xy)]
+        # takes off black edge, resizes to (64, 64) and standardizes
+        image_xy = helpers.preprocess(image_xy)
+    except:
+        print("cannot find xy2d config or 'ExpControl Ch1 {1}' window")
+        exit()
+    time.sleep(0.5)
+
+    # initialize empty arrays for the other two views
+    #image_xz = np.zeros_like(image_xy)
+    #image_yz = np.zeros_like(image_xy)    
+
+    if multi:
+        # acquires the other two vies and stacks them
         try:
             x.activate(x.configuration('xz2d'))
             im.start(x)
@@ -116,26 +121,26 @@ def get_image(multi=False):
         except:
             print("cannot find yz2d config or 'ExpControl Ch1 {15}' window")  
             exit()
-
-        #TODO: stacking only works if all images have the same dimensions!
-        image = np.stack((image_xy,image_xz, image_yz), axis=0)
         time.sleep(0.5)
-
+        image = np.stack((image_xy, image_xz, image_yz), axis=0)
     else:
-        # if not multi: grabs the latest image from Imspector without acquiring
-        # for xy models: assumption that acquisition is running constantly
-        # grabs measurment setup, stats etc
-        try:
-            image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-            stats = [np.max(image_xy), np.min(image_xy), np.std(image_xy)]
-            # takes off black edge, resizes to (64, 64) and standardizes
-            image = helpers.preprocess(image_xy)
-        except:
-            print("Cannot find 'ExpControl Ch1 {1}' window")
-            exit() 
+        image = image_xy
+    
+    # else:
+    #     # if not multi: grabs the latest image from Imspector without acquiring
+    #     # for xy models: assumption that acquisition is running constantly
+    #     # grabs measurment setup, stats etc
+    #     try:
+    #         image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+    #         stats = [np.max(image_xy), np.min(image_xy), np.std(image_xy)]
+    #         # takes off black edge, resizes to (64, 64) and standardizes
+    #         image = helpers.preprocess(image_xy)
+    #     except:
+    #         print("Cannot find 'ExpControl Ch1 {1}' window")
+    #         exit()
 
     return image, configuration, msr, stats
-    
+
 
 def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
     
