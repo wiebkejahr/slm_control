@@ -35,12 +35,12 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import json
 
-from PIL import Image
+#from PIL import Image
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-import scipy
-import scipy.ndimage 
+#import scipy
+#import scipy.ndimage 
 
 # local packages
 import slm_control.Pattern_Calculator as pcalc
@@ -104,7 +104,6 @@ class Main_Window(QtWidgets.QMainWindow):
         self.setGeometry(screen0.left(), screen0.top(), 
                          screen0.width()/4, .9*screen0.height())
         
-                    
         self.param_path = ['parameters/', 'params']
         self.p = param()
         self.p.load_file_general(self.param_path[0], self.param_path[1])
@@ -115,11 +114,10 @@ class Main_Window(QtWidgets.QMainWindow):
             self.p.objectives[self.current_objective]["backaperture"],
             self.p.general["slm_mag"])
         
-        
         self.init_data()
-        
         self.show()
         self.raise_()
+        
         
     def init_data(self):
         """ Called upon start up to initialize all the date for the first time.
@@ -138,26 +136,15 @@ class Main_Window(QtWidgets.QMainWindow):
         self.init_images()
         self.create_main_frame()
         self.combine_and_update()
-
-        
-    # def load_params(self, fname):
-    #     """ Calls the load_file function implemented in the parameters class, 
-    #         which loads the parameter lists from the text file. Called after
-    #         startup of the program. """
-    #     self.p = param()
-    #     self.p.load_file(fname[0], self.current_objective["name"], fname[1])
         
 
     def reload_params(self, fname):
         """ Calls the load_file function implemented in the parameters class, 
             which loads the parameter lists from the text file. Called after
             button is clicked. """
-        #self.load_params(fname)
-        #self.p = param()
         self.p.load_file_obj(fname[0], self.current_objective, fname[1])
         print("params ", self.p.full["mode"])
-        # print("left", self.p.left)
-        # print("right", self.p.right)
+
         if self.p.general["split_image"]:
             self.img_l.update_guivalues(self.p, self.p.left)
             self.img_r.update_guivalues(self.p, self.p.right)
@@ -165,21 +152,13 @@ class Main_Window(QtWidgets.QMainWindow):
             self.phase_tiptilt = np.zeros_like(self.img_l.data)
             self.phase_defocus = np.zeros_like(self.img_l.data)
         else:
-            #TODO: general values, not left values
             print("loading from file")
             self.img_full.update_guivalues(self.p, self.p.full)
             self.phase_zern = np.zeros_like(self.img_full.data)
             self.phase_tiptilt = np.zeros_like(self.img_full.data)
             self.phase_defocus = np.zeros_like(self.img_full.data)
-
-        #self.objective_changed()
-        # TODO WJ
-        #self.split_image(self.splt_img_state.checkState())
-        #self.single_correction(self.sngl_corr_state.checkState())
-        #self.flat_field(self.flt_fld_state.checkState(), recalc = False)
         
         self.recalc_images()
-        #self.init_images()   
 
         
     def save_params(self, fname):
@@ -187,7 +166,6 @@ class Main_Window(QtWidgets.QMainWindow):
             current parameters to the file provided in fname. These are then 
             loaded as default on next startup."""
         self.p.update(self)
-        
         self.p.write_file(fname[0], self.current_objective, fname[1])
         
         
@@ -195,16 +173,6 @@ class Main_Window(QtWidgets.QMainWindow):
         """ Called upon startup of the program. Initizialises the variables
             containing the left and right halves of the SLM or the full image,
             depending on the state of the "split image" boolean. """
-
-        # setting all to None first helps when function is called later on
-        # to clear all data, eg when 'split image' boolean is changed 
-        # self.img_l = None
-        # self.img_r = None
-        # self.img_full = None
-        # #self.flatfield_orig = None
-        # self.phase_zern = None
-        # self.phase_tiptilt = None
-        # self.phase_defocs = None
         
         if self.p.general["split_image"]:
             
@@ -219,8 +187,6 @@ class Main_Window(QtWidgets.QMainWindow):
             self.phase_zern = np.zeros_like(self.img_l.data)
             self.phase_tiptilt = np.zeros_like(self.img_l.data)
             self.phase_defocus = np.zeros_like(self.img_l.data)
-            #print("left img ", self.img_l)
-            #print(self.p)
             
         else:
             self.img_full = PI.Half_Pattern(self.p, self.img_size)
@@ -229,20 +195,7 @@ class Main_Window(QtWidgets.QMainWindow):
             self.phase_zern = np.zeros_like(self.img_full.data)
             self.phase_tiptilt = np.zeros_like(self.img_full.data)
             self.phase_defocus = np.zeros_like(self.img_full.data)
-            #print("full img ", self.img_full.data)
-            #print("full img ", self.img_full.radgui.value())
-            #print(self.p)
         
-        
-        # images are created after startup
-        # then the gui is created, which also links all the defoc etc parameters into the half_pattern class
-        # how do I relink?!        
-        #if self.p.general["split_image"]:
-        #    c.addLayout(self.img_l.create_gui(self.p, self.p.left), 0, 1, 1, 2)
-        #    c.addLayout(self.img_r.create_gui(self.p, self.p.right), 0, 3, 1, 2)
-        #else:
-        #    #TODO: change this left; requires change for all objectives
-        #    c.addLayout(self.img_full.create_gui(self.p, self.p.left), 0, 1, 1, 2)
         
     def init_zernikes(self):
         """ Creates a dictionary containing all of the Zernike polynomials by
@@ -287,29 +240,13 @@ class Main_Window(QtWidgets.QMainWindow):
         self.main_frame = QtWidgets.QWidget()  
         vbox = QtWidgets.QVBoxLayout()     
 
-        # Quit, objective diameter and autoalign buttons
+        # Quit, initialize, close slm buttons
         hbox = QtWidgets.QHBoxLayout()
-        self.crea_but(hbox, self._quit, "Quit")
-        self.rad_but = QtWidgets.QDoubleSpinBox()
-        self.rad_but.setDecimals(3)
-        self.rad_but.setSingleStep(0.01)
-        self.rad_but.setMinimum(0.01)
-        self.rad_but.setMaximum(10)
-        self.rad_but.setValue(1.68)
-        self.rad_but.setMaximumSize(80,50)
-        self.rad_but.valueChanged.connect(lambda: self.radius_changed())
-        hbox.addWidget(self.rad_but)
-
-        vbox.addLayout(hbox)
-        self.crea_but(hbox, self.auto_align, "Auto Align")
-        vbox.addLayout(hbox)
-        self.crea_but(hbox, self.correct_tiptilt, "Tip/Tilt")
-        self.crea_but(hbox, self.automate, "Auto-test")
-                    
-        # doesn't do anything at the moment, could be used to set another path
-        # to load the images from
-        #strng_path = self.labeled_qt(QtWidgets.QLineEdit, "Path for images", vbox)
-        #strng_path.setText(self.p.general["path"])
+        self.crea_but(hbox, self._quit, "Quit")       
+        self.crea_but(hbox, self.open_SLMDisplay, "Initialize SLM")
+        self.crea_but(hbox, self.close_SLMDisplay, "Close SLM")
+        hbox.setContentsMargins(0,0,0,0)
+        vbox.addLayout(hbox)         
 
         # controls to change objectives and to load/save calibration files         
         hbox = QtWidgets.QHBoxLayout()
@@ -320,31 +257,33 @@ class Main_Window(QtWidgets.QMainWindow):
             self.obj_sel.addItem(mm)
         self.obj_sel.setCurrentText(self.current_objective)
         self.obj_sel.activated.connect(lambda: self.objective_changed())
+        
+        self.rad_but = QtWidgets.QDoubleSpinBox()
+        self.rad_but.setDecimals(3)
+        self.rad_but.setSingleStep(0.01)
+        self.rad_but.setMinimum(0.01)
+        self.rad_but.setMaximum(10)
+        self.rad_but.setValue(1.68)
+        self.rad_but.setMaximumSize(80,50)
+        self.rad_but.valueChanged.connect(lambda: self.radius_changed())
+        hbox.addWidget(self.rad_but)
+        
         self.crea_but(hbox, self.reload_params, "Load Config", self.param_path)
         self.crea_but(hbox, self.save_params, "Save Config", self.param_path)
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
         
-        # controls for basic SLM operation: opening/closing the display,
-        # changing calibration
+        # controls for autoalignment
         hbox = QtWidgets.QHBoxLayout()
-        self.crea_but(hbox, self.open_SLMDisplay, "Initialize SLM")
-        self.crea_but(hbox, self.close_SLMDisplay, "Close SLM")
-        
-        # TODO: currently does not work; need to figure out a way to implement
-        # two paths, one for left, one for right side
-        #self.crea_but(hbox, self.openFlatFieldDialog, "load SLM calib", 
-        #              self.p.general["path"]+self.p.general["cal1"])        
+        self.crea_but(hbox, self.auto_align, "Auto Align")
+        self.crea_but(hbox, self.automate, "Auto-test")
         hbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(hbox)
 
-        # checkboxes for the different modes of operation: split image
-        # (currently not uptdating life), flatfield correction
+        # checkboxes for the different modes of operation: flatfield correction
         # and single correction and cross correction for double pass geometry
         # (as on the Abberior))
         hbox = QtWidgets.QHBoxLayout()
-        self.splt_img_state = self.crea_checkbox(hbox, self.split_image, 
-                        "Split image", self.p.general["split_image"])
         self.sngl_corr_state = self.crea_checkbox(hbox, self.single_correction, 
                         "Single correction", self.p.general["single_aberr"])
         self.dbl_pass_state = self.crea_checkbox(hbox, self.double_pass,
@@ -360,7 +299,6 @@ class Main_Window(QtWidgets.QMainWindow):
         self.plt_frame = PlotCanvas(self)      
         imgbox.addWidget(self.plt_frame)
 
-        
         # create the labels beneath image. Numeric controls are added in the
         # respective subfunctions.
         lbox_img = QtWidgets.QVBoxLayout()
@@ -447,24 +385,11 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_l.off.xgui.setValue(np.round(off[0]))
         self.img_l.off.ygui.setValue(np.round(off[1]))
         
-        
-        #REMOVE AFTER TESTING
-        # phase_correct = pcalc.crop(helpers.create_phase(delta_zern, 
-        #                                                num=np.arange(3, 14), 
-        #                                                size = size, 
-        #                                                radscale = np.sqrt(2)*self.slm_radius), 
-        #                           size/2, offset = off)
-        
         phase_correct = pcalc.crop(helpers.create_phase(aberrs - delta_zern,
                                                         num = np.arange(3,14),
                                                         size = size,
                                                         radscale = np.sqrt(2)*self.slm_radius),
                                    size /2, offset = off)
-        
-        #self.phase_zern = self.phase_zern - phase_correct
-        #TODO: needs to be changed when using offset + zernike model
-        #self.phase_zern = self.phase_zern - phasemask_aberrs
-        #HOTFIX for offset only
         self.phase_zern = phase_correct                    
 
         self.recalc_images()
@@ -476,7 +401,6 @@ class Main_Window(QtWidgets.QMainWindow):
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
         
-        #return delta_zern delta_off*scale, new_img, correlation
         return delta_zern, delta_off, new_img, correlation
 
     def auto_align(self, so_far = -1, best_of = 5, multi = True, offset = True):
@@ -491,7 +415,6 @@ class Main_Window(QtWidgets.QMainWindow):
         if multi:
             self.correct_defocus()
             
-        #preds = np.zeros(11) 
         corr = 0
         i = 0
         new_aberrs = np.zeros(11)
@@ -501,7 +424,6 @@ class Main_Window(QtWidgets.QMainWindow):
             delta_zern, delta_off, image, new_corr = self.corrective_loop(image, aberrs = new_aberrs, 
                                                    offset=offset, multi=multi, i=best_of)
             if new_corr > corr:
-                #so_far = corr
                 print('iteration: ', i, 'new corr: {}, old corr: {}'.format(new_corr, corr))
                 corr = new_corr
                 old_aberrs = new_aberrs
@@ -510,8 +432,6 @@ class Main_Window(QtWidgets.QMainWindow):
             else:
                 print('final correlation: {}'.format(corr))
                 # REMOVING the last phase corrections from the SLM
-                
-                #DOESNT WORK ANYMORE
                 off = [self.img_l.off.xgui.value() - delta_off[1],
                        self.img_l.off.ygui.value() + delta_off[0]]
                 phase_correct = pcalc.crop(helpers.create_phase(old_aberrs, 
@@ -519,15 +439,11 @@ class Main_Window(QtWidgets.QMainWindow):
                                                                size = size, 
                                                                radscale = np.sqrt(2)*self.slm_radius),
                                           size/2, offset = off)
-                #self.phase_zern = self.phase_zern + phase_correct
                 self.phase_zern = phase_correct
                 i -= 1
                 break
-           
         self.recalc_images()
-        # not needed?
-        # self.correct_tiptilt()
-        # self.correct_defocus()
+
 
     def automate(self):
         multi=False
@@ -541,6 +457,7 @@ class Main_Window(QtWidgets.QMainWindow):
         print("used model: ", self.p.general["autodl_model_path"])
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
+        
         # 0. creates data structure
         d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []}
         
@@ -660,7 +577,6 @@ class Main_Window(QtWidgets.QMainWindow):
             
             self.img_l.off.xgui.setValue(off[0])
             self.img_l.off.ygui.setValue(off[1])
-            #TODO: retest offset + zernike model!
             #TODO: sanity check that offsets are within boundaries
             phasemask_aberrs = pcalc.crop(helpers.create_phase(aberrs, 
                                                        num=np.arange(3, 14), 
@@ -668,11 +584,6 @@ class Main_Window(QtWidgets.QMainWindow):
                                                        radscale = np.sqrt(2)*self.slm_radius), 
                                           size/2, offset = off)
             
-            #TODO: needs to be changed when using offset + zernike model
-            #self.phase_zern = self.phase_zern - phasemask_aberrs
-            # remove after testing: when starting, self.phase_zern should be all zeros
-            # because I'm starting from no automatic corrections
-            # -> this code should work!
             self.phase_zern = phasemask_aberrs
             self.recalc_images()
             d['gt'].append(aberrs)
@@ -684,6 +595,7 @@ class Main_Window(QtWidgets.QMainWindow):
             self.correct_tiptilt()
             if ortho_sec:
                 self.correct_defocus()
+                
             #TODO: change abberior.get_image to return always array, then always use img[0]
             img, stats = abberior.acquire_image(imspector, multi=multi)
             name = path + '/' + str(ii+i_start) + "_aberrated.msr"
@@ -849,23 +761,6 @@ class Main_Window(QtWidgets.QMainWindow):
                               np.zeros_like(self.flatfieldcor[1])]
         if recalc:
             self.combine_and_update()
-
-
-    def split_image(self, state = True):
-        """ Action called when the "Split image" checkbox is selected. Toggles
-            between split image operation and single image operation."""
-        self.p.general["split_image"] = int(state)
-        
-        if state:
-            #self.dbl_pass_state.setChecked(False)
-            print(state, "Currently not implemented. Please restart code and \
-                          set split image flag in parameters file.")
-        else:
-            self.img_full = None
-            print(state, "Currently not implemented. Please restart code and \
-                          set split image flag in parameters file.")
-        self.init_data()
-        self.init_images()
         
         
     def single_correction(self, state):
@@ -914,13 +809,10 @@ class Main_Window(QtWidgets.QMainWindow):
     def radius_changed(self):
         """ Radius of pattern on SLM can be hardcoded instead of calculating
             from the objectives backaperture and optical magnification. """
-        #self.current_objective = self.p.objectives[self.obj_sel.currentText()]
         self.radius_input = self.rad_but.value()
         print("radius changed")
         self.slm_radius = self.calc_slmradius(self.radius_input, 1)
         self.init_zernikes()
-        #pcalc.normalize_radius(self.radius_input, 1, 
-        #                self.p.general["slm_px"], self.p.general["size_slm"])
         self.recalc_images()
 
             
@@ -928,7 +820,6 @@ class Main_Window(QtWidgets.QMainWindow):
         """ Action called when the users selects a different objective. 
             Calculates the diameter of the BFP; then recalculates the the
             patterns based on the selected objective. """
-            
         self.current_objective = self.obj_sel.currentText()#["name"]
         self.reload_params(self.param_path)
         self.slm_radius = self.calc_slmradius(
@@ -936,9 +827,6 @@ class Main_Window(QtWidgets.QMainWindow):
             self.p.general["slm_mag"])
         self.init_zernikes()
         self.recalc_images()
-        
-    def apply_correction(self):
-        print("applying corrections")
     
         
     def recalc_images(self):
@@ -999,7 +887,6 @@ class Main_Window(QtWidgets.QMainWindow):
             self.slm.update_image(np.uint8(self.img_data))
 
  
-    
     def open_SLMDisplay(self):
         """ Opens a widget fullscreen on the secondary screen that displays
             the latest image. """
