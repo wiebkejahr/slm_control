@@ -439,23 +439,23 @@ class Main_Window(QtWidgets.QMainWindow):
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
         
-        self.zern_weights_corr, self.off_corr = abberior.abberior_predict(self.p.general["autodl_model_path"], 
+        delta_zern, delta_off = abberior.abberior_predict(self.p.general["autodl_model_path"], 
                                                            image, offset=offset, multi=multi, ii=i)
-        self.off_corr = self.off_corr * scale
-        off = [self.img_l.off.xgui.value() + self.off_corr[1],
-               self.img_l.off.ygui.value() - self.off_corr[0]]
+        delta_off = delta_off * scale
+        off = [self.img_l.off.xgui.value() + delta_off[1],
+               self.img_l.off.ygui.value() - delta_off[0]]
         self.img_l.off.xgui.setValue(np.round(off[0]))
         self.img_l.off.ygui.setValue(np.round(off[1]))
         
         
         #REMOVE AFTER TESTING
-        # phase_correct = pcalc.crop(helpers.create_phase(self.zern_weights_corr, 
+        # phase_correct = pcalc.crop(helpers.create_phase(delta_zern, 
         #                                                num=np.arange(3, 14), 
         #                                                size = size, 
         #                                                radscale = np.sqrt(2)*self.slm_radius), 
         #                           size/2, offset = off)
         
-        phase_correct = pcalc.crop(helpers.create_phase(self.zern_weights_corr - aberrs,
+        phase_correct = pcalc.crop(helpers.create_phase(aberrs - delta_zern,
                                                         num = np.arange(3,14),
                                                         size = size,
                                                         radscale = np.sqrt(2)*self.slm_radius),
@@ -476,8 +476,8 @@ class Main_Window(QtWidgets.QMainWindow):
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
         
-        #return self.zern_weights_corr, self.off_corr*scale, new_img, correlation
-        return new_img, correlation
+        #return delta_zern delta_off*scale, new_img, correlation
+        return delta_zern, delta_off, new_img, correlation
 
     def auto_align(self, so_far = -1, best_of = 5, multi = True, offset = True):
         """This function calls abberior from AutoAlign module, passes the resulting dictionary
@@ -494,31 +494,33 @@ class Main_Window(QtWidgets.QMainWindow):
         #preds = np.zeros(11) 
         corr = 0
         i = 0
-        old_aberrs = np.zeros(11)
-        new_aberrs = old_aberrs
+        new_aberrs = np.zeros(11)
+        old_aberrs = new_aberrs
         while corr >= so_far:
             image = abberior.acquire_image(multi=multi)[0]                                              
-            image, new_corr = self.corrective_loop(image, aberrs = new_aberrs, 
+            delta_zern, delta_off, image, new_corr = self.corrective_loop(image, aberrs = new_aberrs, 
                                                    offset=offset, multi=multi, i=best_of)
             if new_corr > corr:
-                so_far = corr
+                #so_far = corr
+                print('iteration: ', i, 'new corr: {}, old corr: {}'.format(new_corr, corr))
                 corr = new_corr
                 old_aberrs = new_aberrs
-                new_aberrs = self.zern_weights_corr
-                print('iteration: ', i, 'new corr: {}, old corr: {}'.format(corr, so_far))
+                new_aberrs = old_aberrs - delta_zern
                 i = i + 1
             else:
                 print('final correlation: {}'.format(corr))
                 # REMOVING the last phase corrections from the SLM
                 
                 #DOESNT WORK ANYMORE
-                off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
-                phase_correct = pcalc.crop(helpers.create_phase(self.zern_weights_corr, 
+                off = [self.img_l.off.xgui.value() - delta_off[1],
+                       self.img_l.off.ygui.value() + delta_off[0]]
+                phase_correct = pcalc.crop(helpers.create_phase(old_aberrs, 
                                                                num=np.arange(3, 14), 
                                                                size = size, 
                                                                radscale = np.sqrt(2)*self.slm_radius),
                                           size/2, offset = off)
-                self.phase_zern = self.phase_zern + phase_correct
+                #self.phase_zern = self.phase_zern + phase_correct
+                self.phase_zern = phase_correct
                 i -= 1
                 break
            
@@ -689,10 +691,10 @@ class Main_Window(QtWidgets.QMainWindow):
             d['init_corr'].append(helpers.corr_coeff(img, multi=multi))
             
             # 6. single pass correction
-            img, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
+            delta_zern, delta_off, img, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
             
-            d['preds'].append(self.zern_weights_corr.tolist())
-            d['preds'].append(self.off_corr.tolist())
+            d['preds'].append(delta_zern.tolist())
+            d['preds'].append(delta_off.tolist())
             d['corr'].append(corr)
             name = path + '/' + str(ii+i_start) + "_corrected.msr"
             active_msr.save_as(name)
@@ -730,7 +732,6 @@ class Main_Window(QtWidgets.QMainWindow):
                 fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
             #TODO add missing logic blocks
 
-            # d['offset'].append(self.off_corr.tolist())
         print('DONE with automated loop!', '\n', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
 
 
