@@ -23,12 +23,14 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=2 # will do 90/10 train/validation split
 TEST_NUM=1 # number of additional test samples to create
-NAME="wjlearn_2"
-# NAME="20.07.22_1D_offset_15k" # make this as descriptive as possible
+NAME="testing_1" # make this as descriptive as possible
+MULTI=0 # change to 1 for multi
+OFFSET=1 # change to 1 for offset
+ZERN=1 # change to 0 to just train offset
+
 # don't touch this
-DATASET="${DATA_DIR}/${NAME}.hdf5"
-MULTI=0
-OFFSET=0
+DATE=`date +%d-%m-%y`
+DATASET="${DATA_DIR}/${DATE}_${NAME}.hdf5"
 
 # To see all options, run 'python create_train_data.py --help'. Output copied below.
 #
@@ -47,7 +49,7 @@ OFFSET=0
 # only sted mode is tested for now
 
 if [ ! -f ${DATASET} ]; then
-python ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted' --multi ${MULTI} --offset ${OFFSET}
+python ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted' --multi ${MULTI} --offset ${OFFSET} --zern ${ZERN}
 else
 echo "Dataset already exists"
 fi
@@ -79,11 +81,11 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --logdir              path to logging dir for optional tensorboard visualization
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
-if [ ! -f ${MODEL_STORE_PATH} ]; then
-python ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --multi ${MULTI} --offset ${OFFSET}
-else
-echo "Model already exists"
-fi
+# if [ ! -f ${MODEL_STORE_PATH} ]; then
+# python ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --multi ${MULTI} --offset ${OFFSET} --zern ${ZERN}
+# else
+# echo "Model already exists"
+# fi
 ####################### 3. EVALUATE ################################
 # To see all options, run 'python evaluate.py --help'. Output copied below.
 #
@@ -96,6 +98,6 @@ fi
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR}
+# python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR}
 
 #./autoalign/runs/tensorboard.sh

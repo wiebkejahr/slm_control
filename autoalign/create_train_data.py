@@ -37,18 +37,21 @@ def main(args):
     num_data_pts = args.num_points
     hdf5_path = args.data_dir
     res = args.resolution
+    if_zern = args.zern
+    if_offset = args.offset
+    if_multi = args.multi
 
     # create partition: 90/10 train/val split
     train_num = int(0.9*num_data_pts)
     val_num = num_data_pts - train_num 
     test_num = args.test_num
     
-    # print('number of training examples: {}'.format(train_num))
-    # print('number of validation examples: {}'.format(val_num))
-    # print('number of test images: {}'.format(test_num))
+    print('number of training examples: {}'.format(train_num))
+    print('number of validation examples: {}'.format(val_num))
+    print('number of test images: {}'.format(test_num))
 
     # if the flag for multi-channel is there, give it 3 color channels
-    if args.multi:
+    if if_multi:
         channel_num = 3
     else:
         channel_num = 1
@@ -70,28 +73,39 @@ def main(args):
     val_labels = []
     test_labels = []
 
-    if args.offset:
-        label_dim = 13
-    else:
-        label_dim = 11
-    #NOTE: overriding
-    # label_dim = 2
+    # label_dim will be 0,2,11,or 13 depending on combo of features
+    label_dim = 0
+    if if_zern: label_dim += 11
+    if if_offset: label_dim += 2
+    # print('label dimention is: ')
+    # print(label_dim)
+ 
 
     for i in tqdm(range(train_num)):
         if args.mode == 'sted':
+            # if flags for zern and offset given, will generate labels
+            # otherwise they are zeros
+            if if_zern: 
+                zern_label = gen_coeffs()
+            else:
+                zern_label = np.asarray([0.0]*11)
+            if if_offset: 
+                offset_label = gen_offset()
+            else:
+                offset_label = np.asarray([0.0]*2)
 
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
-            tiptilt = center(img, multi=args.multi)
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
+            img = get_sted_psf(coeffs=zern_label, res=[res,res], offset_label=offset_label, multi=if_multi)
+            # calculates the tip and tilt present in the image and corrects it
+            tiptilt = center(img)
+            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, tiptilt=tiptilt)
 
+        # NOTE: get_fluor_psf not up to date yet
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
         # save the label and image
-        if args.offset:
-            train_labels.append(zern_label+offset_label)
-        else:
-            train_labels.append(zern_label)
+        # always save a 13 dim label, can always truncate if you need
+        train_labels.append(np.append(zern_label, offset_label))
 
         hdf5_file["train_img"][i, ...] = img[None]
 
@@ -103,19 +117,24 @@ def main(args):
     
     for i in tqdm(range(val_num)):
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
-            tiptilt = center(img, multi=args.multi)
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
+            if if_zern: 
+                zern_label = gen_coeffs()
+            else:
+                zern_label = np.asarray([0.0]*11)
+            if if_offset: 
+                offset_label = gen_offset()
+            else:
+                offset_label = np.asarray([0.0]*2)
+
+            img = get_sted_psf(coeffs=zern_label, res=[res,res], offset_label=offset_label, multi=if_multi)
+            tiptilt = center(img)
+            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, tiptilt=tiptilt)
 
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
         # save the label and image
-        if args.offset:
-            val_labels.append(zern_label+offset_label)
-        
-        else:
-            val_labels.append(zern_label)
+        val_labels.append(np.append(zern_label, offset_label))
 
         hdf5_file["val_img"][i, ...] = img[None]
 
@@ -128,21 +147,25 @@ def main(args):
     for i in tqdm(range(test_num)):
         
         if args.mode == 'sted':
-            img, zern_label, offset_label = gen_sted_psf(multi=args.multi, offset=args.offset, defocus=False)
-            tiptilt = center(img, multi=args.multi)
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, corrections=tiptilt)
-        
+            if if_zern: 
+                zern_label = gen_coeffs()
+            else:
+                zern_label = np.asarray([0.0]*11)
+            if if_offset: 
+                offset_label = gen_offset()
+            else:
+                offset_label = np.asarray([0.0]*2)
+
+            img = get_sted_psf(coeffs=zern_label, res=[res,res], offset_label=offset_label, multi=if_multi)
+            tiptilt = center(img)
+            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, tiptilt=tiptilt)
         
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
         # save the label and image
-        if args.offset:
-            test_labels.append(zern_label+offset_label)
-        else:
-            test_labels.append(zern_label)
+        test_labels.append(np.append(zern_label, offset_label))
             
-
         hdf5_file["test_img"][i, ...] = img[None]
 
     # create the label array
@@ -163,7 +186,9 @@ if __name__ == '__main__':
     parser.add_argument('--multi', type=int, default=0, \
         help='whether or not to use cross-sections')  
     parser.add_argument('--offset', type=int, default=0, \
-        help='whether or not to incorporate offset')  
+        help='whether or not to incorporate offset')
+    parser.add_argument('--zern', type=int, default=1, \
+        help='whether or not to include optical aberrations')  
     parser.add_argument('--mode', type=str, choices=['fluor', 'sted', 'z-sted'],\
         help='which mode of data to create') 
     ARGS = parser.parse_args()

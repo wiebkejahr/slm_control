@@ -137,10 +137,9 @@ def main(args):
     logdir = args.logdir
     warm_start = args.warm_start
 
-
     mean, std = helpers.get_stats(data_path, batch_size)
-    # exit()
     # Norm = my_classes.MyNormalize(mean=mean, std=std)
+    
     # this is for reproducibility, it renders the model deterministic
     seed = 0
     np.random.seed(seed)

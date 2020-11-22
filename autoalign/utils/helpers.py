@@ -39,18 +39,6 @@ def normalize_img(img):
     """Normalizes the pixel values of an image (np array) between 0.0 and 1.0"""
     return (img-np.min(img))/(np.max(img)-np.min(img))
 
-def add_noise_old(img):
-    """Adds Poisson noise to the image using skimage's built-in method. Function normalizes image before adding noise"""
-    # return img + np.random.poisson(img)
-    return skimage.util.random_noise(normalize_img(img), mode='gaussian', seed=None, clip=True, var=0.0001)
-
-# def crop_image(img,tol=0.2):
-#     """Function to crop the dark line on the edge of the acquired image data.
-#     img is 2D image data (NOTE: it only works with 2D!)
-#     tol  is tolerance."""
-#     mask = img>tol
-#     return img[np.ix_(mask.any(1),mask.any(0))]
-
 # NOTE: fn contributed by Julia Lyudchik
 # TODO: tune optional argument values to match the look we're going for
 def add_noise(image, bgnoise_amount=1, poiss_amount=350):
@@ -64,7 +52,6 @@ def add_noise(image, bgnoise_amount=1, poiss_amount=350):
     #Poisson noise
     final_poiss = np.random.poisson(final_Nb / np.amax(final_Nb) * poiss_amount) / poiss_amount * np.amax(final_Nb)
     return final_poiss
-
 
 def preprocess(image):
     """function for preprocessing image pulled from Abberior msr stack. Used in abberior.py"""
@@ -139,9 +126,6 @@ def calc_defocus(img_xz, img_yz, lambd=0.775, f=1.8, D=5.04, px_size=10, abberio
 
     dz = np.average([dz_xz, dz_yz])*px_size
     #d_obj = D/3/1000 # scaling
-    # print(dz, f, D, lambd)
-
-    # exit()
     
     defocus = dz/((f/D)**2 *8 * np.sqrt(3)*lambd*1e3)/2
     #TODO: freak factor of two? check derivation again
@@ -180,16 +164,19 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
     return [xtilt, ytilt]
 
 
-def center(xy, res=64, multi=True):
+def center(img):
     """Returns the correction phasemask to counteract tiptilt present in given image"""
-    if multi:
-        xy = xy[0]
-    
+    if len(img.shape) == 2:
+        xy = img
+    elif len(img.shape) == 3:
+        xy = img[0]
+    else:
+        print('Image is not the right shape')
+        exit()
     xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
     tiptilt = create_phase(coeffs=[xtilt, ytilt], num=[0,1])
-    # corrected = get_sted_psf(coeffs=label, multi=multi, corrections=tiptilt)
+
     return tiptilt
-    # return corrected
 
 def gen_offset(obj_dia = 5.04, scale = 0.1):
     """A function to generate an offset [x, y] to displace the STED psf. 
@@ -220,12 +207,13 @@ def gen_coeffs(num=11, scale = 0.1):
 
 def corr_coeff(img1, img2=[], multi=False):
     if len(img2)==0:
+        # if only only image is passed, get the ideal donut to compare against
         img2 = get_sted_psf(multi=multi)
 
     return np.corrcoef(img1.flat, img2.flat)[0,1]
 
 
-def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), size=[64, 64], radscale = 2, corrections = []):
+def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), size=[64, 64], radscale = 2):#, corrections = []):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -253,80 +241,71 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), size=[64, 64
             [4,-4],[4,-2],[4,0],[4,2],[4,4]]
     
     # sanity checks
-    # assert(len(coeffs) == len(orders)) # should both be 12
-    #print(np.size(coeffs))
-    #print(len(num))
     assert(np.size(coeffs) == len(num))
     # this multiplies each zernike term phase mask by its corresponding weight in a time-efficient way.
     # it's convoluted, but I've checked it backwards and forwards to make sure it's correct.
-
-    # terms = [coeff*PC.crop(PC.create_zernike(size*2, order), size, offset) for coeff, order in list(zip(coeffs, orders))] 
-    # terms = [PC.create_zernike(size, order, amp = coeff, radscale=radscale) for coeff, order in list(zip(coeffs, orders))] 
+ 
     # NOTE: this is changed so I can call any subset of the full orders with another list called num
+    # uses the Pattern Calculator create_zernike fn
     terms = [PC.create_zernike(size, orders[i], amp = coeff, radscale=radscale) for coeff, i in list(zip(coeffs, num))] 
 
     zern = sum(terms)
     # returns one conglomerated phase mask containing all the weighted aberrations from each zernike term.
     # zern represents the collective abberations that will be added to an ideal donut.
-    # NOTE: This causes an error when tiptilt is not given
-    if len(corrections) > 0 :
-        for corr in corrections:
-            # print(zern.shape)
-            # print(corr.shape)
-            zern = np.add(zern, corr)
-    # for i in range(len(corrections)):
-    #     zern += corrections[i]
-    # zern = zern + tiptilt
-    # zern = zern + corrections[0]
+    
+
+    # # wait I might be dumb. I can just add this in to the xysted fn??
+    # if len(corrections) > 0 :
+    #     for corr in corrections:
+    #         zern = np.add(zern, corr)
 
     return zern
 
 
-def gen_sted_psf(res=64, offset=False,  multi=False, defocus=False):
+# def gen_sted_psf(res=[64,64], offset=False,  multi=False, defocus=False):
+#     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
+#     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
+
+#     if defocus:
+#         coeffs = gen_coeffs(num=12)
+#         nums = np.arange(2, 14)
+#     else:
+#         coeffs = gen_coeffs(num=11)
+#         nums = np.arange(3, 14)
+    
+#     if offset:
+#         offset_label = gen_offset()
+#     else:
+#         offset_label = np.asarray([0,0])
+
+#     zern = create_phase(coeffs, num=nums, size = res)
+    
+#     if multi:
+#         plane = 'all'
+#     else:
+#         plane = 'xy'
+
+#     img = sted_psf(zern, res, offset=offset_label, plane=plane)
+
+#     return img, coeffs, offset_label
+
+def get_sted_psf(coeffs=np.asarray([0.0]*11), res=[64,64], offset_label=[0,0],  multi=False, tiptilt=None, defocus=False):# corrections=[]):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
     if defocus:
-        coeffs = gen_coeffs(num=12)
         nums = np.arange(2, 14)
     else:
-        coeffs = gen_coeffs(num=11)
         nums = np.arange(3, 14)
     
-    if offset:
-        offset_label = gen_offset()
-    else:
-        offset_label = np.asarray([0,0])
-
-    zern = create_phase(coeffs, num=nums, size = [res, res])
+    zern = create_phase(coeffs=coeffs, num=nums, size=res)#, corrections=corrections)
     
     if multi:
         plane = 'all'
     else:
         plane = 'xy'
 
-    img = sted_psf(zern, res, offset=offset_label, plane=plane)
-
-    return img, coeffs, offset_label
-
-def get_sted_psf(coeffs=np.asarray([0.0]*11), res=64, offset_label=[0,0],  multi=False, defocus=False, corrections=[]):
-    """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
-    If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
-
-    if defocus:
-        nums = np.arange(2, 14)
-    else:
-        nums = np.arange(3, 14)
-    
-    zern = create_phase(coeffs=coeffs,num=nums, size = [res, res], corrections=corrections)
-    
-    if multi:
-        plane = 'all'
-    else:
-        plane = 'xy'
-
-    img = sted_psf(zern, res, offset=offset_label, plane=plane)
-    # img = add_noise(img)
+    img = sted_psf(zern, res, offset=offset_label, plane=plane, tiptilt=tiptilt)
     
     return img
 

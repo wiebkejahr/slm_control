@@ -101,16 +101,7 @@ class PSFDataset(data.Dataset):
 #                 'label': label}
 
 
-class Noise(object):
-    """Given a bgnoise and poisson_noise with constructor call, it adds noise to the input."""
-    def __init__(self, bgnoise, poiss):
-        self.bgnoise = bgnoise
-        self.poiss = poiss
 
-    def __call__(self, sample):
-        image, label = sample['image'].numpy(), sample['label'].numpy()
-        return {'image': torch.from_numpy(helpers.add_noise(image, bgnoise_amount=self.bgnoise, poiss_amount=self.poiss)),
-                'label': torch.from_numpy(label)}
 
 
 class Normalize(object):

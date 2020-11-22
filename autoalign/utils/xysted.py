@@ -16,7 +16,7 @@ def stim_em(exc, sted, isat):
     return depleted
 
 
-def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
+def sted_psf(zern, res=[64,64], offset=[0,0], plane='xy', tiptilt=None):
     
     # with open('utils/params.txt') as json_file:
     with open('parameters/laser_params.txt') as json_file:
@@ -61,8 +61,8 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     numerical_params = {
     "out_scrn_size" : 1,
     "z_extent" : 1,
-    "out_res" : res, 
-    "inp_res" : res 
+    "out_res" : res[0], 
+    "inp_res" : res[0] 
     }
 
     ##########################################################################
@@ -96,7 +96,10 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
     # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
     # print('phase')
     phasemask = donut + zern
-    # print('phasemask')
+    # if there was a given tiptilt correction phase, add it in here
+    if tiptilt is not None:
+        phasemask += tiptilt
+ 
     # print(np.max(phasemask), np.min(phasemask)) # (2.646, -1.696)
     # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
     # print(np.max(helpers.normalize_img(donut)), np.min(helpers.normalize_img(donut)))
@@ -139,7 +142,7 @@ def sted_psf(zern, res=64, offset=[0,0], plane='xy'):
  
 
 
-def fluor_psf(zern, res=64, offset=[0,0], plane='xy'):
+def fluor_psf(zern, res=[64,64], offset=[0,0], plane='xy'):
 
     # with open('utils/params.txt') as json_file:
     with open('parameters/laser_params.txt') as json_file:
@@ -186,8 +189,8 @@ def fluor_psf(zern, res=64, offset=[0,0], plane='xy'):
     numerical_params = {
     "out_scrn_size" : 0.05,
     "z_extent" : 1.0,
-    "out_res" : res, #150,
-    "inp_res" : res #151
+    "out_res" : res[0], #150,
+    "inp_res" : res[0] #151
     }
 
  
@@ -207,7 +210,7 @@ def fluor_psf(zern, res=64, offset=[0,0], plane='xy'):
 
     size = np.asarray([numerical_params["out_res"], numerical_params["out_res"]])
     # gauss
-    phasemask = PC.crop(PC.create_gauss(2*size), size, offet)
+    phasemask = PC.crop(PC.create_gauss(2*size), size, offset)
     # phasemask = np.zeros_like(r)
     
 
