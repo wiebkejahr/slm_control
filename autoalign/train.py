@@ -59,14 +59,14 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             labels = labels.to(device)
 
             # Run the forward pass
-            outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
-            print(outputs.numpy().shape)
-            exit()
-            # no activation function on the final layer means that the output IS the weight of the final layer
-            loss = criterion(outputs, labels) # MSE
-            # sum of averages for each coeff position
-            loss = torch.sum(torch.mean(loss, dim=0))
+            outputs = model(images) # e.g. [64, 13] = [batch_size, output_dim]
+            # print(outputs.shape)
             
+            matrix_loss = criterion(outputs, labels) # MSE # [batch_size, output_dim]
+            # sum of averages for each coeff position
+            avg_loss_per_coeff = torch.mean(matrix_loss, dim=0) # [output_dim]
+            loss = torch.sum(avg_loss_per_coeff) # []
+
             # zero the parameter gradients
             optimizer.zero_grad()
             # backward + optimize only in train
@@ -92,7 +92,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         #         'model_state_dict': model.state_dict(),
         #         'optimizer_state_dict': optimizer.state_dict()
         #         }, model_store_path)
-        torch.save(model, model_store_path) 
+        # torch.save(model, model_store_path) 
         
         # VALIDATION LOOP   
         model.eval()
@@ -105,11 +105,21 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             labels = labels.to(device)
 
             with torch.no_grad(): # drastically increases computation speed and reduces memory usage
-                # Get model outputs (the predicted Zernike coefficients)
-                # outputs = model(images)
+                # Get model outputs 
                 outputs = model(images)
-                loss = criterion(outputs, labels) # performing  mean squared error calculation
-                loss = torch.sum(torch.mean(loss, dim=0))
+                matrix_loss = criterion(outputs, labels) # performing  mean squared error calculation
+                avg_loss_per_coeff = torch.mean(matrix_loss, dim=0)
+                loss = torch.sum(avg_loss_per_coeff)
+
+                # TODO: add an accuracy function here. 
+                correct = 0
+                batch_size = matrix_loss.shape[0]
+                # print(batch_size) # 20
+                
+                metric = matrix_loss.numpy() < 1e-4
+                accuracy = np.sum(metric)/(batch_size*13)
+                
+                print('Accuracy: {}'.format(accuracy))
 
                 # statistics logging
                 val_loss += loss.item()
@@ -148,8 +158,8 @@ def main(args):
     np.random.seed(seed)
     torch.manual_seed(seed)
     
-    # tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
-    tsfms = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
+    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
+    # tsfms = transforms.Compose([my_classes.ToTensor(), transforms.Normalize(mean=mean, std=std)])
 
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
     val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
@@ -176,27 +186,10 @@ def main(args):
     out_dim = 0
     if args.zern: out_dim += 11
     if args.offset: out_dim += 2
-    print('out_dim is: ')
-    print(out_dim)
-
-
-    # if args.multi:
-    #     if args.offset:
-    #         model = my_models.MultiOffsetNet13()
-    #         name = 'MultiOffsetNet13()'
-    #     else:
-    #         model = my_models.MultiNet11()
-    #         name = 'MultiOffsetNet11()'
-    # else:
-    #     if args.offset:
-    #         model = my_models.OffsetNet13()
-    #         name = 'OffsetNet13()'
-    #     else:
-    #         model = my_models.Net11()
-    #         name = 'OffsetNet13()'
 
     model = my_models.MyNet(input_dim=in_dim, output_dim=out_dim)
     # print(summary(model, input_size=(in_dim, 64, 64), batch_size=-1))
+    
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     # if a warm start was specified, load model and optimizer state parameters
@@ -205,7 +198,6 @@ def main(args):
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     
-
     # grabbing just the model name with this split
     name = model_store_path.split('/')[-1]
     model_params = {'multi': args.multi,
