@@ -21,6 +21,44 @@ class ISOnet(nn.Module):
         x = F.max_pool2d(F.relu(self.conv1(x)), (2,2))
         x = F.max_pool2d(F.relu(self.conv2(x)), (2,2))
         
+class MyNet(nn.Module):
+    """
+    A simple CNN based on AlexNet
+    Architecture followed from Zhang et. al, 
+    "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
+    """
+    def __init__(self, input_dim=1, output_dim=12):
+        super(MyNet, self).__init__()
+        self.conv1 = nn.Conv2d(input_dim, 32, kernel_size=5, stride=1, padding=2)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv5 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        
+        self.fc1 = nn.Linear(8 * 8 * 64, 512)  # 64 channels, final img size 8x8
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, output_dim)
+
+        self.relu = nn.ReLU(inplace=False)
+
+    def forward(self, x):
+        
+        x = x.float()
+        x = F.dropout(F.max_pool2d(self.relu(self.conv1(x)), (2, 2)), p=0.1)
+        x = F.dropout(F.max_pool2d(self.relu(self.conv2(x)), (2, 2)), p=0.1)
+        x = self.relu(self.conv3(x))
+        x = self.relu(self.conv4(x))
+        
+        x = F.max_pool2d(self.relu(self.conv5(x)), (2, 2))
+        # flatten
+        x = x.reshape(x.size(0), -1)
+        x = F.dropout(self.relu(self.fc1(x)), p=0.2)
+        x = F.dropout(self.relu(self.fc2(x)), p=0.2)
+        x = self.fc3(x)
+        return x
+
+
+
 
 class Net12(nn.Module):
     """

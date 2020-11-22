@@ -1,0 +1,11 @@
+{
+    "testing_1_eps_15_lr_0.001_bs_64.pth": {
+        "multi": 0,
+        "offset": 0,
+        "zern": 1,
+        "learning rate": 0.001,
+        "epochs": 15,
+        "batch size": 64,
+        "dataset": "./autoalign/datasets/22.11.20_testing_1.hdf5"
+    }
+}

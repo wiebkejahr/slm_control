@@ -7,6 +7,7 @@ Created on: Wednesday, 6th November 2019 9:47:12 am
 """Module docstring goes here."""
 # standard imports
 from datetime import datetime
+import json
 
 # third party imports
 import torch
@@ -22,6 +23,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, models, transforms
 from torch.utils.tensorboard import SummaryWriter
+from torchsummary import summary
 
 # local packages
 import utils.my_classes as my_classes
@@ -58,6 +60,8 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
 
             # Run the forward pass
             outputs = model(images) # e.g. [32, 12] = [batch_size, output_dim]
+            print(outputs.numpy().shape)
+            exit()
             # no activation function on the final layer means that the output IS the weight of the final layer
             loss = criterion(outputs, labels) # MSE
             # sum of averages for each coeff position
@@ -73,7 +77,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             running_loss += loss.item() # loss.item() is the loss over a single batch
         
             total_step= len(data_loaders['train']) 
-            update_num = 1
+            update_num = 10
             if (i + 1) % update_num == 0: # will log to tensorboard after `update_num` batches, roughly
                 # ...log the running loss
                 # print('running train loss: {}'.format(running_loss))
@@ -110,7 +114,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 # statistics logging
                 val_loss += loss.item()
                 total_step= len(data_loaders['val']) # number of batches
-                update_num = 1
+                update_num = 10
                 if (i + 1) % update_num == 0:
                     # ...log the validation loss
                     # print('running val loss: {}'.format(val_loss))
@@ -138,20 +142,17 @@ def main(args):
     warm_start = args.warm_start
 
     mean, std = helpers.get_stats(data_path, batch_size)
-    # Norm = my_classes.MyNormalize(mean=mean, std=std)
     
     # this is for reproducibility, it renders the model deterministic
     seed = 0
     np.random.seed(seed)
     torch.manual_seed(seed)
     
-    # tsfms = transforms.Compose([my_classes.Center(), my_classes.Normalize(mean=mean, std=std), my_classes.Noise(), my_classes.ToTensor()])
-    # tsfms = transforms.Compose([my_classes.Noise(), my_classes.Center(), my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
-    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
-    
+    # tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
+    tsfms = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
+
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
     val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
-
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
@@ -167,21 +168,35 @@ def main(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     ################################## running ###################################
     
-    # TODO: the above method of modifying the dataset after creation also gives a streamlined
-    # way of choosing the model based on the features. For now just override, as below
     if args.multi:
-        if args.offset:
-            model = my_models.MultiOffsetNet13()
-        else:
-            model = my_models.MultiNet11()
+        in_dim = 3
     else:
-        if args.offset:
-            model = my_models.OffsetNet13()
-        else:
-            model = my_models.Net11()
+        in_dim = 1
 
-    print(model)
+    out_dim = 0
+    if args.zern: out_dim += 11
+    if args.offset: out_dim += 2
+    print('out_dim is: ')
+    print(out_dim)
 
+
+    # if args.multi:
+    #     if args.offset:
+    #         model = my_models.MultiOffsetNet13()
+    #         name = 'MultiOffsetNet13()'
+    #     else:
+    #         model = my_models.MultiNet11()
+    #         name = 'MultiOffsetNet11()'
+    # else:
+    #     if args.offset:
+    #         model = my_models.OffsetNet13()
+    #         name = 'OffsetNet13()'
+    #     else:
+    #         model = my_models.Net11()
+    #         name = 'OffsetNet13()'
+
+    model = my_models.MyNet(input_dim=in_dim, output_dim=out_dim)
+    # print(summary(model, input_size=(in_dim, 64, 64), batch_size=-1))
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     # if a warm start was specified, load model and optimizer state parameters
@@ -190,6 +205,22 @@ def main(args):
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     
+
+    # grabbing just the model name with this split
+    name = model_store_path.split('/')[-1]
+    model_params = {'multi': args.multi,
+                    'offset': args.multi,
+                    'zern': args.zern,
+                    'learning rate': args.lr,
+                    'epochs': args.num_epochs,
+                    'batch size': args.batch_size,
+                    'dataset': args.dataset}
+
+    # this works to make the json once, but will always overwrite
+    with open("model_params.json", "w") as f:
+        data = json.dumps({name: model_params}, indent=4)
+        f.write(data)
+
     # train the model
     train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path)
 
@@ -205,7 +236,9 @@ if __name__ == '__main__':
     parser.add_argument('--multi', type=int, default=0, \
         help='whether or not to use cross-sections')  
     parser.add_argument('--offset', type=int, default=0, \
-        help='whether or not to incorporate offset') 
+        help='whether or not to incorporate offset')
+    parser.add_argument('--zern', type=int, default=1, \
+        help='whether or not to include optical aberrations') 
     parser.add_argument('--logdir', type=str, help='path to logging dir for optional tensorboard visualization')
     parser.add_argument('--warm_start', type=str, help='path to a previous checkpoint dir for a warm start')     
     ARGS=parser.parse_args()

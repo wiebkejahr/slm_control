@@ -213,7 +213,7 @@ def corr_coeff(img1, img2=[], multi=False):
     return np.corrcoef(img1.flat, img2.flat)[0,1]
 
 
-def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), size=[64, 64], radscale = 2):#, corrections = []):
+def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), size=[64, 64], radscale = 2):
     """
     Creates a phase mask of all of the weighted Zernike terms (= phase masks)
     
@@ -289,7 +289,7 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), size=[64, 64
 
 #     return img, coeffs, offset_label
 
-def get_sted_psf(coeffs=np.asarray([0.0]*11), res=[64,64], offset_label=[0,0],  multi=False, tiptilt=None, defocus=False):# corrections=[]):
+def get_sted_psf(coeffs=np.asarray([0.0]*11), res=[64,64], offset_label=[0,0],  multi=False, tiptilt=None, defocus=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
 
