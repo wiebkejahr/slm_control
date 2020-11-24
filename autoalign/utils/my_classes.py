@@ -51,7 +51,7 @@ class PSFDataset(data.Dataset):
         sample = {'image': self.images[idx], 'label': self.labels[idx]}
         
         if self.transform:
-            sample = self.transform(sample)
+            sample['image'] = self.transform(sample['image'])
 
         return sample
         # return {sample['image'], sample['label']}
@@ -111,29 +111,32 @@ class Normalize(object):
         self.mean = mean
         self.std = std
 
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
+    def __call__(self, image): #sample):
+        
+        #image, label = sample['image'], sample['label']
         
         for channel in range(image.size(0)):
             image[channel] = (image[channel] - self.mean[channel])/ self.std[channel]
 
-        return {'image': image,
-                'label': label}
+        return image
+        # return {'image': image,
+        #         'label': label}
 
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
+    def __call__(self, image): #sample):
+        #image, label = sample['image'], sample['label']
         # NOTE: really not sure about these axes, 
         # I'm only using 1 color channel, so it's usually non-existent
         # swap color axis because
         # numpy image: H x W x C
         # torch image: C X H X W
         #image = image.transpose((2, 0, 1))
-        return {'image': torch.from_numpy(image),
-                'label': torch.from_numpy(label)}
+        return torch.from_numpy(image)
+        # return {'image': torch.from_numpy(image),
+        #         'label': torch.from_numpy(label)}
 
 
 

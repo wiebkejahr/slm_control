@@ -23,14 +23,15 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=200 # will do 90/10 train/validation split
 TEST_NUM=20 # number of additional test samples to create
-NAME="testing_1" # make this as descriptive as possible
+NAME="22.11.20_testing_1" # make this as descriptive as possible
 MULTI=0 # change to 1 for multi
 OFFSET=1 # change to 1 for offset
 ZERN=1 # change to 0 to just train offset
 
 # don't touch this
-DATE=`date +%d.%m.%y`
-DATASET="${DATA_DIR}/${DATE}_${NAME}.hdf5"
+# DATE=`date +%d.%m.%y`
+# DATASET="${DATA_DIR}/${DATE}_${NAME}.hdf5"
+DATASET="${DATA_DIR}/${NAME}.hdf5"
 
 # To see all options, run 'python create_train_data.py --help'. Output copied below.
 #
@@ -57,8 +58,8 @@ fi
 ######################### 2. TRAIN ##################################
 # HYPERPARAMETERS 
 LR=0.001 # learning rate
-NUM_EPOCHS=15
-BATCH_SIZE=64
+NUM_EPOCHS=2
+BATCH_SIZE=32
 MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}"
 # MODEL_NAME="20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_SECOND"
 # don't touch these
@@ -98,6 +99,6 @@ fi
 #   -h, --help        show this help message and exit
 #   --logdir          path to logging dir for optional tensorboard visualization
 
-# python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR}
+python ${OUTPUT_DIR}/evaluate.py ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR}
 
 #./autoalign/runs/tensorboard.sh
