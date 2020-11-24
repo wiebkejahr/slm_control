@@ -52,10 +52,13 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
             images = sample['image']
             labels = sample['label']
-            
 
+            # train_writer.add_graph(model, images)
+            grid = torchvision.utils.make_grid(images)
+            train_writer.add_image("images", grid)
+            
             # if GPU is available, this allows the computation to happen there
-            images = images.to(device)
+            images = images.to(device) #[batch_size, C, H, W]
             labels = labels.to(device)
 
             # Run the forward pass
@@ -77,7 +80,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             running_loss += loss.item() # loss.item() is the loss over a single batch
         
             total_step= len(data_loaders['train']) 
-            update_num = 10
+            update_num = 1
             if (i + 1) % update_num == 0: # will log to tensorboard after `update_num` batches, roughly
                 # ...log the running loss
                 # print('running train loss: {}'.format(running_loss))
@@ -92,7 +95,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         #         'model_state_dict': model.state_dict(),
         #         'optimizer_state_dict': optimizer.state_dict()
         #         }, model_store_path)
-        # torch.save(model, model_store_path) 
+        torch.save(model, model_store_path) 
         
         # VALIDATION LOOP   
         model.eval()
@@ -100,7 +103,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             
             images = sample['image']
             labels = sample['label']
-
+        
             images = images.to(device)
             labels = labels.to(device)
 
@@ -111,8 +114,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 avg_loss_per_coeff = torch.mean(matrix_loss, dim=0)
                 loss = torch.sum(avg_loss_per_coeff)
 
-                # TODO: add an accuracy function here. 
-                correct = 0
+
                 batch_size = matrix_loss.shape[0]
                 # print(batch_size) # 20
                 
@@ -120,11 +122,12 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 accuracy = np.sum(metric)/(batch_size*13)
                 
                 print('Accuracy: {}'.format(accuracy))
+                train_writer.add_scalar('validation accuracy', accuracy, epoch)
 
                 # statistics logging
                 val_loss += loss.item()
                 total_step= len(data_loaders['val']) # number of batches
-                update_num = 10
+                update_num = 1
                 if (i + 1) % update_num == 0:
                     # ...log the validation loss
                     # print('running val loss: {}'.format(val_loss))
@@ -132,8 +135,10 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                                 val_loss/update_num,
                                 epoch * total_step + i)
                     val_loss = 0.0
-    
-        
+
+                
+
+    train_writer.close()
     return model
 
 def main(args):
@@ -158,8 +163,10 @@ def main(args):
     np.random.seed(seed)
     torch.manual_seed(seed)
     
-    tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
+    # tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
     # tsfms = transforms.Compose([my_classes.ToTensor(), transforms.Normalize(mean=mean, std=std)])
+    # NOTE: both Nomralize fns make the image looks really weird
+    tsfms = my_classes.ToTensor()
 
     train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
     val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
@@ -187,11 +194,12 @@ def main(args):
     if args.zern: out_dim += 11
     if args.offset: out_dim += 2
 
-    model = my_models.MyNet(input_dim=in_dim, output_dim=out_dim)
-    # print(summary(model, input_size=(in_dim, 64, 64), batch_size=-1))
-    
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
+    model = my_models.CNN_LSTM(input_dim=in_dim)
+    # model = my_models.MyNet(input_dim=in_dim, output_dim=out_dim)
+    # print(summary(model, input_size=(in_dim, 64, 64), batch_size=out_dim))
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # exit()
     # if a warm start was specified, load model and optimizer state parameters
     if args.warm_start:
         checkpoint = torch.load(warm_start)

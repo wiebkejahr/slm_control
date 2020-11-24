@@ -147,16 +147,45 @@ def main(args):
     
     mean, std = get_stats(data_path, batch_size=10, mode='test')
     test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='test', transform=transforms.Compose([
-        my_classes.ToTensor(), 
-        my_classes.Normalize(mean=mean, std=std)]))
+        my_classes.ToTensor()])) 
+        #, my_classes.Normalize(mean=mean, std=std)]))
     test_loader = DataLoader(dataset=test_dataset, batch_size=1, \
         shuffle=False, num_workers=0)
 
+    # batch_size = matrix_loss.shape[0]
+    #             # print(batch_size) # 20
+                
+    #             metric = matrix_loss.numpy() < 1e-4
+    #             accuracy = np.sum(metric)/(batch_size*13)
+
     # print(next(iter(test_loader)))
     # exit()
+    
+    with torch.no_grad():
+        model.eval()
+        
+        for i, sample in enumerate(test_loader): # i is 0 when batch_size is 1
+            images = sample['image']
+            labels = sample['label']
+
+            outputs = model(images)
+
+            criterion = nn.MSELoss(reduction='none')
+            matrix_loss = criterion(outputs, labels) # performing  mean squared error calculation
+            avg_loss_per_coeff = torch.mean(matrix_loss, dim=0)
+            loss = torch.sum(avg_loss_per_coeff)
+
+            batch_size = matrix_loss.shape[0]
+            # print(batch_size) # 1
+            
+            metric = matrix_loss.numpy() < 1e-2
+            accuracy = np.sum(metric)/(batch_size*13)
+            print(matrix_loss)
+            
+            print('Accuracy: {}'.format(accuracy))
 
 
-    test(model, test_loader, logdir, model_store_path, args.multi, args.offset)
+    # test(model, test_loader, logdir, model_store_path, args.multi, args.offset)
 
 
 
