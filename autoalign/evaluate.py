@@ -178,9 +178,9 @@ def main(args):
             batch_size = matrix_loss.shape[0]
             # print(batch_size) # 1
             
-            metric = matrix_loss.numpy() < 1e-2
+            metric = matrix_loss.numpy() < 1e-4
             accuracy = np.sum(metric)/(batch_size*13)
-            print(matrix_loss)
+            # print(matrix_loss)
             
             print('Accuracy: {}'.format(accuracy))
 

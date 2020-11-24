@@ -50,13 +50,20 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         # TRAINING LOOP
         for i, sample in enumerate(data_loaders['train']):
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
-            images = sample['image']
+            images = sample['image'] #[32, 3, 64, 64]
             labels = sample['label']
 
             # train_writer.add_graph(model, images)
-            grid = torchvision.utils.make_grid(images)
-            train_writer.add_image("images", grid)
-            
+            xgrid = torchvision.utils.make_grid(images[:,0].unsqueeze(1))
+            train_writer.add_image("xy images", xgrid)
+
+            ygrid = torchvision.utils.make_grid(images[:,1].unsqueeze(1))
+            train_writer.add_image("yz images", ygrid)
+
+            zgrid = torchvision.utils.make_grid(images[:,2].unsqueeze(1))
+            train_writer.add_image("xz images", zgrid)
+
+
             # if GPU is available, this allows the computation to happen there
             images = images.to(device) #[batch_size, C, H, W]
             labels = labels.to(device)
@@ -95,7 +102,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         #         'model_state_dict': model.state_dict(),
         #         'optimizer_state_dict': optimizer.state_dict()
         #         }, model_store_path)
-        torch.save(model, model_store_path) 
+        # torch.save(model, model_store_path) 
         
         # VALIDATION LOOP   
         model.eval()
@@ -194,9 +201,8 @@ def main(args):
     if args.zern: out_dim += 11
     if args.offset: out_dim += 2
 
-
-    model = my_models.CNN_LSTM(input_dim=in_dim)
-    # model = my_models.MyNet(input_dim=in_dim, output_dim=out_dim)
+    model = my_models.CNN_LSTM_Multi()
+    # model = my_models.MyNet(input_dim=1, output_dim=out_dim)
     # print(summary(model, input_size=(in_dim, 64, 64), batch_size=out_dim))
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # exit()

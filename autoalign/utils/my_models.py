@@ -10,20 +10,68 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class ISOnet(nn.Module):
-    def __init__(self):
-        super(ISOnet, self).__init__()
-        self.conv1 = nn.Conv2d(1, 16, kernel_size=7)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=7)
-        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear')
-    
-    def forward(self, x):
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2,2))
-        x = F.max_pool2d(F.relu(self.conv2(x)), (2,2))
+class CNN_LSTM_Multi(nn.Module):
 
+    def __init__(self, output_dim=13):
+        super(CNN_LSTM_Multi, self).__init__()
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.lstm1 = torch.nn.LSTM(
+            input_size= 192*16*16, #545,
+            hidden_size=128,
+            num_layers=2,
+        )
+
+        self.fc2 = torch.nn.Linear(128, output_dim)
+    
+    
+    def forward(self, img):
+        x = img[:, 0].unsqueeze(1) # adding dim of 0 after batch dim
+        y = img[:, 1].unsqueeze(1) # [batch, 1, 64, 64]
+        z = img[:, 2].unsqueeze(1)
+
+        x = x.float()
+        x = F.dropout(F.max_pool2d(F.relu(self.conv1(x)), (2, 2)), p=0.1)
+        x = F.dropout(F.max_pool2d(F.relu(self.conv2(x)), (2, 2)), p=0.1)
+        # [batch, 32, 16, 16]
+        
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        # [32, 64, 16, 16]
+
+        y = y.float()
+        y = F.dropout(F.max_pool2d(F.relu(self.conv1(y)), (2, 2)), p=0.1)
+        y = F.dropout(F.max_pool2d(F.relu(self.conv2(y)), (2, 2)), p=0.1)
+        y = F.relu(self.conv3(y))
+        y = F.relu(self.conv4(y))
+
+        z = z.float()
+        z = F.dropout(F.max_pool2d(F.relu(self.conv1(z)), (2, 2)), p=0.1)
+        z = F.dropout(F.max_pool2d(F.relu(self.conv2(z)), (2, 2)), p=0.1)
+        z = F.relu(self.conv3(z))
+        z = F.relu(self.conv4(z))
+
+        a = torch.cat((x, y, z), dim=1) # [batch, 96, 16, 16] that's what we want okay
+        # print(a.shape) # [batch, 192, 16, 16]
+        # print(a.shape)
+        # [batch, 64, 8, 8]
+        # print(x.shape) # [Batch_size,64,64,64]
+        a = a.view(1, a.size(0), a.size(1)*a.size(2)*a.size(3))
+        # print(a.shape)
+        # exit()
+        a,_ = self.lstm1(a)
+
+        a = a[-1, :, :] # [32, 128]
+        a = self.fc2(a)
+        return (a)
+
+        # a = self.fc3(a)
+        # return a
 
 class CNN_LSTM(nn.Module):
-    def __init__(self, input_dim=1):
+    def __init__(self, input_dim=1, output_dim=13):
         super(CNN_LSTM, self).__init__()
         self.conv1 = nn.Conv2d(input_dim, 32, kernel_size=5, stride=1, padding=2)
         self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
@@ -35,7 +83,7 @@ class CNN_LSTM(nn.Module):
             num_layers=2,
         )
 
-        self.fc2 = torch.nn.Linear(128, 13)
+        self.fc2 = torch.nn.Linear(128, output_dim)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -61,9 +109,9 @@ class MyNet(nn.Module):
     Architecture followed from Zhang et. al, 
     "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
     """
-    def __init__(self, input_dim=1, output_dim=12):
+    def __init__(self, output_dim=13):
         super(MyNet, self).__init__()
-        self.conv1 = nn.Conv2d(input_dim, 32, kernel_size=5, stride=1, padding=2)
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2)
         self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
         self.conv4 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
@@ -76,7 +124,6 @@ class MyNet(nn.Module):
         self.relu = nn.ReLU(inplace=False)
 
     def forward(self, x):
-        
         x = x.float()
         x = F.dropout(F.max_pool2d(self.relu(self.conv1(x)), (2, 2)), p=0.1)
         x = F.dropout(F.max_pool2d(self.relu(self.conv2(x)), (2, 2)), p=0.1)
@@ -84,12 +131,75 @@ class MyNet(nn.Module):
         x = self.relu(self.conv4(x))
         
         x = F.max_pool2d(self.relu(self.conv5(x)), (2, 2))
+        # print(a.shape) # [batch, 64, 8, 8]
         # flatten
         x = x.reshape(x.size(0), -1)
         x = F.dropout(self.relu(self.fc1(x)), p=0.2)
         x = F.dropout(self.relu(self.fc2(x)), p=0.2)
         x = self.fc3(x)
         return x
+
+
+class MyMultiNet(nn.Module):
+    """
+    A simple CNN based on AlexNet
+    Architecture followed from Zhang et. al, 
+    "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
+    """
+    def __init__(self, output_dim=13):
+        super(MyMultiNet, self).__init__()
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        # will be concatenated after this, so 64*3
+        self.conv5 = nn.Conv2d(192, 64, kernel_size=3, stride=1, padding=1)
+
+        
+        self.fc1 = nn.Linear(8 * 8 * 64, 512)  # 64 channels, final img size 8x8
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, output_dim)
+
+        self.relu = nn.ReLU(inplace=False)
+
+    def forward(self, img):
+        x = img[:, 0].unsqueeze(1) # adding dim of 0 after batch dim
+        y = img[:, 1].unsqueeze(1) # [batch, 1, 64, 64]
+        z = img[:, 2].unsqueeze(1)
+
+        x = x.float()
+        x = F.dropout(F.max_pool2d(F.relu(self.conv1(x)), (2, 2)), p=0.1)
+        x = F.dropout(F.max_pool2d(F.relu(self.conv2(x)), (2, 2)), p=0.1)
+        # [batch, 32, 16, 16]
+        
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        # [32, 64, 16, 16]
+
+        y = y.float()
+        y = F.dropout(F.max_pool2d(F.relu(self.conv1(y)), (2, 2)), p=0.1)
+        y = F.dropout(F.max_pool2d(F.relu(self.conv2(y)), (2, 2)), p=0.1)
+        y = F.relu(self.conv3(y))
+        y = F.relu(self.conv4(y))
+
+        z = z.float()
+        z = F.dropout(F.max_pool2d(F.relu(self.conv1(z)), (2, 2)), p=0.1)
+        z = F.dropout(F.max_pool2d(F.relu(self.conv2(z)), (2, 2)), p=0.1)
+        z = F.relu(self.conv3(z))
+        z = F.relu(self.conv4(z))
+
+        a = torch.cat((x, y, z), dim=1) # [batch, 96, 16, 16] that's what we want okay
+        # print(a.shape) # [batch, 192, 16, 16]
+
+        a = F.max_pool2d(self.relu(self.conv5(a)), (2, 2))
+        # [batch, 64, 8, 8]
+
+        # flatten
+        a = a.reshape(a.size(0), -1)
+        a = F.dropout(self.relu(self.fc1(a)), p=0.2)
+        a = F.dropout(self.relu(self.fc2(a)), p=0.2)
+        a = self.fc3(a)
+        return a
 
 
 # class Net12(nn.Module):
