@@ -37,7 +37,6 @@ def correct_tip_tilt():
     
     im = sp.Imspector()
     msr = im.active_measurement()
-
     try:
         image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
     except:
@@ -51,7 +50,6 @@ def correct_defocus():
         
     im = sp.Imspector()
     msr = im.active_measurement()
-
     try:
         image_xz = msr.stack('ExpControl Ch1 {13}').data()
     except:
@@ -136,7 +134,7 @@ def acquire_image(im, multi=False):
             im.start(x)
             time.sleep(3)
             im.pause(x)
-            image_yz, _ = grab_image(x, window = 'ExpControl Ch15 {1}')
+            image_yz, _ = grab_image(x, window = 'ExpControl Ch1 {15}')
             # takes off black edge, resizes to (64, 64) and standardizes
             image_yz = helpers.preprocess(image_yz)
         except:
