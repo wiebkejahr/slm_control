@@ -446,7 +446,7 @@ class Main_Window(QtWidgets.QMainWindow):
 
 
     def automate(self):
-        multi=True
+        multi=False
         ortho_sec = True
         offset=True
         num_its=500
@@ -566,8 +566,10 @@ class Main_Window(QtWidgets.QMainWindow):
             # 4. dials in random aberrations and sends them to SLM
             
             #TODO: don't hardcode this anymore depending on model used
-            aberrs = helpers.gen_coeffs(11)
-            #aberrs = [0 for c in range(11)]
+            #aberrs = helpers.gen_coeffs(11)
+            #print('aberrs: ', aberrs)
+            aberrs = [0 for c in range(11)]
+            print('aberrs: ', aberrs)
             ba = self.p.objectives[self.current_objective]["backaperture"]
             off_aberr = [np.round(scale*x) for x in helpers.gen_offset(ba, 0.1)]
 
