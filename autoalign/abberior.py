@@ -154,7 +154,6 @@ def acquire_image(im, multi=False):
 
 def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
     
-    print("predict: ", np.shape(image))
     best_coeffs = []
     best_corr = 0
     for _ in range(ii):
@@ -174,6 +173,7 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
         model = my_models.OffsetNet2()
      
         # gets preds
+        print("predict: ", model_store_path)
         checkpoint = torch.load(model_store_path)
         model.load_state_dict(state_dict=checkpoint['model_state_dict'])
         #model = torch.load(model_store_path)

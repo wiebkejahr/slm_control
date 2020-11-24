@@ -376,7 +376,7 @@ class Main_Window(QtWidgets.QMainWindow):
         
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
-        
+        print("model into predict: ", self.p.general["autodl_model_path"])
         delta_zern, delta_off = abberior.abberior_predict(self.p.general["autodl_model_path"], 
                                                            image, offset=offset, multi=multi, ii=i)
         delta_off = delta_off * scale
@@ -453,8 +453,6 @@ class Main_Window(QtWidgets.QMainWindow):
         px_size = 10
         i_start = 0
         best_of = 5
-        print("save path: ", self.p.general["data_path"])
-        print("used model: ", self.p.general["autodl_model_path"])
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
         
@@ -464,6 +462,8 @@ class Main_Window(QtWidgets.QMainWindow):
         # for model name: drop everything from model path, drop extension
         mdl_name = self.p.general["autodl_model_path"].split("/")[-1][:-4]
         path = self.p.general["data_path"] + mdl_name
+        print("save path: ", path)
+        print("used model: ", mdl_name)
         if not os.path.isdir(self.p.general["data_path"]):
             os.mkdir(self.p.general["data_path"])
         if not os.path.isdir(path):
@@ -566,11 +566,11 @@ class Main_Window(QtWidgets.QMainWindow):
             # 4. dials in random aberrations and sends them to SLM
             
             #TODO: don't hardcode this anymore depending on model used
+            #WHOLE BLOCK; BOTH for aberrs as well as off_aberr
             #aberrs = helpers.gen_coeffs(11)
-            #print('aberrs: ', aberrs)
             aberrs = [0 for c in range(11)]
-            print('aberrs: ', aberrs)
             ba = self.p.objectives[self.current_objective]["backaperture"]
+            off_aberr = [0,0]
             off_aberr = [np.round(scale*x) for x in helpers.gen_offset(ba, 0.1)]
 
             # calculate new offsets and write to GUI
@@ -605,6 +605,7 @@ class Main_Window(QtWidgets.QMainWindow):
             d['init_corr'].append(helpers.corr_coeff(img_aberr, multi=multi))
             
             # 6. single pass correction
+            print(np.shape(img_aberr))
             delta_zern, delta_off, img_corr, corr = self.corrective_loop(imspector, img_aberr, offset=offset, multi=multi, i = best_of)
             
             d['preds'].append(delta_zern.tolist())
