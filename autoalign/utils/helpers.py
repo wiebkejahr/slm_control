@@ -209,7 +209,7 @@ def corr_coeff(img1, img2=[], multi=False):
     if len(img2)==0:
         # if only only image is passed, get the ideal donut to compare against
         img2 = get_sted_psf(multi=multi)
-
+    
     return np.corrcoef(img1.flat, img2.flat)[0,1]
 
 

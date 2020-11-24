@@ -368,7 +368,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.recalc_images()
     
     
-    def corrective_loop(self, image=None, aberrs = np.zeros(11), offset=False, multi=False, ortho_sec=False, i=1):
+    def corrective_loop(self, imspector, image=None, aberrs = np.zeros(11), offset=False, multi=False, ortho_sec=False, i=1):
         """ Passes trained model and acquired image to abberior_predict to 
             estimate zernike weights and offsets required to correct 
             aberrations. Calculates new SLM pattern to acquire new image and 
@@ -397,8 +397,8 @@ class Main_Window(QtWidgets.QMainWindow):
         if ortho_sec:
             self.correct_defocus()
             
-        new_img = abberior.acquire_image(multi=multi)
-        correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+        new_img = abberior.acquire_image(imspector, multi=multi)
+        correlation = np.round(helpers.corr_coeff(new_img[0], multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
         
         return delta_zern, delta_off, new_img, correlation
@@ -409,7 +409,7 @@ class Main_Window(QtWidgets.QMainWindow):
         so_far: correlation required to stop optimizing; -1 means it only executes once"""
 
         size = 2 * np.asarray(self.p.general["size_slm"])
-        
+        imspector, msr_names, active_msr, conf = abberior.get_config()
         # center the image before starting
         self.correct_tiptilt()
         if multi:
@@ -420,8 +420,8 @@ class Main_Window(QtWidgets.QMainWindow):
         new_aberrs = np.zeros(11)
         old_aberrs = new_aberrs
         while corr >= so_far:
-            image = abberior.acquire_image(multi=multi)[0]                                              
-            delta_zern, delta_off, image, new_corr = self.corrective_loop(image, aberrs = new_aberrs, 
+            image = abberior.acquire_image(imspector, multi=multi)[0]                                              
+            delta_zern, delta_off, image, new_corr = self.corrective_loop(imspector, image, aberrs = new_aberrs, 
                                                    offset=offset, multi=multi, i=best_of)
             if new_corr > corr:
                 print('iteration: ', i, 'new corr: {}, old corr: {}'.format(new_corr, corr))
@@ -446,7 +446,7 @@ class Main_Window(QtWidgets.QMainWindow):
 
 
     def automate(self):
-        multi=False
+        multi=True
         ortho_sec = True
         offset=True
         num_its=500
@@ -597,13 +597,13 @@ class Main_Window(QtWidgets.QMainWindow):
                 self.correct_defocus()
                 
             #TODO: change abberior.get_image to return always array, then always use img[0]
-            img, stats = abberior.acquire_image(imspector, multi=multi)
+            img_aberr, stats = abberior.acquire_image(imspector, multi=multi)
             name = path + '/' + str(ii+i_start) + "_aberrated.msr"
             active_msr.save_as(name)
-            d['init_corr'].append(helpers.corr_coeff(img, multi=multi))
+            d['init_corr'].append(helpers.corr_coeff(img_aberr, multi=multi))
             
             # 6. single pass correction
-            delta_zern, delta_off, img, corr = self.corrective_loop(img, offset=offset, multi=multi, i = best_of)
+            delta_zern, delta_off, img_corr, corr = self.corrective_loop(imspector, img_aberr, offset=offset, multi=multi, i = best_of)
             
             d['preds'].append(delta_zern.tolist())
             d['preds'].append(delta_off.tolist())
@@ -616,31 +616,32 @@ class Main_Window(QtWidgets.QMainWindow):
 
             # use matplotlib to plot and save data
             if ortho_sec and multi:
-                minmax = [img.min(), img.max()]
+                minmax = [np.min(img_corr[0]), np.max(img_corr[0])]
                 fig = plt.figure()
                 plt.subplot(231); plt.axis('off')
-                plt.imshow(img[0], clim = minmax, cmap = 'inferno')
+                plt.imshow(img_aberr[0], clim = minmax, cmap = 'inferno')
                 plt.subplot(232); plt.axis('off')
-                plt.imshow(img[1], clim = minmax, cmap = 'inferno')
+                plt.imshow(img_aberr[1], clim = minmax, cmap = 'inferno')
                 plt.subplot(233); plt.axis('off')
-                plt.imshow(img[1], clim = minmax, cmap = 'inferno')
-                img = abberior.acquire_image(imspector, multi = multi)
+                plt.imshow(img_aberr[1], clim = minmax, cmap = 'inferno')
+                #img = abberior.acquire_image(imspector, multi = multi)
                 plt.subplot(234); plt.axis('off')
-                plt.imshow(img[0], clim = minmax, cmap = 'inferno')
+                plt.imshow(img_corr[0], clim = minmax, cmap = 'inferno')
                 plt.subplot(235); plt.axis('off')
-                plt.imshow(img[1], clim = minmax, cmap = 'inferno')
+                plt.imshow(img_corr[1], clim = minmax, cmap = 'inferno')
                 plt.subplot(236); plt.axis('off')
-                plt.imshow(img[2], clim = minmax, cmap = 'inferno')
+                plt.imshow(img_corr[2], clim = minmax, cmap = 'inferno')
                 fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
             elif ortho_sec and not multi:
-                minmax = [img.min(), img.max()]
+                print(np.shape(img_corr), np.shape(img_aberr))
+                minmax = [np.min(img_corr[0]), np.max(img_corr[0])]
                 fig = plt.figure()
                 plt.subplot(121); plt.axis('off')
-                plt.imshow(img, clim = minmax, cmap = 'inferno')
+                plt.imshow(img_aberr, clim = minmax, cmap = 'inferno')
                 
-                img = abberior.acquire_image(imspector, multi = multi)
+                #img = abberior.acquire_image(imspector, multi = multi)
                 plt.subplot(122); plt.axis('off')
-                plt.imshow(img[0], clim = minmax, cmap = 'inferno')
+                plt.imshow(img_corr[0], clim = minmax, cmap = 'inferno')
                 fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
             #TODO add missing logic blocks
 
