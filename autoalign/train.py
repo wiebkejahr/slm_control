@@ -102,7 +102,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         #         'model_state_dict': model.state_dict(),
         #         'optimizer_state_dict': optimizer.state_dict()
         #         }, model_store_path)
-        # torch.save(model, model_store_path) 
+        torch.save(model, model_store_path) 
         
         # VALIDATION LOOP   
         model.eval()
@@ -201,8 +201,8 @@ def main(args):
     if args.zern: out_dim += 11
     if args.offset: out_dim += 2
 
-    model = my_models.CNN_LSTM_Multi()
-    # model = my_models.MyNet(input_dim=1, output_dim=out_dim)
+    # model = my_models.CNN_LSTM_Multi()
+    model = my_models.MyMultiNet(output_dim=out_dim)
     # print(summary(model, input_size=(in_dim, 64, 64), batch_size=out_dim))
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # exit()
