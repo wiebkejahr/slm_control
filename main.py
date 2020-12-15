@@ -451,7 +451,7 @@ class Main_Window(QtWidgets.QMainWindow):
         offset=True
         num_its=500
         px_size = 10
-        i_start = 0
+        i_start = 79
         best_of = 5
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
