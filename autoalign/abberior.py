@@ -170,7 +170,7 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
                 model = my_models.Net11()    
 
         #NOTE: temporary!
-        model = my_models.OffsetNet2()
+        # model = my_models.OffsetNet2()
      
         # gets preds
         print("predict: ", model_store_path)

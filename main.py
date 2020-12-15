@@ -397,8 +397,8 @@ class Main_Window(QtWidgets.QMainWindow):
         if ortho_sec:
             self.correct_defocus()
             
-        new_img = abberior.acquire_image(imspector, multi=multi)
-        correlation = np.round(helpers.corr_coeff(new_img[0], multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+        new_img, stats = abberior.acquire_image(imspector, multi=multi)
+        correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
         
         return delta_zern, delta_off, new_img, correlation
@@ -446,9 +446,9 @@ class Main_Window(QtWidgets.QMainWindow):
 
 
     def automate(self):
-        multi=False
+        multi=True
         ortho_sec = True
-        offset=True
+        offset=False
         num_its=500
         px_size = 10
         i_start = 79
@@ -469,7 +469,6 @@ class Main_Window(QtWidgets.QMainWindow):
         if not os.path.isdir(path):
             os.mkdir(path)
         
-        # NOTE: multi is meant to be hardcoded here, we only need the xy to return the config
         imspector, msr_names, active_msr, conf = abberior.get_config()
         x_init = conf.parameters('ExpControl/scan/range/x/g_off')
         y_init = conf.parameters('ExpControl/scan/range/y/g_off')
@@ -567,11 +566,11 @@ class Main_Window(QtWidgets.QMainWindow):
             
             #TODO: don't hardcode this anymore depending on model used
             #WHOLE BLOCK; BOTH for aberrs as well as off_aberr
-            #aberrs = helpers.gen_coeffs(11)
-            aberrs = [0 for c in range(11)]
+            aberrs = helpers.gen_coeffs(11)
+            #aberrs = [0 for c in range(11)]
             ba = self.p.objectives[self.current_objective]["backaperture"]
             off_aberr = [0,0]
-            off_aberr = [np.round(scale*x) for x in helpers.gen_offset(ba, 0.1)]
+            #off_aberr = [np.round(scale*x) for x in helpers.gen_offset(ba, 0.1)]
 
             # calculate new offsets and write to GUI
             off = [self.img_l.off.xgui.value() - off_aberr[1],
@@ -621,12 +620,13 @@ class Main_Window(QtWidgets.QMainWindow):
             if ortho_sec and multi:
                 minmax = [np.min(img_corr[0]), np.max(img_corr[0])]
                 fig = plt.figure()
+                print(np.shape(img_aberr), np.shape(img_corr))
                 plt.subplot(231); plt.axis('off')
                 plt.imshow(img_aberr[0], clim = minmax, cmap = 'inferno')
                 plt.subplot(232); plt.axis('off')
                 plt.imshow(img_aberr[1], clim = minmax, cmap = 'inferno')
                 plt.subplot(233); plt.axis('off')
-                plt.imshow(img_aberr[1], clim = minmax, cmap = 'inferno')
+                plt.imshow(img_aberr[2], clim = minmax, cmap = 'inferno')
                 #img = abberior.acquire_image(imspector, multi = multi)
                 plt.subplot(234); plt.axis('off')
                 plt.imshow(img_corr[0], clim = minmax, cmap = 'inferno')
