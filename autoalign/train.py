@@ -143,8 +143,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                                 epoch * total_step + i)
                     val_loss = 0.0
 
-                
-
+            
     train_writer.close()
     return model
 
