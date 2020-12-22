@@ -77,8 +77,7 @@ def main(args):
     label_dim = 0
     if if_zern: label_dim += 11
     if if_offset: label_dim += 2
-    # print('label dimention is: ')
-    # print(label_dim)
+    print('label dimention is: {}'.format(label_dim))
  
 
     for i in tqdm(range(train_num)):

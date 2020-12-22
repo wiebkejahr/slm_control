@@ -21,12 +21,12 @@ MODEL_DIR=$OUTPUT_DIR/models
 LOG_DIR=$OUTPUT_DIR/runs
 
 ####################### 1. MAKE DATASET #############################
-NUM_POINTS=50 # will do 90/10 train/validation split
+NUM_POINTS=2000 # will do 90/10 train/validation split
 TEST_NUM=10 # number of additional test samples to create
-NAME="15.15.20_testing" # make this as descriptive as possible
+NAME="16.12.20_multi_offset_only" # make this as descriptive as possible
 MULTI=1 # change to 1 for multi
 OFFSET=1 # change to 1 for offset
-ZERN=1 # change to 0 to just train offset
+ZERN=0 # change to 0 to just train offset
 
 # don't touch this
 # DATE=`date +%d.%m.%y`
@@ -58,7 +58,7 @@ fi
 ######################### 2. TRAIN ##################################
 # HYPERPARAMETERS 
 LR=0.001 # learning rate
-NUM_EPOCHS=2
+NUM_EPOCHS=10
 BATCH_SIZE=32
 MODEL_NAME="${NAME}_eps_${NUM_EPOCHS}_lr_${LR}_bs_${BATCH_SIZE}"
 # MODEL_NAME="20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_SECOND"

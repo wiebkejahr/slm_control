@@ -145,7 +145,7 @@ def main(args):
     # model.load_state_dict(checkpoint['model_state_dict'])
     model = torch.load(model_store_path)
     
-    mean, std = get_stats(data_path, batch_size=10, mode='test')
+    # mean, std = get_stats(data_path, batch_size=10, mode='test')
     test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='test', transform=transforms.Compose([
         my_classes.ToTensor()])) 
         #, my_classes.Normalize(mean=mean, std=std)]))
