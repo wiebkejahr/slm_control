@@ -19,7 +19,10 @@ import numpy as np
 import argparse as ap
 import math
 from tqdm import tqdm
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, models, transforms
 from torch.utils.tensorboard import SummaryWriter
@@ -29,6 +32,20 @@ from torchsummary import summary
 import utils.my_classes as my_classes
 import utils.helpers as helpers
 import utils.my_models as my_models
+
+
+# helper functions
+
+def matplotlib_imshow(img, one_channel=False):
+    if one_channel:
+        img = img.mean(dim=0)
+    img = img / 2 + 0.5     # unnormalize
+    npimg = img.numpy()
+    if one_channel:
+        plt.imshow(npimg, cmap="Greys")
+    else:
+        plt.imshow(np.transpose(npimg, (1, 2, 0)))
+
 
 def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path):
 
@@ -54,14 +71,17 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             labels = sample['label']
 
             # train_writer.add_graph(model, images)
-            xgrid = torchvision.utils.make_grid(images[:,0].unsqueeze(1))
-            train_writer.add_image("xy images", xgrid)
+            train_grid = torchvision.utils.make_grid(
+                torch.from_numpy(np.dstack((images[:,0].unsqueeze(1),
+                                            images[:,1].unsqueeze(1),
+                                            images[:,2].unsqueeze(1)))))
+            train_writer.add_image("train images", train_grid)
 
-            ygrid = torchvision.utils.make_grid(images[:,1].unsqueeze(1))
-            train_writer.add_image("yz images", ygrid)
+            # ygrid = torchvision.utils.make_grid(images[:,1].unsqueeze(1))
+            # train_writer.add_image("yz images", ygrid)
 
-            zgrid = torchvision.utils.make_grid(images[:,2].unsqueeze(1))
-            train_writer.add_image("xz images", zgrid)
+            # zgrid = torchvision.utils.make_grid(images[:,2].unsqueeze(1))
+            # train_writer.add_image("xz images", zgrid)
 
 
             # if GPU is available, this allows the computation to happen there
@@ -102,7 +122,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         #         'model_state_dict': model.state_dict(),
         #         'optimizer_state_dict': optimizer.state_dict()
         #         }, model_store_path)
-        torch.save(model, model_store_path) 
+        # # torch.save(model, model_store_path) 
         
         # VALIDATION LOOP   
         model.eval()
@@ -121,7 +141,6 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 avg_loss_per_coeff = torch.mean(matrix_loss, dim=0)
                 loss = torch.sum(avg_loss_per_coeff)
 
-
                 batch_size = matrix_loss.shape[0]
                 # print(batch_size) # 20
                 
@@ -130,6 +149,42 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 
                 print('Accuracy: {}'.format(accuracy))
                 train_writer.add_scalar('validation accuracy', accuracy, epoch)
+
+                # taken from PyTorch documentation
+                # train_writer.add_graph(model, images)
+                val_grid = torchvision.utils.make_grid(
+                    torch.from_numpy(np.dstack((images[:,0].unsqueeze(1),
+                            images[:,1].unsqueeze(1),
+                            images[:,2].unsqueeze(1)))))
+                
+                train_writer.add_image("validation images", val_grid)
+
+                corr_images = []
+                for i in range(5): # for each datapoint in first 5 val datapoints
+                    zern_label = outputs.numpy()[i][:-2]
+                    # print(zern_label)
+                    # true_zern = labels.numpy()[i][:-2]
+                    # print(labels.numpy()[i][:-2])
+                    offset_label = outputs.numpy()[i][-2:]
+                    # print(offset_label)
+                    # true_off = labels.numpy()[i][-2:]
+                    # print(labels.numpy()[i][-2:])
+                    # plt.imshow(helpers.get_sted_psf(coeffs=zern_label, res=[64,64], offset_label=offset_label, multi=False))
+                    # plt.show()
+                    # exit()
+                    corr_images.append(helpers.get_sted_psf(coeffs=zern_label, res=[64,64], offset_label=offset_label, multi=True))
+
+                corr_images = torch.from_numpy(np.asarray(corr_images))
+                # print(np.asarray(corr_images).shape) # (5, 3, 64, 64)
+                corr_grid = torchvision.utils.make_grid(
+                    torch.from_numpy(np.dstack((corr_images[:,0].unsqueeze(1),
+                            corr_images[:,1].unsqueeze(1),
+                            corr_images[:,2].unsqueeze(1)))))
+                
+                train_writer.add_image("reconstructed images", corr_grid)
+
+
+                ##
 
                 # statistics logging
                 val_loss += loss.item()
@@ -141,10 +196,11 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                     train_writer.add_scalar('validation_loss',
                                 val_loss/update_num,
                                 epoch * total_step + i)
+                    
+                    
                     val_loss = 0.0
 
-                
-
+            
     train_writer.close()
     return model
 
@@ -163,7 +219,7 @@ def main(args):
     logdir = args.logdir
     warm_start = args.warm_start
 
-    mean, std = helpers.get_stats(data_path, batch_size)
+    # mean, std = helpers.get_stats(data_path, batch_size)
     
     # this is for reproducibility, it renders the model deterministic
     seed = 0
@@ -201,8 +257,8 @@ def main(args):
     if args.zern: out_dim += 11
     if args.offset: out_dim += 2
 
-    # model = my_models.CNN_LSTM_Multi()
-    model = my_models.MyMultiNet(output_dim=out_dim)
+
+    model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim)
     # print(summary(model, input_size=(in_dim, 64, 64), batch_size=out_dim))
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # exit()
