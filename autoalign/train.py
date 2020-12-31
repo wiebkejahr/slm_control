@@ -72,9 +72,9 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
 
             # train_writer.add_graph(model, images)
             train_grid = torchvision.utils.make_grid(
-                torch.from_numpy(np.dstack((images[:,0].unsqueeze(1),
-                                            images[:,1].unsqueeze(1),
-                                            images[:,2].unsqueeze(1)))))
+                torch.from_numpy(np.dstack((images[:5,0].unsqueeze(1),
+                                            images[:5,1].unsqueeze(1),
+                                            images[:5,2].unsqueeze(1)))))
             train_writer.add_image("train images", train_grid)
 
             # ygrid = torchvision.utils.make_grid(images[:,1].unsqueeze(1))
@@ -153,9 +153,9 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 # taken from PyTorch documentation
                 # train_writer.add_graph(model, images)
                 val_grid = torchvision.utils.make_grid(
-                    torch.from_numpy(np.dstack((images[:,0].unsqueeze(1),
-                            images[:,1].unsqueeze(1),
-                            images[:,2].unsqueeze(1)))))
+                    torch.from_numpy(np.dstack((images[:5,0].unsqueeze(1),
+                            images[:5,1].unsqueeze(1),
+                            images[:5,2].unsqueeze(1)))))
                 
                 train_writer.add_image("validation images", val_grid)
 

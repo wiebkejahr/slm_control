@@ -1,11 +1,11 @@
 {
-    "22.11.20_testing_1_3D_eps_1_lr_0.001_bs_32.pth": {
+    "TODAY_20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_10_lr_0.001_bs_64_concat.pth": {
         "multi": 1,
         "offset": 1,
         "zern": 1,
         "learning rate": 0.001,
-        "epochs": 1,
-        "batch size": 32,
-        "dataset": "./autoalign/datasets/22.11.20_testing_1_3D.hdf5"
+        "epochs": 10,
+        "batch size": 64,
+        "dataset": "./autoalign/datasets/20.10.22_3D_centered_18k_norm_dist_offset_no_noise.hdf5"
     }
 }
