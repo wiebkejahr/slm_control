@@ -51,30 +51,17 @@ class PSFDataset(data.Dataset):
     def __getitem__(self, idx):
     
         image = self.images[idx]
-        print(image)
-        exit()
-        print(image.shape)
+        image = helpers.normalize_img(image)*255
         image = np.squeeze(np.stack((image, image, image), axis=-1))
-        print(image.shape)
-        # plt.imshow(image[0])
-        # plt.show()
-        image = image.astype(np.uint8)
-        plt.imshow(image[0])
-        plt.show()
-        print(np.max(image.astype(np.uint8)), np.min(image.astype(np.uint8)))
-        print(image.dtype)
-        # exit()
+
         image = Image.fromarray(image.astype(np.uint8), 'RGB')
-        plt.imshow(image)
-        plt.show()
-        exit()
         sample = {'image': image, 'label': self.labels[idx]}
 
         if self.transform:
             sample['image'] = self.transform(sample['image'])
 
         return sample
-        # return {sample['image'], sample['label']}
+
 
 
 # class Offset(object):

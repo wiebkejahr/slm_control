@@ -231,7 +231,7 @@ def main(args):
     # NOTE: both Nomralize fns make the image looks really weird
     tsfms = my_classes.ToTensor()
     train_tsfms = transforms.Compose([
-        transforms.RandomResizedCrop(224),
+        # transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -274,13 +274,19 @@ def main(args):
 
     print(dict['image'].shape)
     
-    plt.imshow(dict['image'][0,0])
-    plt.show()
+    # plt.imshow(dict['image'][0,0])
+    # plt.show()
     
 
-    model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim, res=16)
-    print(summary(model, input_size=(in_dim, 16, 16), batch_size=out_dim))
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    model_ft = models.resnet18(pretrained=True)
+    num_ftrs = model_ft.fc.in_features
+    # Here the size of each output sample is set to 2.
+    # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
+    model_ft.fc = nn.Linear(num_ftrs, out_dim)
+    # model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim, res=224)
+    print(summary(model_ft, input_size=(3, 224, 224), batch_size=out_dim))
+    optimizer = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     exit()
     # if a warm start was specified, load model and optimizer state parameters
     if args.warm_start:

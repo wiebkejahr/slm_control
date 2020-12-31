@@ -157,7 +157,7 @@ class TheUltimateModel(nn.Module):
         self.conv5 = nn.Conv2d(192, 64, kernel_size=3, stride=1, padding=1)
 
         # this had to be changed to be 224/2/2/2 = 28x28 final image size
-        self.fc1 = nn.Linear(res/8 * res/8 * 64, 512)
+        self.fc1 = nn.Linear(res//8 * res//8 * 64, 512)
         # self.fc1 = nn.Linear(8 * 8 * 64, 512)  # 64 channels, final img size 8x8
         self.fc2 = nn.Linear(512, 512)
         self.fc3 = nn.Linear(512, output_dim)

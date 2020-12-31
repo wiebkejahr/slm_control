@@ -23,7 +23,7 @@ LOG_DIR=$OUTPUT_DIR/runs
 ####################### 1. MAKE DATASET #############################
 NUM_POINTS=5 # will do 90/10 train/validation split
 TEST_NUM=2 # number of additional test samples to create
-NAME="pretrain_TEST_new" # make this as descriptive as possible
+NAME="pretrain_test" # make this as descriptive as possible
 MULTI=0 # change to 1 for multi
 OFFSET=1 # change to 1 for offset
 ZERN=1 # change to 0 to just train offset
@@ -82,11 +82,11 @@ LOGDIR=${LOG_DIR}/${MODEL_NAME}
 #   --logdir              path to logging dir for optional tensorboard visualization
 #   --warm_start          path to a previous checkpoint dir to continue training from a previous run
 
-# if [ ! -f ${MODEL_STORE_PATH} ]; then
-# python ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --multi ${MULTI} --offset ${OFFSET} --zern ${ZERN}
-# else
-# echo "Model already exists"
-# fi
+if [ ! -f ${MODEL_STORE_PATH} ]; then
+python ${OUTPUT_DIR}/train.py ${LR} ${NUM_EPOCHS} ${BATCH_SIZE} ${DATASET} ${MODEL_STORE_PATH} --logdir ${LOGDIR} --multi ${MULTI} --offset ${OFFSET} --zern ${ZERN}
+else
+echo "Model already exists"
+fi
 ####################### 3. EVALUATE ################################
 # To see all options, run 'python evaluate.py --help'. Output copied below.
 #
