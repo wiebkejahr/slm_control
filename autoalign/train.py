@@ -287,11 +287,11 @@ def main(args):
     print(summary(model_ft, input_size=(3, 224, 224), batch_size=out_dim))
     optimizer = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    exit()
+    # exit()
     # if a warm start was specified, load model and optimizer state parameters
     if args.warm_start:
         checkpoint = torch.load(warm_start)
-        model.load_state_dict(checkpoint['model_state_dict'])
+        model_ft.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     
     # grabbing just the model name with this split
@@ -310,7 +310,7 @@ def main(args):
         f.write(data)
 
     # train the model
-    train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path)
+    train(model_ft, data_loaders, optimizer, num_epochs, logdir, device, model_store_path)
 
 
 if __name__ == '__main__':
