@@ -21,10 +21,10 @@ MODEL_DIR=$OUTPUT_DIR/models
 LOG_DIR=$OUTPUT_DIR/runs
 
 ####################### 1. MAKE DATASET #############################
-NUM_POINTS=10 # will do 90/10 train/validation split
+NUM_POINTS=5 # will do 90/10 train/validation split
 TEST_NUM=2 # number of additional test samples to create
-NAME="20.10.22_3D_centered_18k_norm_dist_offset_no_noise" # make this as descriptive as possible
-MULTI=1 # change to 1 for multi
+NAME="pretrain_test" # make this as descriptive as possible
+MULTI=0 # change to 1 for multi
 OFFSET=1 # change to 1 for offset
 ZERN=1 # change to 0 to just train offset
 
@@ -50,7 +50,7 @@ DATASET="${DATA_DIR}/${NAME}.hdf5"
 # only sted mode is tested for now
 
 if [ ! -f ${DATASET} ]; then
-python ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 64 --mode 'sted' --multi ${MULTI} --offset ${OFFSET} --zern ${ZERN}
+python ${OUTPUT_DIR}/create_train_data.py ${NUM_POINTS} ${TEST_NUM} ${DATASET} -r 16 --mode 'sted' --multi ${MULTI} --offset ${OFFSET} --zern ${ZERN}
 else
 echo "Dataset already exists"
 fi

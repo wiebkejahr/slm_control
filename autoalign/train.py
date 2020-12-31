@@ -230,9 +230,21 @@ def main(args):
     # tsfms = transforms.Compose([my_classes.ToTensor(), transforms.Normalize(mean=mean, std=std)])
     # NOTE: both Nomralize fns make the image looks really weird
     tsfms = my_classes.ToTensor()
+    train_tsfms = transforms.Compose([
+        # transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    val_tsfms = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
 
-    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
-    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
+    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=train_tsfms)
+    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=val_tsfms)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
@@ -258,10 +270,24 @@ def main(args):
     if args.offset: out_dim += 2
 
 
-    model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim)
-    # print(summary(model, input_size=(in_dim, 64, 64), batch_size=out_dim))
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # exit()
+    dict = next(iter(data_loaders['train']))
+
+    print(dict['image'].shape)
+    
+    # plt.imshow(dict['image'][0,0])
+    # plt.show()
+    
+
+    model_ft = models.resnet18(pretrained=True)
+    num_ftrs = model_ft.fc.in_features
+    # Here the size of each output sample is set to 2.
+    # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
+    model_ft.fc = nn.Linear(num_ftrs, out_dim)
+    # model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim, res=224)
+    print(summary(model_ft, input_size=(3, 224, 224), batch_size=out_dim))
+    optimizer = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    exit()
     # if a warm start was specified, load model and optimizer state parameters
     if args.warm_start:
         checkpoint = torch.load(warm_start)
