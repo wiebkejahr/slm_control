@@ -146,7 +146,7 @@ class TheUltimateModel(nn.Module):
     Architecture followed from Zhang et. al, 
     "Machine learning based adaptive optics for doughnut-shaped beam" (2019)
     """
-    def __init__(self, input_dim, output_dim=13):
+    def __init__(self, input_dim, output_dim=13, res=64):
         super(TheUltimateModel, self).__init__()
         self.input_dim = input_dim
         self.conv1 = nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2)
@@ -156,14 +156,17 @@ class TheUltimateModel(nn.Module):
         # will be concatenated after this, so 64*3
         self.conv5 = nn.Conv2d(192, 64, kernel_size=3, stride=1, padding=1)
 
-        
-        self.fc1 = nn.Linear(8 * 8 * 64, 512)  # 64 channels, final img size 8x8
+        # this had to be changed to be 224/2/2/2 = 28x28 final image size
+        self.fc1 = nn.Linear(res/8 * res/8 * 64, 512)
+        # self.fc1 = nn.Linear(8 * 8 * 64, 512)  # 64 channels, final img size 8x8
         self.fc2 = nn.Linear(512, 512)
         self.fc3 = nn.Linear(512, output_dim)
 
         self.relu = nn.ReLU(inplace=False)
 
     def forward(self, img):
+        # redefining
+        self.conv5 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
         # if the model is only one image
         if self.input_dim == 1:
             x = img.float()

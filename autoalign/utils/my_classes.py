@@ -14,6 +14,7 @@ import numpy as np
 from torch.utils import data
 import torch
 from torchvision import transforms
+from PIL import Image
 
 from utils import helpers
 # import autoalign.utils.helpers as helpers
@@ -43,13 +44,32 @@ class PSFDataset(data.Dataset):
             self.images = self.file['test_img']
             self.labels = self.file['test_labels']
 
-    
+        
     def __len__(self):
         return self.images.shape[0]
     
     def __getitem__(self, idx):
-        sample = {'image': self.images[idx], 'label': self.labels[idx]}
-        
+    
+        image = self.images[idx]
+        print(image)
+        exit()
+        print(image.shape)
+        image = np.squeeze(np.stack((image, image, image), axis=-1))
+        print(image.shape)
+        # plt.imshow(image[0])
+        # plt.show()
+        image = image.astype(np.uint8)
+        plt.imshow(image[0])
+        plt.show()
+        print(np.max(image.astype(np.uint8)), np.min(image.astype(np.uint8)))
+        print(image.dtype)
+        # exit()
+        image = Image.fromarray(image.astype(np.uint8), 'RGB')
+        plt.imshow(image)
+        plt.show()
+        exit()
+        sample = {'image': image, 'label': self.labels[idx]}
+
         if self.transform:
             sample['image'] = self.transform(sample['image'])
 
@@ -134,6 +154,7 @@ class ToTensor(object):
         # numpy image: H x W x C
         # torch image: C X H X W
         #image = image.transpose((2, 0, 1))
+        
         return torch.from_numpy(image)
         # return {'image': torch.from_numpy(image),
         #         'label': torch.from_numpy(label)}

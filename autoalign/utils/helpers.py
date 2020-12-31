@@ -164,7 +164,7 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
     return [xtilt, ytilt]
 
 
-def center(img):
+def center(img, res=[64,64]):
     """Returns the correction phasemask to counteract tiptilt present in given image"""
     if len(img.shape) == 2:
         xy = img
@@ -174,7 +174,7 @@ def center(img):
         print('Image is not the right shape')
         exit()
     xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
-    tiptilt = create_phase(coeffs=[xtilt, ytilt], num=[0,1])
+    tiptilt = create_phase(coeffs=[xtilt, ytilt], size=res, num=[0,1])
 
     return tiptilt
 
@@ -262,33 +262,6 @@ def create_phase(coeffs=np.asarray([0.0]*11), num=np.arange(3, 14), size=[64, 64
     return zern
 
 
-# def gen_sted_psf(res=[64,64], offset=False,  multi=False, defocus=False):
-#     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
-#     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
-
-#     if defocus:
-#         coeffs = gen_coeffs(num=12)
-#         nums = np.arange(2, 14)
-#     else:
-#         coeffs = gen_coeffs(num=11)
-#         nums = np.arange(3, 14)
-    
-#     if offset:
-#         offset_label = gen_offset()
-#     else:
-#         offset_label = np.asarray([0,0])
-
-#     zern = create_phase(coeffs, num=nums, size = res)
-    
-#     if multi:
-#         plane = 'all'
-#     else:
-#         plane = 'xy'
-
-#     img = sted_psf(zern, res, offset=offset_label, plane=plane)
-
-#     return img, coeffs, offset_label
-
 def get_sted_psf(coeffs=np.asarray([0.0]*11), res=[64,64], offset_label=[0,0],  multi=False, tiptilt=None, defocus=False):
     """Given coefficients and an optional resolution argument, returns a point spread function resulting from those coefficients.
     If multi flag is given as True, it creates an image with 3 color channels, one for each cross-section of the PSF"""
@@ -298,7 +271,10 @@ def get_sted_psf(coeffs=np.asarray([0.0]*11), res=[64,64], offset_label=[0,0],  
     else:
         nums = np.arange(3, 14)
     
-    zern = create_phase(coeffs=coeffs, num=nums, size=res)#, corrections=corrections)
+    zern = create_phase(coeffs=coeffs, num=nums, size=res)
+    # plt.imshow(zern)
+    # plt.show()
+    # print(np.max(zern), np.min(zern))
     
     if multi:
         plane = 'all'
@@ -307,6 +283,9 @@ def get_sted_psf(coeffs=np.asarray([0.0]*11), res=[64,64], offset_label=[0,0],  
 
     img = sted_psf(zern, res, offset=offset_label, plane=plane, tiptilt=tiptilt)
     
+    # scaling to 0-255
+    img = normalize_img(img)*255
+    img = img.astype(np.uint8)
     return img
 
 def gen_fluor_psf(res=64, offset=False, multi=False):
@@ -326,6 +305,7 @@ def gen_fluor_psf(res=64, offset=False, multi=False):
         plane = 'xy'
     
     img = fluor_psf(aberr_phase_mask, res, offset=offset_label, plane=plane)
+    
     return img, coeffs, offset_label
 
 def get_fluor_psf(res=64, coeffs=np.asarray([0.0]*12), offset_label=[0,0], multi=False):
