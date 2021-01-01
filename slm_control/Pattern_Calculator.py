@@ -295,7 +295,7 @@ def correct_flatfield(path):
     return ff
 
     
-def correct_aberrations(size, ratios, orders, off = [0,0], radscale = 1):
+def correct_aberrations(size, ratios, orders, radscale = 1):
     """ Calculates an aberration correction by summing up Zernike polynomials.
         Output with given size and offsets. Ratios is a 1D array containing the
         weights of the Zernike polynomials. Orders is a 1D of the same length 
@@ -303,7 +303,7 @@ def correct_aberrations(size, ratios, orders, off = [0,0], radscale = 1):
         polynomial. """
     ab = np.zeros(size)
     for oo, ooo in enumerate(orders):
-        zernike = create_zernike(size, off, ooo, radscale)
+        zernike = create_zernike(size, ooo, amp = 1, radscale = radscale)
         ab = ab + ratios[oo]*zernike
     return ab
 
