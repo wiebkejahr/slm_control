@@ -53,7 +53,7 @@ from slm_control.Parameters import param
 sys.path.insert(1, os.getcwd())
 sys.path.insert(1, 'slm_control/')
 sys.path.insert(1, 'autoalign/')
-import autoalign.abberior as abberior   
+import microscope  
 import autoalign.utils.helpers as helpers
 
 mpl.rc('text', usetex=False)
@@ -340,8 +340,8 @@ class Main_Window(QtWidgets.QMainWindow):
         self.setCentralWidget(self.main_frame)
         
         
-    def correct_defocus(self):
-        self.defocus_weights_corr = abberior.correct_defocus()#(const=1/6.59371319)
+    def correct_defocus(self, scope):
+        self.defocus_weights_corr = scope.correct_defocus()#(const=1/6.59371319)
         
         
         size = 2 * np.asarray(self.p.general["size_slm"])   
@@ -358,8 +358,8 @@ class Main_Window(QtWidgets.QMainWindow):
         self.recalc_images()
 
 
-    def correct_tiptilt(self):
-        self.tiptilt_weights_corr = abberior.correct_tip_tilt()
+    def correct_tiptilt(self, scope):
+        self.tiptilt_weights_corr = scope.correct_tip_tilt()
         size = np.asarray(self.p.general["size_slm"])
         tiptilt_correct = helpers.create_phase(coeffs=self.tiptilt_weights_corr, num=[0,1], 
                                                size = size, radscale = 2*self.rtiptilt)
@@ -368,7 +368,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.recalc_images()
     
     
-    def corrective_loop(self, imspector, image=None, aberrs = np.zeros(11), offset=False, multi=False, ortho_sec=False, i=1):
+    def corrective_loop(self, scope, image=None, aberrs = np.zeros(11), offset=False, multi=False, ortho_sec=False, i=1):
         """ Passes trained model and acquired image to abberior_predict to 
             estimate zernike weights and offsets required to correct 
             aberrations. Calculates new SLM pattern to acquire new image and 
@@ -377,27 +377,38 @@ class Main_Window(QtWidgets.QMainWindow):
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
         print("model into predict: ", self.p.general["autodl_model_path"])
-        delta_zern, delta_off = abberior.abberior_predict(self.p.general["autodl_model_path"], 
+        delta_zern, delta_off = microscope.abberior_predict(self.p.general["autodl_model_path"], 
                                                            image, offset=offset, multi=multi, ii=i)
         delta_off = delta_off * scale
+        # TODO: why is delta_off 11 dim vector?!?
+        # also: values seem to depend on scaling of the image I'm feeding in
+        # what am I overlooking?
+        
+        if np.abs(delta_off[0]) > 32: #size[1]//2:
+            delta_off[0] = 0
+        if np.abs(delta_off[1]) > 32: #size[0]//2:
+            delta_off[1] = 0
+
         off = [self.img_l.off.xgui.value() + delta_off[1],
                self.img_l.off.ygui.value() - delta_off[0]]
         self.img_l.off.xgui.setValue(np.round(off[0]))
         self.img_l.off.ygui.setValue(np.round(off[1]))
         
-        phase_correct = pcalc.crop(helpers.create_phase(aberrs - delta_zern,
+        print("TODO: stats for debugging. ", aberrs, delta_zern, size, self.slm_radius, scale, delta_off, off)
+        new_aberrs = aberrs - delta_zern
+        phase_correct = pcalc.crop(helpers.create_phase(new_aberrs,
                                                         num = np.arange(3,14),
                                                         size = size,
                                                         radscale = np.sqrt(2)*self.slm_radius),
                                    size /2, offset = off)
         self.phase_zern = phase_correct                    
-
+        
         self.recalc_images()
-        self.correct_tiptilt()
+        self.correct_tiptilt(scope)
         if ortho_sec:
-            self.correct_defocus()
+            self.correct_defocus(scope)
             
-        new_img, stats = abberior.acquire_image(imspector, multi=multi)
+        new_img, stats = scope.acquire_image(multi=multi, mask_offset = off, aberrs = new_aberrs)
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
         
@@ -409,19 +420,20 @@ class Main_Window(QtWidgets.QMainWindow):
         so_far: correlation required to stop optimizing; -1 means it only executes once"""
 
         size = 2 * np.asarray(self.p.general["size_slm"])
-        imspector, msr_names, active_msr, conf = abberior.get_config()
+        scope = microscope.Microscope()
+        #imspector, msr_names, active_msr, conf = scope.get_config()
         # center the image before starting
-        self.correct_tiptilt()
+        self.correct_tiptilt(scope)
         if multi:
-            self.correct_defocus()
+            self.correct_defocus(scope)
             
         corr = 0
         i = 0
         new_aberrs = np.zeros(11)
         old_aberrs = new_aberrs
         while corr >= so_far:
-            image = abberior.acquire_image(imspector, multi=multi)[0]                                              
-            delta_zern, delta_off, image, new_corr = self.corrective_loop(imspector, image, aberrs = new_aberrs, 
+            image = scope.acquire_image(multi=multi, mask_offset = [0,0], aberrs = new_aberrs)[0]                                              
+            delta_zern, delta_off, image, new_corr = self.corrective_loop(scope, image, aberrs = new_aberrs, 
                                                    offset=offset, multi=multi, i=best_of)
             if new_corr > corr:
                 print('iteration: ', i, 'new corr: {}, old corr: {}'.format(new_corr, corr))
@@ -464,20 +476,22 @@ class Main_Window(QtWidgets.QMainWindow):
         path = self.p.general["data_path"] + mdl_name
         print("save path: ", path)
         print("used model: ", mdl_name)
-        if not os.path.isdir(self.p.general["data_path"]):
-            os.mkdir(self.p.general["data_path"])
-        if not os.path.isdir(path):
-            os.mkdir(path)
+        try:
+            if not os.path.isdir(self.p.general["data_path"]):
+                os.mkdir(self.p.general["data_path"])
+            if not os.path.isdir(path):
+                os.mkdir(path)
+        except:
+            print("couldn't create directory!")
         
-        imspector, msr_names, active_msr, conf = abberior.get_config()
-        x_init = conf.parameters('ExpControl/scan/range/x/g_off')
-        y_init = conf.parameters('ExpControl/scan/range/y/g_off')
-        z_init = conf.parameters('ExpControl/scan/range/z/g_off')
+        scope = microscope.Microscope()
+        #imspector, msr_names, active_msr, conf = scope.get_config()
+        xyz_init = scope.get_stage_offsets()
         for ii in range(num_its):
             # 1. zeroes SLM
             self.reload_params(self.param_path)
-            # get image from Abberior
-            img, stats = abberior.acquire_image(imspector, multi=ortho_sec)
+            # get image from Microscope
+            img, stats = scope.acquire_image(multi=ortho_sec, mask_offset = [0,0], aberrs = np.zeros(11))
         
             #TODO: Which values are good will depend on the system & acquisition parameters. Needs to be tested
             #IMPORTANT: should also stop acquisition, potentially shut down Imspector?
@@ -503,63 +517,39 @@ class Main_Window(QtWidgets.QMainWindow):
                 dy_yz = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
                 dz_yz = ((y_shape-1)/2-b)*1e-9*px_size  # convert to m
                 
-                dx = np.average([dx_xy, dx_xz])
-                dy = np.average([dy_xy, dy_yz])
-                dz = np.average([dz_xz, dz_yz])
+                d_xyz = np.asarray([np.average([dx_xy, dx_xz]), 
+                                    np.average([dy_xy, dy_yz]),
+                                    np.average([dz_xz, dz_yz])])
                 
             # 2.b fits CoM, for single model
             else:
                 x_shape, y_shape = np.shape(img)
                 b, a = helpers.get_CoM(img)
-                dx = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
-                dy = ((y_shape-1)/2-b)*1e-9*px_size
-                dz = 0
+                d_xyz = np.asarray[((x_shape-1)/2-a)*1e-9*px_size,
+                                   ((y_shape-1)/2-b)*1e-9*px_size,
+                                   0]
                 
             # if CoM is more than 200 nm from center, skip and try againg
             lim = 160e-9
-            if np.abs(dx) >= lim or np.abs(dy) >= lim or np.abs(dz)>=lim:
-                print('skipped', dx, dy, dz)
-                # fine, using galvo
-                conf.set_parameters('ExpControl/scan/range/x/g_off', x_init)
-                conf.set_parameters('ExpControl/scan/range/y/g_off', y_init)
-                conf.set_parameters('ExpControl/scan/range/z/g_off', z_init)
-                # coarse, using stage
-                # conf.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', x_init)
-                # conf.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', x_init)
-                # conf.set_parameters('ExpControl/scan/range/offsets/coarse/z/g_off', x_init)
+            if np.abs(d_xyz[0]) >= lim or np.abs(d_xyz[1]) >= lim or np.abs(d_xyz[2])>=lim:
+                print('skipped', d_xyz)
+                scope.set_stage_offsets(xyz_init, 'fine')
                 continue
 
             # 3. centers using ImSpector
-            # coarse: center using the stage. keep for reference
-            #xo = conf.parameters('ExpControl/scan/range/offsets/coarse/x/g_off')
-            #yo = conf.parameters('ExpControl/scan/range/offsets/coarse/y/g_off')
-            #zo = conf.parameters('ExpControl/scan/range/offsets/coarse/z/g_off')
-            # fine: center using the galvos.
-            # get positions from Imspector
-            xo = conf.parameters('ExpControl/scan/range/x/g_off')
-            yo = conf.parameters('ExpControl/scan/range/y/g_off')
-            zo = conf.parameters('ExpControl/scan/range/z/g_off')
-            
-            # calculate new positions
-            xPos = xo - dx
-            yPos = yo - dy
-            zPos = zo - dz
+            xyz_0 = scope.get_stage_offsets('fine')
+            xyz_Pos = xyz_0 - d_xyz 
             
             # if overall, drift has been more then 800 um, reset.
             # TODO: test again if this works
             # if np.abs(xPos) >= 800e-6 or np.abs(yPos) >= 800e-6:
             #     print('skipped', xPos, yPos)
             #     # fine
-            #     conf.set_parameters('ExpControl/scan/range/x/g_off', x_init)
-            #     conf.set_parameters('ExpControl/scan/range/y/g_off', y_init)
-            #     conf.set_parameters('ExpControl/scan/range/z/g_off', z_init)
+            #     scope.set_stage_offsets(xyz_init, 'fine)
             #     continue
 
-            
             # write new position values
-            conf.set_parameters('ExpControl/scan/range/x/g_off', xPos)
-            conf.set_parameters('ExpControl/scan/range/y/g_off', yPos)
-            conf.set_parameters('ExpControl/scan/range/z/g_off', zPos)
+            scope.set_stage_offsets(xyz_Pos)
 
             
             # 4. dials in random aberrations and sends them to SLM
@@ -592,26 +582,26 @@ class Main_Window(QtWidgets.QMainWindow):
             
             # 5. Get image, center once more using tip tilt and defocus corrections
             # save image and write correction coefficients to file
-            img, stats = abberior.acquire_image(imspector, multi=ortho_sec)
-            self.correct_tiptilt()
+            img, stats = scope.acquire_image(multi=ortho_sec, mask_offset = off_aberr, aberrs = aberrs)
+            self.correct_tiptilt(scope)
             if ortho_sec:
-                self.correct_defocus()
+                self.correct_defocus(scope)
                 
-            #TODO: change abberior.get_image to return always array, then always use img[0]
-            img_aberr, stats = abberior.acquire_image(imspector, multi=multi)
-            name = path + '/' + str(ii+i_start) + "_aberrated.msr"
-            active_msr.save_as(name)
+            #TODO: change scope.get_image to return always array, then always use img[0]
+            img_aberr, stats = scope.acquire_image(multi=multi, mask_offset = off_aberr, aberrs = aberrs)
+            name = path + '/' + str(ii+i_start) + "_aberrated"
+            scope.save_img(name)
             d['init_corr'].append(helpers.corr_coeff(img_aberr, multi=multi))
             
             # 6. single pass correction
-            print(np.shape(img_aberr))
-            delta_zern, delta_off, img_corr, corr = self.corrective_loop(imspector, img_aberr, offset=offset, multi=multi, i = best_of)
+            #print(np.shape(img_aberr))
+            delta_zern, delta_off, img_corr, corr = self.corrective_loop(scope, img_aberr, offset=offset, multi=multi, i = best_of)
             
             d['preds'].append(delta_zern.tolist())
             d['preds'].append(delta_off.tolist())
             d['corr'].append(corr)
-            name = path + '/' + str(ii+i_start) + "_corrected.msr"
-            active_msr.save_as(name)
+            name = path + '/' + str(ii+i_start) + "_corrected"
+            scope.save_img(name)
             with open(path + '/' + mdl_name +str(i_start)+'.txt', 'w') as file:
                 json.dump(d, file)
 
@@ -627,7 +617,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 plt.imshow(img_aberr[1], clim = minmax, cmap = 'inferno')
                 plt.subplot(233); plt.axis('off')
                 plt.imshow(img_aberr[2], clim = minmax, cmap = 'inferno')
-                #img = abberior.acquire_image(imspector, multi = multi)
+                #img = scope.acquire_image(multi = multi, phasemask = self.img_l.data)
                 plt.subplot(234); plt.axis('off')
                 plt.imshow(img_corr[0], clim = minmax, cmap = 'inferno')
                 plt.subplot(235); plt.axis('off')
@@ -642,7 +632,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 plt.subplot(121); plt.axis('off')
                 plt.imshow(img_aberr, clim = minmax, cmap = 'inferno')
                 
-                #img = abberior.acquire_image(imspector, multi = multi)
+                #img = scope.acquire_image(multi = multi, phasemask = self.img_l.data)
                 plt.subplot(122); plt.axis('off')
                 plt.imshow(img_corr[0], clim = minmax, cmap = 'inferno')
                 fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
