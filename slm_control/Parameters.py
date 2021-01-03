@@ -138,6 +138,39 @@ class param():
                                             },
                         }
         
+        self.simulation = {"optical_params_sted": {
+                                                    "n": 1.518, 
+                                                    "NA": 1.4, 
+                                                    "f": 1.8, 
+                                                    "transmittance": 0.74, 
+                                                    "lambda": 775, 
+                                                    "P_laser": 0.25, 
+                                                    "rep_rate": 40000000.0, 
+                                                    "pulse_length": 7e-10, 
+                                                    "obj_ba": 5.04,
+                                                    "px_size": 10, 
+                                                    "offset": [0, 0]
+                                                    }, 
+                            "optical_params_gauss": {
+                                                    "n": 1.518, 
+                                                    "NA": 1.4, 
+                                                    "f": 1.8, 
+                                                    "transmittance": 0.84, 
+                                                    "lambda": 640, 
+                                                    "P_laser": 0.000125, 
+                                                    "rep_rate": 40000000.0, 
+                                                    "pulse_length": 1e-10, 
+                                                    "obj_ba": 5.04, 
+                                                    "px_size": 10,
+                                                    "offset": [0, 0]
+                                                    }, 
+                            "numerical_params" = {
+                                                    "out_scrn_size" : 1,
+                                                    "z_extent" : 1,
+                                                    "out_res" : 64, 
+                                                    "inp_res" : 64}
+                            }
+        
 #        self.aberrations = {
 #                            "astig" : [0,0],
 #                            "coma" : [0,0],
@@ -308,8 +341,11 @@ class param():
         with open(path + obj_path + '_' + name_base + "_full.txt", 'r') as f:
             self.full = json.load(f)
         return 
+    
+    def load_file_sim(self, path, name_base):
+        with open(path + name_base + "_simulation.txt", 'r') as f:
+            self.simulation = json.load(f)
             
-          
     def load_file(self, path, obj_path, name_base):
         print("Loading parameters from: ", path + obj_path + '_' + name_base)
         with open(path + name_base + "_general.txt", 'r') as f:
