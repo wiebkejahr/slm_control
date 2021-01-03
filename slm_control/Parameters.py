@@ -164,7 +164,7 @@ class param():
                                                     "px_size": 10,
                                                     "offset": [0, 0]
                                                     }, 
-                            "numerical_params" = {
+                            "numerical_params" :    {
                                                     "out_scrn_size" : 1,
                                                     "z_extent" : 1,
                                                     "out_res" : 64, 

@@ -45,26 +45,11 @@ class Microscope():
         Optical and numerical parameters used for simulations are currently 
         hard coded. Later: should be read in from config files.
         """
-    def __init__(self):
+    def __init__(self, params_sim):
         super(Microscope, self).__init__()
         self.get_config()
-        self.optical_params_sted = {
-                                    "n": 1.518, 
-                                    "NA": 1.4, 
-                                    "f": 1.8, 
-                                    "transmittance": 0.74, 
-                                    "lambda": 775, 
-                                    "P_laser": 0.25, 
-                                    "rep_rate": 40000000.0, 
-                                    "pulse_length": 7e-10, 
-                                    "obj_ba": 5.04, 
-                                    "offset": [0, 0]}
-        self.numerical_params = {
-                                    "out_scrn_size" : 1,
-                                    "z_extent" : 1,
-                                    "out_res" : 64, 
-                                    "inp_res" : 64 
-                                    }
+        self.opt_props = params_sim["optical_params_sted"]
+        self.num_props = params_sim["numerical_params"]
         # left handed circular
         self.polarization = [1.0/np.sqrt(2), 1.0/np.sqrt(2)*1j, 0]
         self.calc_data()
@@ -81,10 +66,10 @@ class Microscope():
                     self.phasemask
                     zerns: phasemask containing the aberrations
             """
-        lp_scale_sted = vd.calc_lp(self.optical_params_sted["P_laser"], 
-                                   self.optical_params_sted["rep_rate"], 
-                                   self.optical_params_sted["pulse_length"])
-        size = np.asarray([self.numerical_params["inp_res"], self.numerical_params["inp_res"]])
+        lp_scale_sted = vd.calc_lp(self.opt_props["P_laser"], 
+                                   self.opt_props["rep_rate"], 
+                                   self.opt_props["pulse_length"])
+        size = np.asarray([self.num_props["inp_res"], self.num_props["inp_res"]])
         vortex = pc.create_donut(2*size, 0, 1, radscale = 2)
         orders = [[1,-1],[1,1],[2,0],
                     [2,-2],[2,2],
@@ -96,9 +81,9 @@ class Microscope():
         
 #        def correct_aberrations(size, ratios, orders, off = [0,0], radscale = 1):
         [xy, xz, yz, xyz] = vd.vector_diffraction(
-            self.optical_params_sted, self.numerical_params, 
+            self.opt_props, self.num_props, 
             self.polarization, self.phasemask, amp, lp_scale_sted, plane='all', 
-            offset=self.optical_params_sted['offset'])
+            offset=self.opt_props['offset'])
         self.data = np.stack((helpers.preprocess(xy), 
                               helpers.preprocess(xz), 
                               helpers.preprocess(yz)), axis = 0)
@@ -145,12 +130,12 @@ class Microscope():
         self.set_stage_offsets(xyz_Pos)
         
         
-    def correct_tip_tilt(self):
-        return helpers.calc_tip_tilt(self.data[0])
+    # def correct_tip_tilt(self):
+    #     return helpers.calc_tip_tilt(self.data[0])
         
     
-    def correct_defocus(self):
-        return helpers.calc_defocus(self.data[1], self.data[2])
+    # def correct_defocus(self):
+    #     return helpers.calc_defocus(self.data[1], self.data[2])
     
         
     def acquire_image(self, multi = True, mask_offset = [0,0], aberrs = np.zeros(11)):
@@ -209,34 +194,34 @@ class Abberior():
             self.config.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', stage_offsets[1])
             self.config.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', stage_offsets[2])
 
-    def correct_tip_tilt(self):
-        """" Acquires xy image in Imspector, calculates the degree of
-             tiptilt by fitting and averaging the CoM in both."""
+    # def correct_tip_tilt(self):
+    #     """" Acquires xy image in Imspector, calculates the degree of
+    #          tiptilt by fitting and averaging the CoM in both."""
         
-        msr = self.gui.active_measurement()
-        try:
-            image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-        except:
-            print("Cannot find 'ExpControl Ch1 {1}' window")
-            exit()
-        return helpers.calc_tip_tilt(image_xy)
+    #     msr = self.gui.active_measurement()
+    #     try:
+    #         image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
+    #     except:
+    #         print("Cannot find 'ExpControl Ch1 {1}' window")
+    #         exit()
+    #     return helpers.calc_tip_tilt(image_xy)
     
     
-    def correct_defocus(self):
-        """" Acquires xz and yz images in Imspector, calculates the degree of
-            defocus by fitting and averaging the CoM in both."""
+    # def correct_defocus(self):
+    #     """" Acquires xz and yz images in Imspector, calculates the degree of
+    #         defocus by fitting and averaging the CoM in both."""
             
-        msr = self.gui.active_measurement()
-        try:
-            image_xz = msr.stack('ExpControl Ch1 {13}').data()
-        except:
-            print("Cannot find 'ExpControl Ch1 {13}' window")
-            exit()
-        try:
-            image_yz = msr.stack('ExpControl Ch1 {15}').data()
-        except:
-            print("Cannot find 'ExpControl Ch1 {15}' window")
-        return helpers.calc_defocus(image_xz, image_yz)
+    #     msr = self.gui.active_measurement()
+    #     try:
+    #         image_xz = msr.stack('ExpControl Ch1 {13}').data()
+    #     except:
+    #         print("Cannot find 'ExpControl Ch1 {13}' window")
+    #         exit()
+    #     try:
+    #         image_yz = msr.stack('ExpControl Ch1 {15}').data()
+    #     except:
+    #         print("Cannot find 'ExpControl Ch1 {15}' window")
+    #     return helpers.calc_defocus(image_xz, image_yz)
     
     
     def grab_image(self, msr, window = 'ExpControl Ch1 {1}'):

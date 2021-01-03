@@ -444,7 +444,7 @@ class Main_Window(QtWidgets.QMainWindow):
         so_far: correlation required to stop optimizing; -1 means it only executes once"""
 
         size = 2 * np.asarray(self.p.general["size_slm"])
-        scope = microscope.Microscope()
+        scope = microscope.Microscope(self.p.simulation)
         #imspector, msr_names, active_msr, conf = scope.get_config()
         # center the image before starting
         self.correct_tiptilt(scope)
@@ -508,7 +508,7 @@ class Main_Window(QtWidgets.QMainWindow):
         except:
             print("couldn't create directory!")
         
-        scope = microscope.Microscope()
+        scope = microscope.Microscope(self.p.simulation)
         #imspector, msr_names, active_msr, conf = scope.get_config()
         xyz_init = scope.get_stage_offsets()
         for ii in range(num_its):
@@ -540,7 +540,6 @@ class Main_Window(QtWidgets.QMainWindow):
                                         size/2, offset = off)
             self.recalc_images()
             
-            
             # 4. Acquire image, center once more using tip tilt and defocus corrections
             # save image and write correction coefficients to file
             img, stats = scope.acquire_image(multi=ortho_sec, mask_offset = off_aberr, aberrs = aberrs)
@@ -554,7 +553,6 @@ class Main_Window(QtWidgets.QMainWindow):
             scope.save_img(path + '/' + str(ii+i_start) + "_aberrated")
             
             # 5. single pass correction
-            #print(np.shape(img_aberr))
             delta_zern, delta_off, img_corr, corr = self.corrective_loop(scope, img_aberr, aberrs, offset=offset, multi=multi, i = best_of)
             
             statistics['preds_zern'].append(delta_zern.tolist())
@@ -574,18 +572,15 @@ class Main_Window(QtWidgets.QMainWindow):
                 plt.imshow(img_aberr[1], clim = minmax, cmap = 'inferno')
                 plt.subplot(233); plt.axis('off')
                 plt.imshow(img_aberr[2], clim = minmax, cmap = 'inferno')
-                #img = scope.acquire_image(multi = multi, phasemask = self.img_l.data)
                 plt.subplot(234); plt.axis('off')
                 plt.imshow(img_corr[0], clim = minmax, cmap = 'inferno')
                 plt.subplot(235); plt.axis('off')
                 plt.imshow(img_corr[1], clim = minmax, cmap = 'inferno')
                 plt.subplot(236); plt.axis('off')
                 plt.imshow(img_corr[2], clim = minmax, cmap = 'inferno')
-                #fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
             elif ortho_sec and not multi:
                 plt.subplot(121); plt.axis('off')
                 plt.imshow(img_aberr, clim = minmax, cmap = 'inferno')
-                #img = scope.acquire_image(multi = multi, phasemask = self.img_l.data)
                 plt.subplot(122); plt.axis('off')
                 plt.imshow(img_corr[0], clim = minmax, cmap = 'inferno')
             fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
