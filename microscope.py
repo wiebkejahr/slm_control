@@ -99,12 +99,9 @@ class Microscope():
             self.optical_params_sted, self.numerical_params, 
             self.polarization, self.phasemask, amp, lp_scale_sted, plane='all', 
             offset=self.optical_params_sted['offset'])
-        # TODO: normalisation of data!
-        self.data = np.stack((xy, xz, yz), axis =0)
-        minmax = [np.min(self.data), np.max(self.data)]
-        if not(minmax[0] == 0 and minmax[1] == 0):
-            self.data = (self.data - minmax[0])/(minmax[1] - minmax[0])*(2**8-1)
-        self.data = self.data // 1
+        self.data = np.stack((helpers.preprocess(xy), 
+                              helpers.preprocess(xz), 
+                              helpers.preprocess(yz)), axis = 0)
         
         return self.data, self.phasemask, self.zerns
         
@@ -248,11 +245,15 @@ class Abberior():
         # for xy models: assumption that acquisition is running constantly
         # grabs measurment setup, stats etc
         msr = self.gui.active_measurement()
-        try:
+        try:            
+            self.gui.start(msr)
+            time.sleep(3)
+            self.gui.pause(msr)
             img = msr.stack(window).data() # converts it to a numpy array
             stats = [np.max(img), np.min(img), np.std(img)]
             # takes off black edge, resizes to (64, 64) and standardizes
             img_p = helpers.preprocess(img)
+            time.sleep(0.5)
         except:
             print("Cannot find ", window, " window")
         #         exit()
@@ -261,59 +262,33 @@ class Abberior():
     
     def acquire_image(self, multi=False, mask_offset = [0,0], aberrs = np.zeros(11)):
         """" Acquires xy, xz and yz images in Imspector, returns some stats 
-            and the active configurations"""
-            
-        #msr = im.active_measurement()
-        #configuration = msr.active_configuration()
-        
-        #im, msr_names, msr, configuration = get_config()
-        
+            and the active configurations.
+            Configuration names and measurements names are hard coded
+        """
         # acquires xy view
-        # configuration names and measurements names are hard coded
-            
-        x = self.gui.measurement(self.gui.measurement_names()[0])
-        self.gui.activate(x)
+        msr = self.gui.measurement(self.gui.measurement_names()[0])
+        self.gui.activate(msr)
         try:
-            x.activate(x.configuration('xy2d'))
-            self.gui.start(x)
-            time.sleep(3)
-            self.gui.pause(x)
-            #image_xy = x.stack('ExpControl Ch1 {1}').data()
-            image_xy, stats = self.grab_image(x, window = 'ExpControl Ch1 {1}')
-            # takes off black edge, resizes to (64, 64) and standardizes
-            image_xy = helpers.preprocess(image_xy)
+            msr.activate(msr.configuration('xy2d'))
+            image_xy, stats = self.grab_image(msr, window = 'ExpControl Ch1 {1}')
         except:
             print("cannot find xy2d config or 'ExpControl Ch1 {1}' window")
             exit()
-        time.sleep(0.5)  
     
         if multi:
-            # acquires the other two vies and stacks them
+            # acquires the other two views and stacks them
             try:
-                x.activate(x.configuration('xz2d'))
-                self.gui.start(x)
-                time.sleep(3)
-                self.gui.pause(x)
-                image_xz, _ = self.grab_image(x, window = 'ExpControl Ch1 {13}')
-                # takes off black edge, resizes to (64, 64) and standardizes
-                image_xz = helpers.preprocess(image_xz)
+                msr.activate(msr.configuration('xz2d'))
+                image_xz, _ = self.grab_image(msr, window = 'ExpControl Ch1 {13}')
             except:
                 print("cannot find xz2d config or 'ExpControl Ch1 {13}' window")
                 exit()
-            time.sleep(0.5)
-    
             try:
-                x.activate(x.configuration('yz2d'))
-                self.gui.start(x)
-                time.sleep(3)
-                self.gui.pause(x)
-                image_yz, _ = self.grab_image(x, window = 'ExpControl Ch1 {15}')
-                # takes off black edge, resizes to (64, 64) and standardizes
-                image_yz = helpers.preprocess(image_yz)
+                msr.activate(msr.configuration('yz2d'))
+                image_yz, _ = self.grab_image(msr, window = 'ExpControl Ch1 {15}')
             except:
                 print("cannot find yz2d config or 'ExpControl Ch1 {15}' window")  
                 exit()
-            time.sleep(0.5)
             image = np.stack((image_xy, image_xz, image_yz), axis=0)
         else:
             image = image_xy

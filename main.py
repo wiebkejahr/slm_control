@@ -109,7 +109,8 @@ class Main_Window(QtWidgets.QMainWindow):
         self.p.load_file_general(self.param_path[0], self.param_path[1])
         self.current_objective = self.p.general["objective"]
         self.p.load_file_obj(self.param_path[0], self.current_objective, self.param_path[1])
-                
+        self.p.load_file_sim(self.param_path[0], self.param_path[1])
+        
         self.slm_radius = self.calc_slmradius(
             self.p.objectives[self.current_objective]["backaperture"],
             self.p.general["slm_mag"])
@@ -340,36 +341,64 @@ class Main_Window(QtWidgets.QMainWindow):
         self.setCentralWidget(self.main_frame)
         
         
-    def correct_defocus(self, scope):
-        self.defocus_weights_corr = scope.correct_defocus()#(const=1/6.59371319)
+    # def correct_defocus(self, scope):
+    #     self.defocus_weights_corr = scope.correct_defocus()#(const=1/6.59371319)
         
         
+    #     size = 2 * np.asarray(self.p.general["size_slm"])   
+    #     off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]  
+        
+    #     defoc_correct = pcalc.crop(helpers.create_phase([self.defocus_weights_corr], 
+    #                                                     num=[2], 
+    #                                                     size = size,
+    #                                                     radscale = self.slm_radius),
+    #                                       size/2, offset = off)
+    #     #TODO: Why is added defocus positive, not negative?
+    #     # and why is radscale w/o sqrt(2)?
+    #     self.phase_defocus = self.phase_defocus + defoc_correct
+    #     self.recalc_images()
+
+
+    # def correct_tiptilt(self, scope):
+    #     self.tiptilt_weights_corr = scope.correct_tip_tilt()
+    #     size = np.asarray(self.p.general["size_slm"])
+    #     tiptilt_correct = helpers.create_phase(coeffs=self.tiptilt_weights_corr, num=[0,1], 
+    #                                            size = size, radscale = 2*self.rtiptilt)
+        
+    #     self.phase_tiptilt = self.phase_tiptilt + tiptilt_correct
+    #     self.recalc_images()
+    
+    
+    def correct_tiptiltdefoc(self, img):
+        c = self.p.simulation["optical_params_sted"]
+        mag = self.p.general["slm_mag"]
         size = 2 * np.asarray(self.p.general["size_slm"])   
-        off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]  
+        off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]
         
+        d_xyz = helpers.get_CoMs(img) # in px!
+        
+        h = (np.pi * c["px_size"]) / (c["lambda"] * c["f"]) * c["obj_ba"] / mag / 2
+        xtilt =  h * d_xyz[0]
+        ytilt = -h * d_xyz[1]
+        self.tiptilt_weights_corr = [xtilt, ytilt]
+        tiptilt_correct = pcalc.crop(helpers.create_phase(coeffs=self.tiptilt_weights_corr, num=[0,1], 
+                                                size = size, radscale = 2*self.rtiptilt),
+                                     size/2, offset = off)
+        self.phase_tiptilt = self.phase_tiptilt + tiptilt_correct  
+        
+        h = c["px_size"]/((c["f"]/c["obj_ba"])**2 *8 * np.sqrt(3)*c["lambda"])/2 
+        defocus = h * d_xyz[2]
+        self.defocus_weights_corr = defocus
         defoc_correct = pcalc.crop(helpers.create_phase([self.defocus_weights_corr], 
                                                         num=[2], 
                                                         size = size,
                                                         radscale = self.slm_radius),
                                           size/2, offset = off)
-        #TODO: Why is added defocus positive, not negative?
-        # and why is radscale w/o sqrt(2)?
         self.phase_defocus = self.phase_defocus + defoc_correct
         self.recalc_images()
-
-
-    def correct_tiptilt(self, scope):
-        self.tiptilt_weights_corr = scope.correct_tip_tilt()
-        size = np.asarray(self.p.general["size_slm"])
-        tiptilt_correct = helpers.create_phase(coeffs=self.tiptilt_weights_corr, num=[0,1], 
-                                               size = size, radscale = 2*self.rtiptilt)
-        
-        self.phase_tiptilt = self.phase_tiptilt + tiptilt_correct
-        self.recalc_images()
+      
     
-    
-    def corrective_loop(self, scope, image=None, aberrs = np.zeros(11), 
-                        offset=False, multi=False, ortho_sec=False, i=1):
+    def corrective_loop(self, scope, image=None, aberrs = np.zeros(11), offset=False, multi=False, ortho_sec=False, i=1):
         """ Passes trained model and acquired image to abberior_predict to 
             estimate zernike weights and offsets required to correct 
             aberrations. Calculates new SLM pattern to acquire new image and 
@@ -381,14 +410,6 @@ class Main_Window(QtWidgets.QMainWindow):
         delta_zern, delta_off = microscope.abberior_predict(self.p.general["autodl_model_path"], 
                                                            image, offset=offset, multi=multi, ii=i)
         delta_off = delta_off * scale
-        # TODO: why is delta_off 11 dim vector?!?
-        # also: values seem to depend on scaling of the image I'm feeding in
-        # what am I overlooking?
-        
-        if np.abs(delta_off[0]) > 32: #size[1]//2:
-            delta_off[0] = 0
-        if np.abs(delta_off[1]) > 32: #size[0]//2:
-            delta_off[1] = 0
 
         off = [self.img_l.off.xgui.value() + delta_off[1],
                self.img_l.off.ygui.value() - delta_off[0]]
@@ -404,11 +425,12 @@ class Main_Window(QtWidgets.QMainWindow):
                                                         radscale = np.sqrt(2)*self.slm_radius),
                                    size /2, offset = off)
         self.phase_zern = phase_correct                    
-        
         self.recalc_images()
-        self.correct_tiptilt(scope)
-        if ortho_sec:
-            self.correct_defocus(scope)
+        img, stats = scope.acquire_image(multi=multi, mask_offset = off, aberrs = new_aberrs)
+        self.correct_tiptiltdefoc(img)
+        # self.correct_tiptilt(scope)
+        # if ortho_sec:
+        #     self.correct_defocus(scope)
             
         new_img, stats = scope.acquire_image(multi=multi, mask_offset = off, aberrs = new_aberrs)
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
@@ -522,9 +544,7 @@ class Main_Window(QtWidgets.QMainWindow):
             # 4. Acquire image, center once more using tip tilt and defocus corrections
             # save image and write correction coefficients to file
             img, stats = scope.acquire_image(multi=ortho_sec, mask_offset = off_aberr, aberrs = aberrs)
-            self.correct_tiptilt(scope)
-            if ortho_sec:
-                self.correct_defocus(scope)
+            self.correct_tiptiltdefoc(img)
                 
             #TODO: change scope.acquire_image to return always array, then always use img[0]
             img_aberr, stats = scope.acquire_image(multi=multi, mask_offset = off_aberr, aberrs = aberrs)
@@ -535,7 +555,7 @@ class Main_Window(QtWidgets.QMainWindow):
             
             # 5. single pass correction
             #print(np.shape(img_aberr))
-            delta_zern, delta_off, img_corr, corr = self.corrective_loop(scope, img_aberr, offset=offset, multi=multi, i = best_of)
+            delta_zern, delta_off, img_corr, corr = self.corrective_loop(scope, img_aberr, aberrs, offset=offset, multi=multi, i = best_of)
             
             statistics['preds_zern'].append(delta_zern.tolist())
             statistics['preds_off'].append(delta_off.tolist())

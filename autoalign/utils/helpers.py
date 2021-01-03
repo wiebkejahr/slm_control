@@ -198,19 +198,19 @@ def calc_tip_tilt(img, lambd=0.775, f=1.8, D=5.04, px_size=10, abberior=True):
     return [xtilt, ytilt]
 
 
-def center(img):
-    """Returns the correction phasemask to counteract tiptilt present in given image"""
-    if len(img.shape) == 2:
-        xy = img
-    elif len(img.shape) == 3:
-        xy = img[0]
-    else:
-        print('Image is not the right shape')
-        exit()
-    xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
-    tiptilt = create_phase(coeffs=[xtilt, ytilt], num=[0,1])
+# def center(img):
+#     """Returns the correction phasemask to counteract tiptilt present in given image"""
+#     if len(img.shape) == 2:
+#         xy = img
+#     elif len(img.shape) == 3:
+#         xy = img[0]
+#     else:
+#         print('Image is not the right shape')
+#         exit()
+#     xtilt, ytilt = calc_tip_tilt(xy, abberior=False)
+#     tiptilt = create_phase(coeffs=[xtilt, ytilt], num=[0,1])
 
-    return tiptilt
+#     return tiptilt
 
 def gen_offset(obj_dia = 5.04, scale = 0.1):
     """A function to generate an offset [x, y] to displace the STED psf. 
