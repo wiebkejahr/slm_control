@@ -368,7 +368,8 @@ class Main_Window(QtWidgets.QMainWindow):
         self.recalc_images()
     
     
-    def corrective_loop(self, scope, image=None, aberrs = np.zeros(11), offset=False, multi=False, ortho_sec=False, i=1):
+    def corrective_loop(self, scope, image=None, aberrs = np.zeros(11), 
+                        offset=False, multi=False, ortho_sec=False, i=1):
         """ Passes trained model and acquired image to abberior_predict to 
             estimate zernike weights and offsets required to correct 
             aberrations. Calculates new SLM pattern to acquire new image and 
@@ -394,7 +395,8 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_l.off.xgui.setValue(np.round(off[0]))
         self.img_l.off.ygui.setValue(np.round(off[1]))
         
-        print("TODO: stats for debugging. ", aberrs, delta_zern, size, self.slm_radius, scale, delta_off, off)
+        print("TODO: stats for debugging. ", aberrs, delta_zern, size, 
+              self.slm_radius, scale, delta_off, off)
         new_aberrs = aberrs - delta_zern
         phase_correct = pcalc.crop(helpers.create_phase(new_aberrs,
                                                         num = np.arange(3,14),
@@ -462,20 +464,20 @@ class Main_Window(QtWidgets.QMainWindow):
         ortho_sec = True
         offset=False
         num_its=500
-        px_size = 10
+        px_size = 10*1e-9
         i_start = 79
         best_of = 5
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
         
-        # 0. creates data structure
-        d = {'gt': [], 'preds': [], 'init_corr': [],'corr': []}
-        
+        # 0. creates data structure for statistics
+        statistics = {'gt_off': [], 'preds_off': [], 
+                      'gt_zern': [], 'preds_zern': [], 
+                      'init_corr': [],'corr': []}
         # for model name: drop everything from model path, drop extension
         mdl_name = self.p.general["autodl_model_path"].split("/")[-1][:-4]
         path = self.p.general["data_path"] + mdl_name
-        print("save path: ", path)
-        print("used model: ", mdl_name)
+        print("save path: ", path, "\n used model: ", mdl_name)
         try:
             if not os.path.isdir(self.p.general["data_path"]):
                 os.mkdir(self.p.general["data_path"])
@@ -490,70 +492,11 @@ class Main_Window(QtWidgets.QMainWindow):
         for ii in range(num_its):
             # 1. zeroes SLM
             self.reload_params(self.param_path)
-            # get image from Microscope
-            img, stats = scope.acquire_image(multi=ortho_sec, mask_offset = [0,0], aberrs = np.zeros(11))
-        
-            #TODO: Which values are good will depend on the system & acquisition parameters. Needs to be tested
-            #IMPORTANT: should also stop acquisition, potentially shut down Imspector?
-            if stats[2] < 25:
-                print("Interrupted because no signal. Stats: ", stats)
-                break
-
-            # 2.a fits CoM, for multi model: average from the two views
-            if ortho_sec:
-                _, x_shape, y_shape = np.shape(img)
-                ####### xy ########
-                b, a = helpers.get_CoM(img[0])
-                dx_xy = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
-                dy_xy = ((y_shape-1)/2-b)*1e-9*px_size  # convert to m
-
-                ####### xz ########
-                b, a = helpers.get_CoM(img[1])
-                dx_xz = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
-                dz_xz = ((y_shape-1)/2-b)*1e-9*px_size  # convert to m
-                
-                ######## yz #########
-                b, a = helpers.get_CoM(img[2])
-                dy_yz = ((x_shape-1)/2-a)*1e-9*px_size  # convert to m
-                dz_yz = ((y_shape-1)/2-b)*1e-9*px_size  # convert to m
-                
-                d_xyz = np.asarray([np.average([dx_xy, dx_xz]), 
-                                    np.average([dy_xy, dy_yz]),
-                                    np.average([dz_xz, dz_yz])])
-                
-            # 2.b fits CoM, for single model
-            else:
-                x_shape, y_shape = np.shape(img)
-                b, a = helpers.get_CoM(img)
-                d_xyz = np.asarray[((x_shape-1)/2-a)*1e-9*px_size,
-                                   ((y_shape-1)/2-b)*1e-9*px_size,
-                                   0]
-                
-            # if CoM is more than 200 nm from center, skip and try againg
-            lim = 160e-9
-            if np.abs(d_xyz[0]) >= lim or np.abs(d_xyz[1]) >= lim or np.abs(d_xyz[2])>=lim:
-                print('skipped', d_xyz)
-                scope.set_stage_offsets(xyz_init, 'fine')
-                continue
-
-            # 3. centers using ImSpector
-            xyz_0 = scope.get_stage_offsets('fine')
-            xyz_Pos = xyz_0 - d_xyz 
+            # 2. get image from microscope and center
+            img, stats = scope.acquire_image(multi=ortho_sec, mask_offset = [0,0], aberrs = np.zeros(11))        
+            scope.center_stage(img, xyz_init, px_size, mode = 'fine')
             
-            # if overall, drift has been more then 800 um, reset.
-            # TODO: test again if this works
-            # if np.abs(xPos) >= 800e-6 or np.abs(yPos) >= 800e-6:
-            #     print('skipped', xPos, yPos)
-            #     # fine
-            #     scope.set_stage_offsets(xyz_init, 'fine)
-            #     continue
-
-            # write new position values
-            scope.set_stage_offsets(xyz_Pos)
-
-            
-            # 4. dials in random aberrations and sends them to SLM
-            
+            # 3. dials in random aberrations and sends them to SLM and SLM GUI
             #TODO: don't hardcode this anymore depending on model used
             #WHOLE BLOCK; BOTH for aberrs as well as off_aberr
             aberrs = helpers.gen_coeffs(11)
@@ -565,52 +508,46 @@ class Main_Window(QtWidgets.QMainWindow):
             # calculate new offsets and write to GUI
             off = [self.img_l.off.xgui.value() - off_aberr[1],
                    self.img_l.off.ygui.value() + off_aberr[0]]
-            
             self.img_l.off.xgui.setValue(off[0])
             self.img_l.off.ygui.setValue(off[1])
             #TODO: sanity check that offsets are within boundaries
-            phasemask_aberrs = pcalc.crop(helpers.create_phase(aberrs, 
-                                                       num=np.arange(3, 14), 
-                                                       size = size, 
-                                                       radscale = np.sqrt(2)*self.slm_radius), 
-                                          size/2, offset = off)
-            
-            self.phase_zern = phasemask_aberrs
+            self.phase_zern = pcalc.crop(helpers.create_phase(aberrs, 
+                                            num=np.arange(3, 14), 
+                                            size = size, 
+                                            radscale = np.sqrt(2)*self.slm_radius), 
+                                        size/2, offset = off)
             self.recalc_images()
-            d['gt'].append(aberrs)
-            d['gt'].append(off_aberr)
             
-            # 5. Get image, center once more using tip tilt and defocus corrections
+            
+            # 4. Acquire image, center once more using tip tilt and defocus corrections
             # save image and write correction coefficients to file
             img, stats = scope.acquire_image(multi=ortho_sec, mask_offset = off_aberr, aberrs = aberrs)
             self.correct_tiptilt(scope)
             if ortho_sec:
                 self.correct_defocus(scope)
                 
-            #TODO: change scope.get_image to return always array, then always use img[0]
+            #TODO: change scope.acquire_image to return always array, then always use img[0]
             img_aberr, stats = scope.acquire_image(multi=multi, mask_offset = off_aberr, aberrs = aberrs)
-            name = path + '/' + str(ii+i_start) + "_aberrated"
-            scope.save_img(name)
-            d['init_corr'].append(helpers.corr_coeff(img_aberr, multi=multi))
+            statistics['gt_zern'].append(aberrs)
+            statistics['gt_off'].append(off_aberr)
+            statistics['init_corr'].append(helpers.corr_coeff(img_aberr, multi=multi))
+            scope.save_img(path + '/' + str(ii+i_start) + "_aberrated")
             
-            # 6. single pass correction
+            # 5. single pass correction
             #print(np.shape(img_aberr))
             delta_zern, delta_off, img_corr, corr = self.corrective_loop(scope, img_aberr, offset=offset, multi=multi, i = best_of)
             
-            d['preds'].append(delta_zern.tolist())
-            d['preds'].append(delta_off.tolist())
-            d['corr'].append(corr)
-            name = path + '/' + str(ii+i_start) + "_corrected"
-            scope.save_img(name)
+            statistics['preds_zern'].append(delta_zern.tolist())
+            statistics['preds_off'].append(delta_off.tolist())
+            statistics['corr'].append(corr)
+            scope.save_img(path + '/' + str(ii+i_start) + "_corrected")
             with open(path + '/' + mdl_name +str(i_start)+'.txt', 'w') as file:
-                json.dump(d, file)
-
+                json.dump(statistics, file)
 
             # use matplotlib to plot and save data
+            fig = plt.figure()
+            minmax = [np.min(img_corr[0]), np.max(img_corr[0])]
             if ortho_sec and multi:
-                minmax = [np.min(img_corr[0]), np.max(img_corr[0])]
-                fig = plt.figure()
-                print(np.shape(img_aberr), np.shape(img_corr))
                 plt.subplot(231); plt.axis('off')
                 plt.imshow(img_aberr[0], clim = minmax, cmap = 'inferno')
                 plt.subplot(232); plt.axis('off')
@@ -624,21 +561,19 @@ class Main_Window(QtWidgets.QMainWindow):
                 plt.imshow(img_corr[1], clim = minmax, cmap = 'inferno')
                 plt.subplot(236); plt.axis('off')
                 plt.imshow(img_corr[2], clim = minmax, cmap = 'inferno')
-                fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
+                #fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
             elif ortho_sec and not multi:
-                print(np.shape(img_corr), np.shape(img_aberr))
-                minmax = [np.min(img_corr[0]), np.max(img_corr[0])]
-                fig = plt.figure()
                 plt.subplot(121); plt.axis('off')
                 plt.imshow(img_aberr, clim = minmax, cmap = 'inferno')
-                
                 #img = scope.acquire_image(multi = multi, phasemask = self.img_l.data)
                 plt.subplot(122); plt.axis('off')
                 plt.imshow(img_corr[0], clim = minmax, cmap = 'inferno')
-                fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
+            fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
             #TODO add missing logic blocks
 
-        print('DONE with automated loop!', '\n', 'Initial correlation: ', d['init_corr'], '\n', 'final correlation: ', d['corr'])
+        print('DONE with automated loop!', '\n', 
+              'Initial correlation: ', statistics['init_corr'], '\n', 
+              'final correlation: ', statistics['corr'])
 
 
     def crea_but(self, box, action, name, param = None):

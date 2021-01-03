@@ -121,7 +121,33 @@ class Microscope():
     def set_stage_offsets(self, stage_offset = [0,0,0], mode = ''):
         self.config['stage_offsets'] = stage_offset
 
-    
+    def center_stage(self, img, xyz_init, px_size, mode = ''):
+        """ defines center of the PSFs in img, then moves the stage accordingly
+            TODO: img should be self.img?
+            there's no need to loop it thru calling function."""
+        d_xyz = helpers.get_CoMs(img) * px_size
+        
+        # TODO: doesn't work here bc not in loop
+        # if CoM is more than 200 nm from center, skip and try againg
+        # lim = 160e-9
+        # if np.abs(d_xyz[0]) >= lim or np.abs(d_xyz[1]) >= lim or np.abs(d_xyz[2])>=lim:
+        #     print('skipped', d_xyz)
+        #     self.set_stage_offsets(xyz_init, mode)
+        #     continue
+
+        # 3. centers using ImSpector
+        xyz_0 = self.get_stage_offsets(mode)
+        xyz_Pos = xyz_0 - d_xyz 
+        # TODO: test again if this works. if overall drift has been more then 800 um, reset.
+        # if np.abs(xPos) >= 800e-6 or np.abs(yPos) >= 800e-6:
+        #     print('skipped', xPos, yPos)
+        #     scope.set_stage_offsets(xyz_init, 'fine')
+        #     continue
+
+        # write new position values
+        self.set_stage_offsets(xyz_Pos)
+        
+        
     def correct_tip_tilt(self):
         return helpers.calc_tip_tilt(self.data[0])
         
@@ -186,7 +212,6 @@ class Abberior():
             self.config.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', stage_offsets[1])
             self.config.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', stage_offsets[2])
 
-    
     def correct_tip_tilt(self):
         """" Acquires xy image in Imspector, calculates the degree of
              tiptilt by fitting and averaging the CoM in both."""

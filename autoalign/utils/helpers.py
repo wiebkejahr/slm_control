@@ -78,6 +78,40 @@ def fit(x,y):
     plt.show()
     # return model
 
+
+def get_CoMs(img):
+    
+    if len(img.shape) == 3:
+        _, x_shape, y_shape = np.shape(img)
+        
+        ####### xy ########
+        b, a = get_CoM(img[0])
+        dx_xy = ((x_shape-1)/2-a)  # convert to m
+        dy_xy = ((y_shape-1)/2-b)  # convert to m
+    
+        ####### xz ########
+        b, a = get_CoM(img[1])
+        dx_xz = ((x_shape-1)/2-a)  # convert to m
+        dz_xz = ((y_shape-1)/2-b)  # convert to m
+        
+        ######## yz #########
+        b, a = get_CoM(img[2])
+        dy_yz = ((x_shape-1)/2-a)  # convert to m
+        dz_yz = ((y_shape-1)/2-b)  # convert to m
+        
+        d_xyz = np.asarray([np.average([dx_xy, dx_xz]), 
+                            np.average([dy_xy, dy_yz]),
+                            np.average([dz_xz, dz_yz])])
+    
+    elif len(img.shape) == 2:
+        x_shape, y_shape = np.shape(img)
+        b, a = get_CoM(img)
+        d_xyz = np.asarray[((x_shape-1)/2-a),
+                           ((y_shape-1)/2-b),
+                           0]
+    return d_xyz
+
+
 def get_CoM(img):
     #TODO: return offsets in nm instead of absolute positons in px
     #    dx = (x_shape-1)/2-a
