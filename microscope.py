@@ -329,8 +329,11 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
 
         
         #NOTE: temporary!
-        zern = np.asarray([0.0]*11)
-        offset_label = coeffs
+        #zern = np.asarray([0.0]*11)
+        #offset_label = coeffs
+        zern = coeffs
+        offset_label = np.asarray([0,0])
+        
         # return coeffs
         # if offset:
         #     zern = coeffs[:-2]
