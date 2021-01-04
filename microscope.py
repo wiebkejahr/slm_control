@@ -151,8 +151,8 @@ class Microscope():
 
 class Abberior():
     """bla"""
-    def __init__(self):
-        super(Microscope, self).__init__()
+    def __init__(self, params_sim):
+        #super(Microscope, self).__init__(self)
         self.get_config()
         
     def get_config(self):
@@ -161,64 +161,62 @@ class Abberior():
         self.msr_names = self.gui.measurement_names()
         self.msr = self.gui.active_measurement()
         self.config = self.msr.active_configuration()
-        #return im, msr_names, msr, config
-        
+        #print(self.config.parameters('prop_version'))
         
     def get_stage_offsets(self, mode = 'fine'):
         """ gets offsets from abberior gui, either for galvo or for the stage
             depending whether mode == 'fine' or mode == 'corase'."""
+        c = self.gui.active_measurement().active_configuration()
         if mode == 'fine':
-            x = self.config.parameters('ExpControl/scan/range/x/g_off')
-            y = self.config.parameters('ExpControl/scan/range/y/g_off')
-            z = self.config.parameters('ExpControl/scan/range/z/g_off')
+            x = c.parameters('ExpControl/scan/range/x/g_off')
+            y = c.parameters('ExpControl/scan/range/y/g_off')
+            z = c.parameters('ExpControl/scan/range/z/g_off')
         elif mode == 'coarse':
-            x = self.config.parameters('ExpControl/scan/range/offsets/coarse/x/g_off')
-            y = self.config.parameters('ExpControl/scan/range/offsets/coarse/y/g_off')
-            z = self.config.parameters('ExpControl/scan/range/offsets/coarse/z/g_off')
+            x = c.parameters('ExpControl/scan/range/offsets/coarse/x/g_off')
+            y = c.parameters('ExpControl/scan/range/offsets/coarse/y/g_off')
+            z = c.parameters('ExpControl/scan/range/offsets/coarse/z/g_off')
         return [x, y, z]
     
     
     def set_stage_offsets(self, stage_offsets = [0,0,0], mode = 'fine'):
         """ sets offsets in abberior gui, either for galvo or for the stage
             depending whether mode == 'fine' or mode == 'coarse'."""
+        c = self.gui.active_measurement().active_configuration()
         if mode == 'fine':
-            self.config.set_parameters('ExpControl/scan/range/x/g_off', stage_offsets[0])
-            self.config.set_parameters('ExpControl/scan/range/y/g_off', stage_offsets[1])
-            self.config.set_parameters('ExpControl/scan/range/z/g_off', stage_offsets[2])
+            c.set_parameters('ExpControl/scan/range/x/g_off', stage_offsets[0])
+            c.set_parameters('ExpControl/scan/range/y/g_off', stage_offsets[1])
+            c.set_parameters('ExpControl/scan/range/z/g_off', stage_offsets[2])
         elif mode == 'coarse':
-            self.config.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', stage_offsets[0])
-            self.config.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', stage_offsets[1])
-            self.config.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', stage_offsets[2])
+            c.set_parameters('ExpControl/scan/range/offsets/coarse/x/g_off', stage_offsets[0])
+            c.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', stage_offsets[1])
+            c.set_parameters('ExpControl/scan/range/offsets/coarse/y/g_off', stage_offsets[2])
 
-    # def correct_tip_tilt(self):
-    #     """" Acquires xy image in Imspector, calculates the degree of
-    #          tiptilt by fitting and averaging the CoM in both."""
+    def center_stage(self, img, xyz_init, px_size, mode = ''):
+        """ defines center of the PSFs in img, then moves the stage accordingly
+            TODO: img should be self.img?
+            there's no need to loop it thru calling function."""
+        d_xyz = helpers.get_CoMs(img) * px_size
         
-    #     msr = self.gui.active_measurement()
-    #     try:
-    #         image_xy = msr.stack('ExpControl Ch1 {1}').data() # converts it to a numpy array
-    #     except:
-    #         print("Cannot find 'ExpControl Ch1 {1}' window")
-    #         exit()
-    #     return helpers.calc_tip_tilt(image_xy)
-    
-    
-    # def correct_defocus(self):
-    #     """" Acquires xz and yz images in Imspector, calculates the degree of
-    #         defocus by fitting and averaging the CoM in both."""
-            
-    #     msr = self.gui.active_measurement()
-    #     try:
-    #         image_xz = msr.stack('ExpControl Ch1 {13}').data()
-    #     except:
-    #         print("Cannot find 'ExpControl Ch1 {13}' window")
-    #         exit()
-    #     try:
-    #         image_yz = msr.stack('ExpControl Ch1 {15}').data()
-    #     except:
-    #         print("Cannot find 'ExpControl Ch1 {15}' window")
-    #     return helpers.calc_defocus(image_xz, image_yz)
-    
+        # TODO: doesn't work here bc not in loop
+        # if CoM is more than 200 nm from center, skip and try againg
+        # lim = 160e-9
+        # if np.abs(d_xyz[0]) >= lim or np.abs(d_xyz[1]) >= lim or np.abs(d_xyz[2])>=lim:
+        #     print('skipped', d_xyz)
+        #     self.set_stage_offsets(xyz_init, mode)
+        #     continue
+
+        # 3. centers using ImSpector
+        xyz_0 = self.get_stage_offsets(mode)
+        xyz_Pos = xyz_0 - d_xyz 
+        # TODO: test again if this works. if overall drift has been more then 800 um, reset.
+        # if np.abs(xPos) >= 800e-6 or np.abs(yPos) >= 800e-6:
+        #     print('skipped', xPos, yPos)
+        #     scope.set_stage_offsets(xyz_init, 'fine')
+        #     continue
+
+        # write new position values
+        print('centering: ', d_xyz/px_size, d_xyz, xyz_0, xyz_Pos)
+        self.set_stage_offsets(xyz_Pos)
     
     def grab_image(self, msr, window = 'ExpControl Ch1 {1}'):
         #TODO: seems is only used internally

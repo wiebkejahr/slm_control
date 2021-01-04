@@ -99,10 +99,10 @@ def get_CoMs(img):
         dy_yz = ((x_shape-1)/2-a)  # convert to m
         dz_yz = ((y_shape-1)/2-b)  # convert to m
         
-        d_xyz = np.asarray([np.average([dx_xy, dx_xz]), 
-                            np.average([dy_xy, dy_yz]),
-                            np.average([dz_xz, dz_yz])])
-    
+        #d_xyz = np.asarray([np.average([dx_xy, dx_xz]), 
+        #                    np.average([dy_xy, dy_yz]),
+        #                    np.average([dz_xz, dz_yz])])
+        d_xyz = np.asarray([dx_xy, dy_xy, np.average([dz_xz, dz_yz])])    
     elif len(img.shape) == 2:
         x_shape, y_shape = np.shape(img)
         b, a = get_CoM(img)

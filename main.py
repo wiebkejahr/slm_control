@@ -379,6 +379,10 @@ class Main_Window(QtWidgets.QMainWindow):
         delta_zern, delta_off = microscope.abberior_predict(self.p.general["autodl_model_path"], 
                                                            image, offset=offset, multi=multi, ii=i)
         delta_off = delta_off * scale
+        #if abs(delta_off[0]) > 32:
+        #    delta_off = 0
+        #elif abs(delta_off[1]) > 32:
+        #    delta_off = 0
 
         off = [self.img_l.off.xgui.value() + delta_off[1],
                self.img_l.off.ygui.value() - delta_off[0]]
@@ -446,7 +450,7 @@ class Main_Window(QtWidgets.QMainWindow):
         offset=False
         num_its=500
         px_size = 10*1e-9
-        i_start = 79
+        i_start = 0
         best_of = 5
         size = 2 * np.asarray(self.p.general["size_slm"])
         orders = self.p.simulation["numerical_params"]["orders"]
@@ -468,7 +472,7 @@ class Main_Window(QtWidgets.QMainWindow):
         except:
             print("couldn't create directory!")
         
-        scope = microscope.Microscope(self.p.simulation)
+        scope = microscope.Abberior(self.p.simulation)
         #imspector, msr_names, active_msr, conf = scope.get_config()
         xyz_init = scope.get_stage_offsets()
         for ii in range(num_its):
