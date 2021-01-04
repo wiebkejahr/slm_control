@@ -71,11 +71,7 @@ class Microscope():
                                    self.opt_props["pulse_length"])
         size = np.asarray([self.num_props["inp_res"], self.num_props["inp_res"]])
         vortex = pc.create_donut(2*size, 0, 1, radscale = 2)
-        orders = [[1,-1],[1,1],[2,0],
-                    [2,-2],[2,2],
-                    [3,-3],[3,-1],[3,1],[3,3], 
-                    [4,-4],[4,-2],[4,0],[4,2],[4,4]]
-        self.zerns = pc.correct_aberrations(2*size, aberrs, orders[3::], radscale = 2)
+        self.zerns = pc.zern_sum(2*size, aberrs, self.num_props["orders"][3::], radscale = 2)
         self.phasemask = pc.crop(pc.add_images([vortex, self.zerns]), size, mask_offset)
         amp = np.ones_like(self.phasemask)
         

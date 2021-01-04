@@ -295,7 +295,7 @@ def correct_flatfield(path):
     return ff
 
     
-def correct_aberrations(size, ratios, orders, radscale = 1):
+def zern_sum(size, ratios, orders, radscale = 1):
     """ Calculates an aberration correction by summing up Zernike polynomials.
         Output with given size and offsets. Ratios is a 1D array containing the
         weights of the Zernike polynomials. Orders is a 1D of the same length 

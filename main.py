@@ -339,35 +339,7 @@ class Main_Window(QtWidgets.QMainWindow):
         vbox.setContentsMargins(0,0,0,0)
         self.main_frame.setLayout(vbox)       
         self.setCentralWidget(self.main_frame)
-        
-        
-    # def correct_defocus(self, scope):
-    #     self.defocus_weights_corr = scope.correct_defocus()#(const=1/6.59371319)
-        
-        
-    #     size = 2 * np.asarray(self.p.general["size_slm"])   
-    #     off = [self.img_l.off.xgui.value(), self.img_l.off.ygui.value()]  
-        
-    #     defoc_correct = pcalc.crop(helpers.create_phase([self.defocus_weights_corr], 
-    #                                                     num=[2], 
-    #                                                     size = size,
-    #                                                     radscale = self.slm_radius),
-    #                                       size/2, offset = off)
-    #     #TODO: Why is added defocus positive, not negative?
-    #     # and why is radscale w/o sqrt(2)?
-    #     self.phase_defocus = self.phase_defocus + defoc_correct
-    #     self.recalc_images()
-
-
-    # def correct_tiptilt(self, scope):
-    #     self.tiptilt_weights_corr = scope.correct_tip_tilt()
-    #     size = np.asarray(self.p.general["size_slm"])
-    #     tiptilt_correct = helpers.create_phase(coeffs=self.tiptilt_weights_corr, num=[0,1], 
-    #                                            size = size, radscale = 2*self.rtiptilt)
-        
-    #     self.phase_tiptilt = self.phase_tiptilt + tiptilt_correct
-    #     self.recalc_images()
-    
+           
     
     def correct_tiptiltdefoc(self, img):
         c = self.p.simulation["optical_params_sted"]
@@ -380,20 +352,16 @@ class Main_Window(QtWidgets.QMainWindow):
         h = (np.pi * c["px_size"]) / (c["lambda"] * c["f"]) * c["obj_ba"] / mag / 2
         xtilt =  h * d_xyz[0]
         ytilt = -h * d_xyz[1]
-        self.tiptilt_weights_corr = [xtilt, ytilt]
-        tiptilt_correct = pcalc.crop(helpers.create_phase(coeffs=self.tiptilt_weights_corr, num=[0,1], 
-                                                size = size, radscale = 2*self.rtiptilt),
-                                     size/2, offset = off)
+        #calculate tip/tilt as zernike polynomials [1,1] and [-1,1]
+        full = pcalc.zern_sum(size, [xtilt, ytilt], [[1,-1],[1,1]], radscale = 2)
+        tiptilt_correct = pcalc.crop(full, size//2, offset = off)
         self.phase_tiptilt = self.phase_tiptilt + tiptilt_correct  
         
         h = c["px_size"]/((c["f"]/c["obj_ba"])**2 *8 * np.sqrt(3)*c["lambda"])/2 
         defocus = h * d_xyz[2]
-        self.defocus_weights_corr = defocus
-        defoc_correct = pcalc.crop(helpers.create_phase([self.defocus_weights_corr], 
-                                                        num=[2], 
-                                                        size = size,
-                                                        radscale = self.slm_radius),
-                                          size/2, offset = off)
+        # calculate defocus as zernike polynomial [2,0]
+        full = pcalc.zern_sum(size, [defocus], [[2,0]], radscale = 2)
+        defoc_correct = pcalc.crop(full, size//2, offset = off)
         self.phase_defocus = self.phase_defocus + defoc_correct
         self.recalc_images()
       
@@ -406,6 +374,7 @@ class Main_Window(QtWidgets.QMainWindow):
         
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
+        orders = self.p.simulation["numerical_params"]["orders"]
         print("model into predict: ", self.p.general["autodl_model_path"])
         delta_zern, delta_off = microscope.abberior_predict(self.p.general["autodl_model_path"], 
                                                            image, offset=offset, multi=multi, ii=i)
@@ -419,18 +388,11 @@ class Main_Window(QtWidgets.QMainWindow):
         print("TODO: stats for debugging. ", aberrs, delta_zern, size, 
               self.slm_radius, scale, delta_off, off)
         new_aberrs = aberrs - delta_zern
-        phase_correct = pcalc.crop(helpers.create_phase(new_aberrs,
-                                                        num = np.arange(3,14),
-                                                        size = size,
-                                                        radscale = np.sqrt(2)*self.slm_radius),
-                                   size /2, offset = off)
-        self.phase_zern = phase_correct                    
+        full = pcalc.zern_sum(size, new_aberrs, orders[3::], np.sqrt(2)*self.slm_radius)
+        self.phase_zern = pcalc.crop(full, size//2, offset = off)
         self.recalc_images()
         img, stats = scope.acquire_image(multi=multi, mask_offset = off, aberrs = new_aberrs)
         self.correct_tiptiltdefoc(img)
-        # self.correct_tiptilt(scope)
-        # if ortho_sec:
-        #     self.correct_defocus(scope)
             
         new_img, stats = scope.acquire_image(multi=multi, mask_offset = off, aberrs = new_aberrs)
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
@@ -444,6 +406,7 @@ class Main_Window(QtWidgets.QMainWindow):
         so_far: correlation required to stop optimizing; -1 means it only executes once"""
 
         size = 2 * np.asarray(self.p.general["size_slm"])
+        orders = self.p.simulation["numerical_params"]["orders"]
         scope = microscope.Microscope(self.p.simulation)
         #imspector, msr_names, active_msr, conf = scope.get_config()
         # center the image before starting
@@ -470,12 +433,8 @@ class Main_Window(QtWidgets.QMainWindow):
                 # REMOVING the last phase corrections from the SLM
                 off = [self.img_l.off.xgui.value() - delta_off[1],
                        self.img_l.off.ygui.value() + delta_off[0]]
-                phase_correct = pcalc.crop(helpers.create_phase(old_aberrs, 
-                                                               num=np.arange(3, 14), 
-                                                               size = size, 
-                                                               radscale = np.sqrt(2)*self.slm_radius),
-                                          size/2, offset = off)
-                self.phase_zern = phase_correct
+                full = pcalc.zern_sum(size, old_aberrs, orders[3::], np.sqrt(2)*self.slm_radius)
+                self.phase_zern = pcalc.crop(full, size//2, offset = off)
                 i -= 1
                 break
         self.recalc_images()
@@ -490,6 +449,7 @@ class Main_Window(QtWidgets.QMainWindow):
         i_start = 79
         best_of = 5
         size = 2 * np.asarray(self.p.general["size_slm"])
+        orders = self.p.simulation["numerical_params"]["orders"]
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
         
         # 0. creates data structure for statistics
@@ -527,17 +487,15 @@ class Main_Window(QtWidgets.QMainWindow):
             off_aberr = [0,0]
             #off_aberr = [np.round(scale*x) for x in helpers.gen_offset(ba, 0.1)]
 
-            # calculate new offsets and write to GUI
+            # calculate new offsets and write to GUI, recalc SLM image
             off = [self.img_l.off.xgui.value() - off_aberr[1],
                    self.img_l.off.ygui.value() + off_aberr[0]]
             self.img_l.off.xgui.setValue(off[0])
             self.img_l.off.ygui.setValue(off[1])
             #TODO: sanity check that offsets are within boundaries
-            self.phase_zern = pcalc.crop(helpers.create_phase(aberrs, 
-                                            num=np.arange(3, 14), 
-                                            size = size, 
-                                            radscale = np.sqrt(2)*self.slm_radius), 
-                                        size/2, offset = off)
+            full = pcalc.zern_sum(size, aberrs, orders[3::], np.sqrt(2)*self.slm_radius)
+            self.phase_zern = pcalc.crop(full, size//2, offset = off)
+            
             self.recalc_images()
             
             # 4. Acquire image, center once more using tip tilt and defocus corrections
