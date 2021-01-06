@@ -152,25 +152,45 @@ def acquire_image(im, multi=False):
     
     
 
-def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
+def abberior_predict(model_store_path, image, offset=False, multi=False, zern=True, ii=1):
     
     best_coeffs = []
     best_corr = 0
     for _ in range(ii):
 
-        if multi:
-            if offset:
-                model = my_models.MultiOffsetNet13()
-            else:
-                model = my_models.MultiNet11()
-        else:
-            if offset:
-                model = my_models.OffsetNet13()
-            else:
-                model = my_models.Net11()    
+        # if multi:
+        #     if offset:
+        #         model = my_models.MultiOffsetNet13()
+        #     else:
+        #         model = my_models.MultiNet11()
+        # else:
+        #     if offset:
+        #         model = my_models.OffsetNet13()
+        #     else:
+        #         model = my_models.Net11()    
 
-        #NOTE: temporary!
-        # model = my_models.OffsetNet2()
+        # NOTE: OR this all comes from params file
+        if multi:
+            in_dim = 3
+        else:
+            in_dim = 1
+
+        out_dim = 0
+        if zern: out_dim += 11
+        if offset: out_dim += 2
+        print('in dim', in_dim, 'out dim', out_dim)
+
+        import json
+        with open(path, 'r') as f:
+                data = json.load(f)
+                
+                data_clean = {}
+                data_clean["gt"] = data["gt"][1::2]
+                data_clean["preds"] = data["preds"][1::2]
+                data_clean["corr"] = data["corr"]
+                data_clean["init_corr"] = data["init_corr"]
+
+        model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim)
      
         # gets preds
         print("predict: ", model_store_path)

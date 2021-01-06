@@ -170,8 +170,9 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
 
                 # taken from PyTorch documentation
                 # train_writer.add_graph(model, images)
-                unorm = my_classes.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-                grid_imgs = unorm(images)
+                # unorm = my_classes.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+                # grid_imgs = unorm(images)
+                grid_imgs =images
 
                 val_grid = torchvision.utils.make_grid(grid_imgs)
 
@@ -184,13 +185,17 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
 
                 corr_images = []
                 for i in range(5): # for each datapoint in first 5 val datapoints
-                    if len(outputs.numpy()[i])%11 ==2:
+                    if len(outputs.numpy()[i]) ==13:
                         zern_label = outputs.numpy()[i][:-2]
                         offset_label = outputs.numpy()[i][-2:]
  
-                    elif len(outputs.numpy()[i])%11 == 0:
+                    elif len(outputs.numpy()[i])== 11:
                         zern_label = outputs.numpy()[i]
                         offset_label = [0,0]
+                    
+                    elif len(outputs.numpy()[i])== 2:
+                        zern_label = np.asarray([0.0*11])
+                        offset_label = outputs.numpy()[i]
                     
                     corr_images.append(helpers.get_sted_psf(coeffs=zern_label, res=[64,64], offset_label=offset_label, multi=False))
 
@@ -292,29 +297,20 @@ def main(args):
     if args.offset: out_dim += 2
 
 
-    dict = next(iter(data_loaders['train']))
-
-    print(dict['image'].shape)
-    
-    plt.imshow(dict['image'][0,0])
-    plt.show()
-    # exit()
-    
-
-    model_ft = models.resnet18(pretrained=True)
-    num_ftrs = model_ft.fc.in_features
+    # model_ft = models.resnet18(pretrained=True)
+    # num_ftrs = model_ft.fc.in_features
     # Here the size of each output sample is set to 2.
     # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
-    model_ft.fc = nn.Linear(num_ftrs, out_dim)
-    # model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim, res=224)
-    print(summary(model_ft, input_size=(3, 224, 224), batch_size=out_dim))
-    optimizer = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # model_ft.fc = nn.Linear(num_ftrs, out_dim)
+    model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim, res=224)
+    # print(summary(model_ft, input_size=(3, 224, 224), batch_size=out_dim))
+    # optimizer = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # exit()
     # if a warm start was specified, load model and optimizer state parameters
     if args.warm_start:
         checkpoint = torch.load(warm_start)
-        model_ft.load_state_dict(checkpoint['model_state_dict'])
+        model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     
     # grabbing just the model name with this split
@@ -333,7 +329,7 @@ def main(args):
         f.write(data)
 
     # train the model
-    train(model_ft, data_loaders, optimizer, num_epochs, logdir, device, model_store_path)
+    train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path)
 
 
 if __name__ == '__main__':

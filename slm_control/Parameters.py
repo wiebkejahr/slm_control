@@ -365,6 +365,11 @@ class param():
             self.full = json.load(f)
 
 
+    def load_model_def(self, path, fname, model_name):
+        with open(path + fname, 'r') as f:
+            models = json.load(f)
+            self.model_def = models[model_name]
+
     def get(self, param):
         return param
     

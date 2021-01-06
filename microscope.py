@@ -281,26 +281,29 @@ class Abberior():
     
     
 
-def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
+def abberior_predict(model_store_path, model_def, image, ii=1):
     
-    best_coeffs = []
+    # best_coeffs = []
     best_corr = 0
     for _ in range(ii):
 
-        if multi:
-            if offset:
-                model = my_models.MultiOffsetNet13()
-            else:
-                model = my_models.MultiNet11()
+        if model_def["multi_flag"]:
+            in_dim = 3
         else:
-            if offset:
-                model = my_models.OffsetNet13()
-            else:
-                model = my_models.Net11()    
+            in_dim = 1
 
-        #NOTE: temporary!
-        # model = my_models.OffsetNet2()
-     
+        out_dim = 0
+        if model_def["zern_flag"]: out_dim += 11
+        if model_def["offset_flag"]: out_dim += 2
+        
+        
+        resolution = model_def["resolution"]
+        print('in dim', in_dim, 'out dim', out_dim, 'res', resolution)
+
+
+        model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim, res=resolution, concat=model_def["concat"])
+        # from torchsummary import summary
+        # print(summary(model, input_size=(in_dim, resolution, resolution), batch_size=out_dim))
         # gets preds
         #print("predict: ", model_store_path)
         checkpoint = torch.load(model_store_path)
@@ -312,21 +315,29 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
 
         with torch.no_grad():
             # adds 3rd color channel dim and batch dim
-            if multi:   
+            if model_def["multi_flag"]:   
                 input_image = torch.from_numpy(image).unsqueeze(0)
             else:
                 # NOTE: THIS IS ONLY FOR 1D
                 input_image = torch.from_numpy(image).unsqueeze(0).unsqueeze(0)
     
             outputs = model(input_image.float())
-            coeffs = outputs.numpy().squeeze()
+            # coeffs = outputs.numpy().squeeze()
 
+        if len(outputs.numpy()[0]) == 13:
+            zern_label = outputs.numpy()[0][:-2]
+            offset_label = outputs.numpy()[0][-2:]
+
+        elif len(outputs.numpy()[0])== 11:
+            zern_label = outputs.numpy()[0]
+            offset_label = [0,0]
         
-        #NOTE: temporary!
-        #zern = np.asarray([0.0]*11)
-        #offset_label = coeffs
-        zern = coeffs
-        offset_label = np.asarray([0,0])
+        elif len(outputs.numpy()[0])== 2:
+            zern_label = np.asarray([0.0*11])
+            offset_label = outputs.numpy()[0]
+                    
+        # zern = coeffs
+        # offset_label = np.asarray([0,0])
         
         # return coeffs
         # if offset:
@@ -335,11 +346,12 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
         # else:
         #     zern = coeffs
         #     offset_label = [0,0]
-        reconstructed = helpers.get_sted_psf(coeffs=zern, offset_label=offset_label, multi=multi, defocus=False)
+        reconstructed = helpers.get_sted_psf(coeffs=zern_label, offset_label=offset_label, multi=model_def["multi_flag"], defocus=False)
         corr = helpers.corr_coeff(image, reconstructed)
         if corr > best_corr:
             best_corr = corr
-            best_coeffs = coeffs
+            best_coeffs = zern_label
+            best_offsets = offset_label
 
     # if offset:
     #     zern = best_coeffs[:-2]
@@ -350,7 +362,7 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, ii=1):
    
     
 
-    return zern, offset_label
+    return np.asarray(best_coeffs), np.asarray(best_offsets)
 
 
 

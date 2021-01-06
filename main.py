@@ -377,7 +377,8 @@ class Main_Window(QtWidgets.QMainWindow):
         orders = self.p.simulation["numerical_params"]["orders"]
         print("model into predict: ", self.p.general["autodl_model_path"])
         delta_zern, delta_off = microscope.abberior_predict(self.p.general["autodl_model_path"], 
-                                                           image, offset=offset, multi=multi, ii=i)
+                                                            self.p.model_def,
+                                                            image, ii=i)
         delta_off = delta_off * scale
         #if abs(delta_off[0]) > 32:
         #    delta_off = 0
@@ -445,9 +446,7 @@ class Main_Window(QtWidgets.QMainWindow):
 
 
     def automate(self):
-        multi=True
-        ortho_sec = True
-        offset=False
+
         num_its=500
         px_size = 10*1e-9
         i_start = 0
@@ -463,6 +462,14 @@ class Main_Window(QtWidgets.QMainWindow):
         # for model name: drop everything from model path, drop extension
         mdl_name = self.p.general["autodl_model_path"].split("/")[-1][:-4]
         path = self.p.general["data_path"] + mdl_name
+        self.p.load_model_def('', 'model_params.json', mdl_name)
+        
+        # TODO: clean up usage of these flags later
+        multi = self.p.model_def['multi_flag']
+        ortho_sec = self.p.model_def['orthosec_flag']
+        offset = self.p.model_def['offset_flag']
+        zern_flag = self.p.model_def['zern_flag']
+        
         print("save path: ", path, "\n used model: ", mdl_name)
         try:
             if not os.path.isdir(self.p.general["data_path"]):
@@ -485,12 +492,16 @@ class Main_Window(QtWidgets.QMainWindow):
             # 3. dials in random aberrations and sends them to SLM and SLM GUI
             #TODO: don't hardcode this anymore depending on model used
             #WHOLE BLOCK; BOTH for aberrs as well as off_aberr
-            aberrs = helpers.gen_coeffs(11)
-            #aberrs = [0 for c in range(11)]
-            ba = self.p.objectives[self.current_objective]["backaperture"]
-            off_aberr = [0,0]
-            #off_aberr = [np.round(scale*x) for x in helpers.gen_offset(ba, 0.1)]
-
+            if zern_flag:
+                aberrs = helpers.gen_coeffs(11)
+            else:
+                aberrs = [0 for c in range(11)]
+            if offset:
+                ba = self.p.objectives[self.current_objective]["backaperture"]
+                off_aberr = [np.round(scale*x) for x in helpers.gen_offset(ba, 0.1)]
+            else:
+                off_aberr = [0,0]
+            
             # calculate new offsets and write to GUI, recalc SLM image
             off = [self.img_l.off.xgui.value() - off_aberr[1],
                    self.img_l.off.ygui.value() + off_aberr[0]]
