@@ -19,7 +19,10 @@ import numpy as np
 import argparse as ap
 import math
 from tqdm import tqdm
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, models, transforms
 from torch.utils.tensorboard import SummaryWriter
@@ -29,6 +32,20 @@ from torchsummary import summary
 import utils.my_classes as my_classes
 import utils.helpers as helpers
 import utils.my_models as my_models
+
+
+# helper functions
+
+def matplotlib_imshow(img, one_channel=False):
+    if one_channel:
+        img = img.mean(dim=0)
+    img = img / 2 + 0.5     # unnormalize
+    npimg = img.numpy()
+    if one_channel:
+        plt.imshow(npimg, cmap="Greys")
+    else:
+        plt.imshow(np.transpose(npimg, (1, 2, 0)))
+
 
 def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path):
 
@@ -50,13 +67,41 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
         # TRAINING LOOP
         for i, sample in enumerate(data_loaders['train']):
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
-            images = sample['image']
+            images = sample['image'] #[32, 3, 64, 64]
             labels = sample['label']
+            
+            # unorm = my_classes.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+            # grid_imgs = unorm(images)
+
+
+            # def show(img):
+            #     npimg = img.numpy()
+            #     plt.imshow(np.transpose(npimg, (1,2,0)), interpolation='nearest')
+
+            # w = images
+            # plt.imshow(images[1, 0])
+            # plt.show()
+            # grid = torchvision.utils.make_grid(w, nrow=32)
+            # # show(grid)
+            # # plt.show()
+            # # grid_imgs = np.transpose(grid_imgs, (1,2,0))
+            # # print(grid_imgs.shape)
 
             # train_writer.add_graph(model, images)
-            grid = torchvision.utils.make_grid(images)
-            train_writer.add_image("images", grid)
-            
+            train_grid = torchvision.utils.make_grid(images[:10], nrow=16)
+            # train_grid = torchvision.utils.make_grid(
+            #     torch.from_numpy(np.dstack((grid_imgs[0,:5].unsqueeze(1),
+            #                                 grid_imgs[1,:5].unsqueeze(1),
+            #                                 grid_imgs[2,:5].unsqueeze(1)))))
+            train_writer.add_image("train images", train_grid)
+
+            # ygrid = torchvision.utils.make_grid(images[:,1].unsqueeze(1))
+            # train_writer.add_image("yz images", ygrid)
+
+            # zgrid = torchvision.utils.make_grid(images[:,2].unsqueeze(1))
+            # train_writer.add_image("xz images", zgrid)
+
+
             # if GPU is available, this allows the computation to happen there
             images = images.to(device) #[batch_size, C, H, W]
             labels = labels.to(device)
@@ -90,12 +135,12 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 running_loss = 0.0
 
         # saving model state parameters so I can return to training later if necessary
-        # torch.save({
-        #         'epoch': epoch,
-        #         'model_state_dict': model.state_dict(),
-        #         'optimizer_state_dict': optimizer.state_dict()
-        #         }, model_store_path)
-        torch.save(model, model_store_path) 
+        torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict()
+                }, model_store_path)
+        # # torch.save(model, model_store_path) 
         
         # VALIDATION LOOP   
         model.eval()
@@ -114,7 +159,6 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 avg_loss_per_coeff = torch.mean(matrix_loss, dim=0)
                 loss = torch.sum(avg_loss_per_coeff)
 
-
                 batch_size = matrix_loss.shape[0]
                 # print(batch_size) # 20
                 
@@ -123,6 +167,44 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 
                 print('Accuracy: {}'.format(accuracy))
                 train_writer.add_scalar('validation accuracy', accuracy, epoch)
+
+                # taken from PyTorch documentation
+                # train_writer.add_graph(model, images)
+                unorm = my_classes.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+                grid_imgs = unorm(images)
+
+                val_grid = torchvision.utils.make_grid(grid_imgs)
+
+                # val_grid = torchvision.utils.make_grid(
+                #     torch.from_numpy(np.dstack((grid_imgs[:5,0].unsqueeze(1),
+                #             grid_imgs[:5,1].unsqueeze(1),
+                #             grid_imgs[:5,2].unsqueeze(1)))))
+                
+                train_writer.add_image("validation images", val_grid)
+
+                corr_images = []
+                for i in range(5): # for each datapoint in first 5 val datapoints
+                    if len(outputs.numpy()[i])%11 ==2:
+                        zern_label = outputs.numpy()[i][:-2]
+                        offset_label = outputs.numpy()[i][-2:]
+ 
+                    elif len(outputs.numpy()[i])%11 == 0:
+                        zern_label = outputs.numpy()[i]
+                        offset_label = [0,0]
+                    
+                    corr_images.append(helpers.get_sted_psf(coeffs=zern_label, res=[64,64], offset_label=offset_label, multi=False))
+
+                corr_images = torch.from_numpy(np.asarray(corr_images))
+                # print(np.asarray(corr_images).shape) # (5, 3, 64, 64)
+                corr_grid = torchvision.utils.make_grid(
+                    torch.from_numpy(np.dstack((corr_images[:,0].unsqueeze(1),
+                            corr_images[:,1].unsqueeze(1),
+                            corr_images[:,2].unsqueeze(1)))))
+                
+                train_writer.add_image("reconstructed images", corr_grid)
+
+
+                ##
 
                 # statistics logging
                 val_loss += loss.item()
@@ -134,10 +216,11 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                     train_writer.add_scalar('validation_loss',
                                 val_loss/update_num,
                                 epoch * total_step + i)
+                    
+                    
                     val_loss = 0.0
 
-                
-
+            
     train_writer.close()
     return model
 
@@ -156,7 +239,7 @@ def main(args):
     logdir = args.logdir
     warm_start = args.warm_start
 
-    mean, std = helpers.get_stats(data_path, batch_size)
+    # mean, std = helpers.get_stats(data_path, batch_size)
     
     # this is for reproducibility, it renders the model deterministic
     seed = 0
@@ -165,11 +248,25 @@ def main(args):
     
     # tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
     # tsfms = transforms.Compose([my_classes.ToTensor(), transforms.Normalize(mean=mean, std=std)])
-    # NOTE: both Nomralize fns make the image looks really weird
+ 
     tsfms = my_classes.ToTensor()
+    train_tsfms = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        # transforms.RandomResizedCrop(224),
+        # transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    val_tsfms = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
 
-    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=tsfms)
-    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=tsfms)
+    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=train_tsfms)
+    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=val_tsfms)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
@@ -195,15 +292,29 @@ def main(args):
     if args.offset: out_dim += 2
 
 
-    model = my_models.CNN_LSTM(input_dim=in_dim)
-    # model = my_models.MyNet(input_dim=in_dim, output_dim=out_dim)
-    # print(summary(model, input_size=(in_dim, 64, 64), batch_size=out_dim))
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    dict = next(iter(data_loaders['train']))
+
+    print(dict['image'].shape)
+    
+    plt.imshow(dict['image'][0,0])
+    plt.show()
+    # exit()
+    
+
+    model_ft = models.resnet18(pretrained=True)
+    num_ftrs = model_ft.fc.in_features
+    # Here the size of each output sample is set to 2.
+    # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
+    model_ft.fc = nn.Linear(num_ftrs, out_dim)
+    # model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim, res=224)
+    print(summary(model_ft, input_size=(3, 224, 224), batch_size=out_dim))
+    optimizer = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # exit()
     # if a warm start was specified, load model and optimizer state parameters
     if args.warm_start:
         checkpoint = torch.load(warm_start)
-        model.load_state_dict(checkpoint['model_state_dict'])
+        model_ft.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     
     # grabbing just the model name with this split
@@ -222,7 +333,7 @@ def main(args):
         f.write(data)
 
     # train the model
-    train(model, data_loaders, optimizer, num_epochs, logdir, device, model_store_path)
+    train(model_ft, data_loaders, optimizer, num_epochs, logdir, device, model_store_path)
 
 
 if __name__ == '__main__':

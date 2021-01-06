@@ -96,6 +96,9 @@ def sted_psf(zern, res=[64,64], offset=[0,0], plane='xy', tiptilt=None):
     # phasemask = helpers.normalize_img(donut) + helpers.normalize_img(zern)
     # print('phase')
     phasemask = donut + zern
+    # print('donut', np.max(donut), np.min(donut))
+    # print('zern', np.max(zern), np.min(zern))
+    # print('phasemask', np.max(phasemask), np.min(phasemask))
     # if there was a given tiptilt correction phase, add it in here
     if tiptilt is not None:
         phasemask += tiptilt
@@ -130,7 +133,9 @@ def sted_psf(zern, res=[64,64], offset=[0,0], plane='xy', tiptilt=None):
         amplitude, lp_scale_sted, plane=plane, offset=offset)
 
     if plane == 'xy':
+        # print('sted_xy', np.max(sted_xy), np.min(sted_xy))
         return sted_xy
+        
         # return helpers.normalize_img(sted_xy)
     elif plane == 'all':
         return np.stack((sted_xy, sted_xz, sted_yz), axis=0)

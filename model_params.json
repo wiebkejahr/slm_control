@@ -1,11 +1,11 @@
 {
-    "22.11.20_testing_1_eps_2_lr_0.001_bs_32.pth": {
+    "jan06_20.08.03_1D_centered_18k_norm_dist_eps_50_lr_0.001_bs_64_resnet18.pth": {
         "multi": 0,
         "offset": 0,
         "zern": 1,
         "learning rate": 0.001,
-        "epochs": 2,
-        "batch size": 32,
-        "dataset": "./autoalign/datasets/22.11.20_testing_1.hdf5"
+        "epochs": 50,
+        "batch size": 64,
+        "dataset": "./autoalign/datasets/20.08.03_1D_centered_18k_norm_dist.hdf5"
     }
 }

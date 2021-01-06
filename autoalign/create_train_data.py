@@ -7,6 +7,8 @@ Created on: Wednesday, 6th November 2019 9:47:12 am
 '''
 # third party
 import random
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse as ap
@@ -57,9 +59,10 @@ def main(args):
         channel_num = 1
 
     # shift_num = 3
-    train_shape = (train_num, channel_num, res, res)
-    val_shape = (val_num, channel_num, res, res)
-    test_shape = (test_num, channel_num, res, res)
+    # NOTE: used to be train_num, channel_num, res, res
+    train_shape = (train_num, res, res, channel_num)
+    val_shape = (val_num, res, res, channel_num)
+    test_shape = (test_num, res, res, channel_num)
 
     # open a hdf5 file and create arrays
     hdf5_file = h5py.File(hdf5_path, mode='w-')
@@ -77,8 +80,7 @@ def main(args):
     label_dim = 0
     if if_zern: label_dim += 11
     if if_offset: label_dim += 2
-    # print('label dimention is: ')
-    # print(label_dim)
+    print('label dimention is: {}'.format(label_dim))
  
 
     for i in tqdm(range(train_num)):
@@ -96,8 +98,8 @@ def main(args):
 
             img = get_sted_psf(coeffs=zern_label, res=[res,res], offset_label=offset_label, multi=if_multi)
             # calculates the tip and tilt present in the image and corrects it
-            tiptilt = center(img)
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, tiptilt=tiptilt)
+            tiptilt = center(img, res=[res, res])
+            img = get_sted_psf(coeffs=zern_label, res=[res, res], multi=args.multi, offset_label=offset_label, tiptilt=tiptilt)
 
         # NOTE: get_fluor_psf not up to date yet
         elif args.mode == 'fluor':
@@ -106,8 +108,10 @@ def main(args):
         # save the label and image
         # always save a 13 dim label, can always truncate if you need
         train_labels.append(np.append(zern_label, offset_label))
-
-        hdf5_file["train_img"][i, ...] = img[None]
+        
+        # adding extra dimension res x res x 1
+        img = np.expand_dims(img, axis=2)
+        hdf5_file["train_img"][i, ...] = img
 
 
     # create the label array
@@ -127,8 +131,8 @@ def main(args):
                 offset_label = np.asarray([0.0]*2)
 
             img = get_sted_psf(coeffs=zern_label, res=[res,res], offset_label=offset_label, multi=if_multi)
-            tiptilt = center(img)
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, tiptilt=tiptilt)
+            tiptilt = center(img, res=[res, res])
+            img = get_sted_psf(coeffs=zern_label,res = [res, res],multi=args.multi, offset_label=offset_label, tiptilt=tiptilt)
 
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
@@ -136,7 +140,8 @@ def main(args):
         # save the label and image
         val_labels.append(np.append(zern_label, offset_label))
 
-        hdf5_file["val_img"][i, ...] = img[None]
+        img = np.expand_dims(img, axis=2)
+        hdf5_file["val_img"][i, ...] = img
 
 
     # create the label array
@@ -157,16 +162,17 @@ def main(args):
                 offset_label = np.asarray([0.0]*2)
 
             img = get_sted_psf(coeffs=zern_label, res=[res,res], offset_label=offset_label, multi=if_multi)
-            tiptilt = center(img)
-            img = get_sted_psf(coeffs=zern_label, multi=args.multi, offset_label=offset_label, tiptilt=tiptilt)
+            tiptilt = center(img, res=[res, res])
+            img = get_sted_psf(coeffs=zern_label, res=[res, res], multi=args.multi, offset_label=offset_label, tiptilt=tiptilt)
         
         elif args.mode == 'fluor':
             img, zern_label, offset_label = gen_fluor_psf(res, offset=args.offset, multi=args.multi)
         
         # save the label and image
         test_labels.append(np.append(zern_label, offset_label))
-            
-        hdf5_file["test_img"][i, ...] = img[None]
+        
+        img = np.expand_dims(img, axis=2)
+        hdf5_file["test_img"][i, ...] = img
 
     # create the label array
     hdf5_file.create_dataset("test_labels", (test_num, label_dim), np.float32)

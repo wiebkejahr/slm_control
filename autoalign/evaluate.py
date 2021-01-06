@@ -145,7 +145,7 @@ def main(args):
     # model.load_state_dict(checkpoint['model_state_dict'])
     model = torch.load(model_store_path)
     
-    mean, std = get_stats(data_path, batch_size=10, mode='test')
+    # mean, std = get_stats(data_path, batch_size=10, mode='test')
     test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='test', transform=transforms.Compose([
         my_classes.ToTensor()])) 
         #, my_classes.Normalize(mean=mean, std=std)]))
@@ -178,9 +178,9 @@ def main(args):
             batch_size = matrix_loss.shape[0]
             # print(batch_size) # 1
             
-            metric = matrix_loss.numpy() < 1e-2
+            metric = matrix_loss.numpy() < 1e-4
             accuracy = np.sum(metric)/(batch_size*13)
-            print(matrix_loss)
+            # print(matrix_loss)
             
             print('Accuracy: {}'.format(accuracy))
 
