@@ -69,12 +69,30 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             # i is the number of batches. With a batch size of 32, for the 500 pt dataset, it's 13. for 20000 pt, it's 563.
             images = sample['image'] #[32, 3, 64, 64]
             labels = sample['label']
+            
+            # unorm = my_classes.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+            # grid_imgs = unorm(images)
+
+
+            # def show(img):
+            #     npimg = img.numpy()
+            #     plt.imshow(np.transpose(npimg, (1,2,0)), interpolation='nearest')
+
+            # w = images
+            # plt.imshow(images[1, 0])
+            # plt.show()
+            # grid = torchvision.utils.make_grid(w, nrow=32)
+            # # show(grid)
+            # # plt.show()
+            # # grid_imgs = np.transpose(grid_imgs, (1,2,0))
+            # # print(grid_imgs.shape)
 
             # train_writer.add_graph(model, images)
-            train_grid = torchvision.utils.make_grid(
-                torch.from_numpy(np.dstack((images[:5,0].unsqueeze(1),
-                                            images[:5,1].unsqueeze(1),
-                                            images[:5,2].unsqueeze(1)))))
+            train_grid = torchvision.utils.make_grid(images[:10], nrow=16)
+            # train_grid = torchvision.utils.make_grid(
+            #     torch.from_numpy(np.dstack((grid_imgs[0,:5].unsqueeze(1),
+            #                                 grid_imgs[1,:5].unsqueeze(1),
+            #                                 grid_imgs[2,:5].unsqueeze(1)))))
             train_writer.add_image("train images", train_grid)
 
             # ygrid = torchvision.utils.make_grid(images[:,1].unsqueeze(1))
@@ -117,11 +135,11 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
                 running_loss = 0.0
 
         # saving model state parameters so I can return to training later if necessary
-        # torch.save({
-        #         'epoch': epoch,
-        #         'model_state_dict': model.state_dict(),
-        #         'optimizer_state_dict': optimizer.state_dict()
-        #         }, model_store_path)
+        torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict()
+                }, model_store_path)
         # # torch.save(model, model_store_path) 
         
         # VALIDATION LOOP   
@@ -152,27 +170,29 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
 
                 # taken from PyTorch documentation
                 # train_writer.add_graph(model, images)
-                val_grid = torchvision.utils.make_grid(
-                    torch.from_numpy(np.dstack((images[:5,0].unsqueeze(1),
-                            images[:5,1].unsqueeze(1),
-                            images[:5,2].unsqueeze(1)))))
+                unorm = my_classes.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+                grid_imgs = unorm(images)
+
+                val_grid = torchvision.utils.make_grid(grid_imgs)
+
+                # val_grid = torchvision.utils.make_grid(
+                #     torch.from_numpy(np.dstack((grid_imgs[:5,0].unsqueeze(1),
+                #             grid_imgs[:5,1].unsqueeze(1),
+                #             grid_imgs[:5,2].unsqueeze(1)))))
                 
                 train_writer.add_image("validation images", val_grid)
 
                 corr_images = []
                 for i in range(5): # for each datapoint in first 5 val datapoints
-                    zern_label = outputs.numpy()[i][:-2]
-                    # print(zern_label)
-                    # true_zern = labels.numpy()[i][:-2]
-                    # print(labels.numpy()[i][:-2])
-                    offset_label = outputs.numpy()[i][-2:]
-                    # print(offset_label)
-                    # true_off = labels.numpy()[i][-2:]
-                    # print(labels.numpy()[i][-2:])
-                    # plt.imshow(helpers.get_sted_psf(coeffs=zern_label, res=[64,64], offset_label=offset_label, multi=False))
-                    # plt.show()
-                    # exit()
-                    corr_images.append(helpers.get_sted_psf(coeffs=zern_label, res=[64,64], offset_label=offset_label, multi=True))
+                    if len(outputs.numpy()[i])%11 ==2:
+                        zern_label = outputs.numpy()[i][:-2]
+                        offset_label = outputs.numpy()[i][-2:]
+ 
+                    elif len(outputs.numpy()[i])%11 == 0:
+                        zern_label = outputs.numpy()[i]
+                        offset_label = [0,0]
+                    
+                    corr_images.append(helpers.get_sted_psf(coeffs=zern_label, res=[64,64], offset_label=offset_label, multi=False))
 
                 corr_images = torch.from_numpy(np.asarray(corr_images))
                 # print(np.asarray(corr_images).shape) # (5, 3, 64, 64)
@@ -228,11 +248,13 @@ def main(args):
     
     # tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
     # tsfms = transforms.Compose([my_classes.ToTensor(), transforms.Normalize(mean=mean, std=std)])
-    # NOTE: both Nomralize fns make the image looks really weird
+ 
     tsfms = my_classes.ToTensor()
     train_tsfms = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
         # transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
+        # transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
@@ -274,8 +296,9 @@ def main(args):
 
     print(dict['image'].shape)
     
-    # plt.imshow(dict['image'][0,0])
-    # plt.show()
+    plt.imshow(dict['image'][0,0])
+    plt.show()
+    # exit()
     
 
     model_ft = models.resnet18(pretrained=True)
