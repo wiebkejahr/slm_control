@@ -86,23 +86,23 @@ def get_CoMs(img):
         
         ####### xy ########
         b, a = get_CoM(img[0])
-        dx_xy = ((x_shape-1)/2-a)  # convert to m
-        dy_xy = ((y_shape-1)/2-b)  # convert to m
+        dx_xy = ((x_shape-1)/2-a)
+        dy_xy = ((y_shape-1)/2-b)
     
         ####### xz ########
         b, a = get_CoM(img[1])
-        dx_xz = ((x_shape-1)/2-a)  # convert to m
-        dz_xz = ((y_shape-1)/2-b)  # convert to m
+        dx_xz = ((x_shape-1)/2-a)
+        dz_xz = ((y_shape-1)/2-b)
         
         ######## yz #########
         b, a = get_CoM(img[2])
-        dy_yz = ((x_shape-1)/2-a)  # convert to m
-        dz_yz = ((y_shape-1)/2-b)  # convert to m
+        dy_yz = ((x_shape-1)/2-a)
+        dz_yz = ((y_shape-1)/2-b)
         
-        #d_xyz = np.asarray([np.average([dx_xy, dx_xz]), 
-        #                    np.average([dy_xy, dy_yz]),
-        #                    np.average([dz_xz, dz_yz])])
-        d_xyz = np.asarray([dx_xy, dy_xy, np.average([dz_xz, dz_yz])])    
+        d_xyz = np.asarray([np.average([dx_xy, dx_xz]), 
+                            np.average([dy_xy, dy_yz]),
+                            np.average([dz_xz, dz_yz])])
+        #d_xyz = np.asarray([dx_xy, dy_xy, np.average([dz_xz, dz_yz])])    
     elif len(img.shape) == 2:
         x_shape, y_shape = np.shape(img)
         b, a = get_CoM(img)
