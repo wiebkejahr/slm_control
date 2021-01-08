@@ -368,37 +368,74 @@ def abberior_predict(model_store_path, model_def, image, ii=1):
 
 
 if __name__ == "__main__":
+    
+    params_sim = {
+        "optical_params_sted": {
+            "n": 1.518, 
+            "NA": 1.4, 
+            "f": 1.8, 
+            "transmittance": 0.74, 
+            "lambda": 775, 
+            "P_laser": 0.25, 
+            "rep_rate": 40000000.0, 
+            "pulse_length": 7e-10, 
+            "obj_ba": 5.04,
+            "px_size": 10, 
+            "offset": [0, 0]}, 
+        "optical_params_gauss": {
+            "n": 1.518, 
+            "NA": 1.4, 
+            "f": 1.8, 
+            "transmittance": 0.84, 
+            "lambda": 640, 
+            "P_laser": 0.000125, 
+            "rep_rate": 40000000.0, 
+            "pulse_length": 1e-10, 
+            "obj_ba": 5.04, 
+            "px_size": 10,
+            "offset": [0, 0]},
+        "numerical_params": {
+            "out_scrn_size" : 1,
+            "z_extent" : 1,
+            "out_res" : 64, 
+            "inp_res" : 64,
+            "orders" : [[1,-1],[1,1],[2,0],[2,-2],[2,2],
+                        [3,-3],[3,-1],[3,1],[3,3],
+                        [4,-4],[4,-2],[4,0],[4,2],[4,4]]}
+                }
+    
     #abberior_multi('models/20.05.18_scaling_fix_eps_15_lr_0.001_bs_64_2.pth')
     #aberrs = np.random.random(11)
-    aberrs = np.zeros(11)
-    aberrs[0] = 0.5
-    mask_offset = [10,5]
+    aberrs = np.random.rand(11)*0.5
+    #aberrs[0] = 0.5
+    mask_offset = [0,0]
     
-    scope = Microscope()
+    scope = Microscope(params_sim)
+    minmax = [np.min(scope.data), np.max(scope.data)]
     plt.figure()
     plt.subplot(2,5,1)
-    plt.imshow(scope.data[0])
+    plt.imshow(scope.data[0], clim = minmax, cmap = 'magma'); plt.axis("off")
     plt.subplot(2,5,2)
-    plt.imshow(scope.data[1])
+    plt.imshow(scope.data[1], clim = minmax, cmap = 'magma'); plt.axis("off")
     plt.subplot(2,5,3)
-    plt.imshow(scope.data[2])
+    plt.imshow(scope.data[2], clim = minmax, cmap = 'magma'); plt.axis("off")
     plt.subplot(2,5,4)
-    plt.imshow(scope.phasemask)
+    plt.imshow(scope.phasemask); plt.axis("off")
     plt.subplot(2,5,5)
-    plt.imshow(scope.zerns)
+    plt.imshow(scope.zerns); plt.axis("off")
     
     scope.acquire_image(multi=True, mask_offset = mask_offset, aberrs = aberrs)
     plt.subplot(2,5,6)
-    plt.imshow(scope.data[0])
+    plt.imshow(scope.data[0], clim = minmax, cmap = 'magma'); plt.axis("off")
     plt.subplot(2,5,7)
-    plt.imshow(scope.data[1])
+    plt.imshow(scope.data[1], clim = minmax, cmap = 'magma'); plt.axis("off")
     plt.subplot(2,5,8)
-    plt.imshow(scope.data[2])
+    plt.imshow(scope.data[2], clim = minmax, cmap = 'magma'); plt.axis("off")
     plt.subplot(2,5,9)
-    plt.imshow(scope.phasemask)    
+    plt.imshow(scope.phasemask); plt.axis("off")
     plt.subplot(2,5,10)
-    plt.imshow(scope.zerns)
+    plt.imshow(scope.zerns); plt.axis("off")
     
-    
+    plt.layout("tight")
     
     
