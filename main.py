@@ -50,9 +50,9 @@ import slm_control.SLM as SLM
 
 from slm_control.Parameters import param
 
-sys.path.insert(1, os.getcwd())
-sys.path.insert(1, 'slm_control/')
-sys.path.insert(1, 'autoalign/')
+#sys.path.insert(1, os.getcwd())
+#sys.path.insert(1, 'slm_control/')
+#sys.path.insert(1, 'autoalign/')
 import microscope  
 import autoalign.utils.helpers as helpers
 
@@ -137,6 +137,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.init_images()
         self.create_main_frame()
         self.combine_and_update()
+        self.groundtruth = None
         
 
     def reload_params(self, fname):
@@ -147,13 +148,14 @@ class Main_Window(QtWidgets.QMainWindow):
         print("params ", self.p.full["mode"])
 
         if self.p.general["split_image"]:
+            print("loading from file for split image")
             self.img_l.update_guivalues(self.p, self.p.left)
             self.img_r.update_guivalues(self.p, self.p.right)
             self.phase_zern = np.zeros_like(self.img_l.data)
             self.phase_tiptilt = np.zeros_like(self.img_l.data)
             self.phase_defocus = np.zeros_like(self.img_l.data)
         else:
-            print("loading from file")
+            print("loading from file for full image")
             self.img_full.update_guivalues(self.p, self.p.full)
             self.phase_zern = np.zeros_like(self.img_full.data)
             self.phase_tiptilt = np.zeros_like(self.img_full.data)
@@ -447,13 +449,16 @@ class Main_Window(QtWidgets.QMainWindow):
 
     def automate(self):
 
-        num_its=500
+        num_its=2
         px_size = 10*1e-9
         i_start = 0
         best_of = 5
         size = 2 * np.asarray(self.p.general["size_slm"])
         orders = self.p.simulation["numerical_params"]["orders"]
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
+        
+        #TODO: implement offsets here!
+        plane = [0,0,0]
         
         # 0. creates data structure for statistics
         statistics = {'gt_off': [], 'preds_off': [], 
@@ -479,7 +484,11 @@ class Main_Window(QtWidgets.QMainWindow):
         except:
             print("couldn't create directory!")
         
-        scope = microscope.Abberior(self.p.simulation)
+        scope = microscope.Microscope(self.p.simulation)
+        if self.groundtruth == None:
+            virtual_scope = microscope.Microscope(self.p.simulation)
+            self.groundtruth = virtual_scope.calc_groundtruth(1.1)
+        
         #imspector, msr_names, active_msr, conf = scope.get_config()
         xyz_init = scope.get_stage_offsets()
         for ii in range(num_its):
