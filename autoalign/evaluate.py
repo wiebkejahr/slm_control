@@ -21,7 +21,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 # local packages
 import utils.my_models as my_models
-import utils.my_classes as my_classes
+#import utils.my_classes as my_classes
 from utils.vector_diffraction import *
 from utils.helpers import *
 
@@ -146,9 +146,9 @@ def main(args):
     model = torch.load(model_store_path)
     
     # mean, std = get_stats(data_path, batch_size=10, mode='test')
-    test_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='test', transform=transforms.Compose([
-        my_classes.ToTensor()])) 
-        #, my_classes.Normalize(mean=mean, std=std)]))
+    test_dataset = PSFDataset(hdf5_path=data_path, mode='test', transform=transforms.Compose([
+        ToTensor()])) 
+        #, Normalize(mean=mean, std=std)]))
     test_loader = DataLoader(dataset=test_dataset, batch_size=1, \
         shuffle=False, num_workers=0)
 

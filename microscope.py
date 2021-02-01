@@ -94,6 +94,10 @@ class Microscope():
                                    self.opt_props["rep_rate"], 
                                    self.opt_props["pulse_length"])
         size = np.asarray([self.num_props["inp_res"], self.num_props["inp_res"]])
+        
+        if any(np.abs(mask_offset)) > any(size) / 2:
+            mask_offset = [0,0]
+            print("ATTENTION: determined offsets were too big, setting to zero, handle with caution")
         vortex = pc.crop(pc.create_donut(2*size, 0, 1, radscale = 2), size, mask_offset)
         self.zerns = pc.crop(pc.zern_sum(2*size, aberrs, self.num_props["orders"][3::], radscale = 2), size, mask_offset)
         self.phasemask = pc.add_images([vortex, self.zerns])
@@ -310,7 +314,8 @@ class Abberior():
 
 def abberior_predict(model_store_path, model_def, image, ii=1):
     
-    # best_coeffs = []
+    best_coeffs = np.zeros(11)
+    best_offsets = np.zeros(2)
     best_corr = 0
     for _ in range(ii):
 
@@ -395,7 +400,7 @@ def abberior_predict(model_store_path, model_def, image, ii=1):
     #     offset_label = [0,0]   
    
     
-
+    print("best_coeffs: ", best_coeffs, " best_offsets: ", best_offsets)
     return np.asarray(best_coeffs), np.asarray(best_offsets)
 
 

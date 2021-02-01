@@ -487,7 +487,7 @@ class Main_Window(QtWidgets.QMainWindow):
         scope = microscope.Microscope(self.p.simulation)
         if self.groundtruth == None:
             virtual_scope = microscope.Microscope(self.p.simulation)
-            self.groundtruth = virtual_scope.calc_groundtruth(1.1)
+            #self.groundtruth = virtual_scope.calc_groundtruth(1.1)
         
         #imspector, msr_names, active_msr, conf = scope.get_config()
         xyz_init = scope.get_stage_offsets()

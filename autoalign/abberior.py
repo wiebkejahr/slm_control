@@ -25,7 +25,7 @@ import time
 sys.path.insert(1, 'autoalign/')
 sys.path.insert(1, 'parameters/')
 import utils.helpers as helpers
-import utils.my_models as my_models
+#import utils.my_models as my_models
 from scipy.ndimage.measurements import center_of_mass
 from scipy.ndimage import shift
 import torchvision.models as models
@@ -160,14 +160,14 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, zern=Tr
 
         # if multi:
         #     if offset:
-        #         model = my_models.MultiOffsetNet13()
+        #         model = helpers.MultiOffsetNet13()
         #     else:
-        #         model = my_models.MultiNet11()
+        #         model = helpers.MultiNet11()
         # else:
         #     if offset:
-        #         model = my_models.OffsetNet13()
+        #         model = helpers.OffsetNet13()
         #     else:
-        #         model = my_models.Net11()    
+        #         model = helpers.Net11()    
 
         # NOTE: OR this all comes from params file
         if multi:
@@ -190,7 +190,7 @@ def abberior_predict(model_store_path, image, offset=False, multi=False, zern=Tr
                 data_clean["corr"] = data["corr"]
                 data_clean["init_corr"] = data["init_corr"]
 
-        model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim)
+        model = helpers.TheUltimateModel(input_dim=in_dim, output_dim=out_dim)
      
         # gets preds
         print("predict: ", model_store_path)

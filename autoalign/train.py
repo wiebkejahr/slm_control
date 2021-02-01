@@ -29,7 +29,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
 # local packages
-import utils.my_classes as my_classes
+#import utils.my_classes as my_classes
 import utils.helpers as helpers
 import utils.my_models as my_models
 
@@ -70,7 +70,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
             images = sample['image'] #[32, 3, 64, 64]
             labels = sample['label']
             
-            # unorm = my_classes.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+            # unorm = helpers.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
             # grid_imgs = unorm(images)
 
 
@@ -170,7 +170,7 @@ def train(model, data_loaders, optimizer, num_epochs, logdir, device, model_stor
 
                 # taken from PyTorch documentation
                 # train_writer.add_graph(model, images)
-                # unorm = my_classes.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+                # unorm = helpers.UnNormalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
                 # grid_imgs = unorm(images)
                 grid_imgs =images
 
@@ -234,7 +234,7 @@ def main(args):
     First it iterates through the data to find the mean and std & normalizes to that (helps training get off to a good start)
     Then it creates a random seed and sets np.random.seed and torch.manual_seed to it so that every time you train with the same 
         params, you get the exact same results.
-    Next it instantiates custom PSFDataset objects (definition in utils.my_classes) and then, with those, instantiates pytorch DataLoader objects
+    Next it instantiates custom PSFDataset objects (definition in utils.helpers) and then, with those, instantiates pytorch DataLoader objects
     Finally, it checks if GPU is available, sets an optimizer, and starts the training/validation loop."""
     lr = args.lr
     num_epochs = args.num_epochs
@@ -251,10 +251,10 @@ def main(args):
     np.random.seed(seed)
     torch.manual_seed(seed)
     
-    # tsfms = transforms.Compose([my_classes.ToTensor(), my_classes.Normalize(mean=mean, std=std)])
-    # tsfms = transforms.Compose([my_classes.ToTensor(), transforms.Normalize(mean=mean, std=std)])
+    # tsfms = transforms.Compose([helpers.ToTensor(), helpers.Normalize(mean=mean, std=std)])
+    # tsfms = transforms.Compose([helpers.ToTensor(), helpers.Normalize(mean=mean, std=std)])
  
-    tsfms = my_classes.ToTensor()
+    tsfms = helpers.ToTensor()
     train_tsfms = transforms.Compose([
         transforms.Resize(256),
         transforms.CenterCrop(224),
@@ -270,8 +270,8 @@ def main(args):
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    train_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='train', transform=train_tsfms)
-    val_dataset = my_classes.PSFDataset(hdf5_path=data_path, mode='val', transform=val_tsfms)
+    train_dataset = helpers.PSFDataset(hdf5_path=data_path, mode='train', transform=train_tsfms)
+    val_dataset = helpers.PSFDataset(hdf5_path=data_path, mode='val', transform=val_tsfms)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, \
         shuffle=True, num_workers=0)
