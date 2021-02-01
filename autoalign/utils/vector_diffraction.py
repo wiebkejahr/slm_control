@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
-sys.path.insert(1, '../slm_control/')
-from slm_control import Pattern_Calculator as PC
+import Pattern_Calculator as PC
 
 def gauss(x, x0, y0, sigma):
     p = [x0, y0, sigma]
@@ -36,6 +34,11 @@ def calc_lp(P_in, rep, tau):
     return np.sqrt(P_in / (rep * tau))
 
 
+def calc_intensity(e_field):
+    intensity = np.sum(np.abs(e_field ** 2), axis = 0)
+    return intensity
+
+
 def stim_em(exc, sted, isat):
     """Calculates the effective PSF created using stimulated emission. Input
         excitation laser intensity, STED laser intensity, saturations intensity
@@ -67,9 +70,9 @@ def loop_indices(xi, yi, zi, c, sin_theta, cos_theta, phi):
     return ri, phii, temp_exp
 
 
-def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane = "all", offset=[0,0]):
+def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane = "all", offset = [0,0], efields = False):
     """ Calculates the focused PSF created by a given the wavefront in the 
-        objective's backaperture according to vector diffraction threory 
+        objective's backaperture according to vector diffraction theory 
         (Richards / Wolff 1959).
         
         Inputs:
@@ -114,8 +117,7 @@ def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane =
     output_screen_size = p_num["out_scrn_size"]
     z_extent = p_num["z_extent"]
     out_res = p_num["out_res"]
-    inp_res = p_num["inp_res"]
-    # inp_res = np.shape(phasemask)[0]
+    inp_res = np.shape(phase)[0]
 
     lambd = lambd * 1e-9 * 1e3 # wavelength in mm
     k = 2 * np.pi / lambd  #wavevector in 1/mm
@@ -170,7 +172,7 @@ def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane =
     
     # when calculating e field (calc_lp routine), factor ce0/2 can be dropped
     # (it would be factored in again when calculating intensity:
-    # e_xy = 2/ce0 * e ** 2); also dropped there
+    # I = 2/ce0 * e ** 2); also dropped there
     
     C = np.sqrt(np.pi) * f * n / lambd / obj_ba # geometry dependent scaling factor
     H = LP * C * aperture * sin_theta * np.sqrt(cos_theta) * \
@@ -214,66 +216,63 @@ def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane =
     e_xyz = np.zeros([3, len(zp), len(yp), len(xp)]) * 0j
 
     if plane == "all" or plane == "xy":
-        # print ("Calculating XY plane intensity...")
-        e = e_xy
+        print ("Calculating XY plane intensity...")
         zi = 0
         for [yyi, yi] in enumerate(yp):
             for [xxi, xi] in enumerate(xp):                
                 ri, phii, temp_exp = loop_indices(xi, yi, zi, 1j*k*n, sin_theta, cos_theta, phi)
                 
-                e[:, yyi, xxi] = [(np.sum(temp_ex * temp_exp)), 
-                                  (np.sum(temp_ey * temp_exp)), 
-                                  (np.sum(temp_ez * temp_exp))]
-        e_xy = np.sum(np.abs(e ** 2), axis = 0)
-
+                e_xy[:, yyi, xxi] = [(np.sum(temp_ex * temp_exp)), 
+                                     (np.sum(temp_ey * temp_exp)), 
+                                     (np.sum(temp_ez * temp_exp))]
         
     
     if plane == "all" or plane == "xz":
-        #print ("Calculating XZ plane intensity...")
-        e = e_xz
+        print ("Calculating XZ plane intensity...")
         yi = 0
 
         for [zzi, zi] in enumerate(zp):
             for [xxi, xi] in enumerate(xp):
                 ri, phii, temp_exp = loop_indices(xi, yi, zi, 1j*k*n, sin_theta, cos_theta, phi)
         
-                e[:, zzi, xxi] = [(np.sum(temp_ex * temp_exp)), 
-                                  (np.sum(temp_ey * temp_exp)), 
-                                  (np.sum(temp_ez * temp_exp))]
-        e_xz = np.sum(np.abs(e ** 2), axis = 0)
+                e_xz[:, zzi, xxi] = [(np.sum(temp_ex * temp_exp)), 
+                                     (np.sum(temp_ey * temp_exp)), 
+                                     (np.sum(temp_ez * temp_exp))]
 
-    
-    
+
     if plane == "all" or plane == "yz":    
-        #print ("Calculating YZ plane intensity...")
-        e = e_yz
+        print ("Calculating YZ plane intensity...")
         xi = 0
         for [zzi, zi] in enumerate(zp):
             for [yyi, yi] in enumerate(yp):
                 ri, phii, temp_exp = loop_indices(xi, yi, zi, 1j*k*n, sin_theta, cos_theta, phi)
                 
-                e[:, zzi, yyi] = [(np.sum(temp_ex * temp_exp)), 
-                                  (np.sum(temp_ey * temp_exp)), 
-                                  (np.sum(temp_ez * temp_exp))]
-        e_yz = np.sum(np.abs(e ** 2), axis = 0)
-
+                e_yz[:, zzi, yyi] = [(np.sum(temp_ex * temp_exp)), 
+                                     (np.sum(temp_ey * temp_exp)), 
+                                     (np.sum(temp_ez * temp_exp))]
+        
 
     if plane == "3D":
         # For 3D plane
-        #print ("Calculating 3D intensity...")
-        e = e_xyz
+        print ("Calculating 3D intensity...")
         for [zzi, zi] in enumerate(zp):
             for [yyi, yi] in enumerate(yp):
                 for[xxi, xi] in enumerate(xp):                
                     ri, phii, temp_exp = loop_indices(xi, yi, zi, 1j*k*n, 
                                                       sin_theta, cos_theta, phi)
         
-                    e[:, zzi, yyi, xxi] = [(np.sum(temp_ex * temp_exp)), 
-                                           (np.sum(temp_ey * temp_exp)), 
-                                           (np.sum(temp_ez * temp_exp))]      
+                    e_xyz[:, zzi, yyi, xxi] = [(np.sum(temp_ex * temp_exp)), 
+                                               (np.sum(temp_ey * temp_exp)), 
+                                               (np.sum(temp_ez * temp_exp))]      
         
-        e_xyz = np.sum(np.abs(e**2), axis = 0)
-
+        
+    if not efields:
+        # calculate intensities
+        e_xy = calc_intensity(e_xy)
+        e_xz = calc_intensity(e_xz)
+        e_yz = calc_intensity(e_yz)
+        e_xyz = calc_intensity(e_xyz)
+        
     return(e_xy, e_xz, e_yz, e_xyz)
 
 
@@ -294,15 +293,16 @@ if __name__ == "__main__":
         "P_laser" : 0.125e-3, # in mW
         "rep_rate" : 40e6, # in MHz
         "pulse_length" : 700e-12, # in ps
-        "obj_ba" : 5.04, # in mm
+        #"obj_ba" : 5.04, # in mm
+        "obj_ba": 7.2,
         "offset" : [0,0] # in mm
         }
     
     numerical_params = {
-        "out_scrn_size" : 1, #um
+        "out_scrn_size" : 1,
         "z_extent" : 1,
         "out_res" : 64,
-        "inp_res" : 64
+        "inp_res" : 65
         }
 
     polarization = [1.0/np.sqrt(2), 1.0/np.sqrt(2)*1j, 0]    
@@ -317,25 +317,32 @@ if __name__ == "__main__":
     #
     ##########################################################################
 
+    #optical_params["obj_ba"] = np.float(numerical_params["inp_res"])
     [r, phi] = calc_rphi(optical_params["obj_ba"]/2, 
                          numerical_params["inp_res"], optical_params["offset"])
     size = np.asarray([numerical_params["inp_res"], numerical_params["inp_res"]])
     
     # xy donut
-    phasemask = PC.create_donut(2*size, 0, 1)
-    coma = PC.create_zernike(2*size, [3,1], 1)
-    astig = PC.create_zernike(2*size, [2,-2], 1)
-    sphere = PC.create_zernike(2*size, [4,0], 1)
-    phasemask = PC.crop(phasemask, size)
-    #phasemask = PC.crop(phasemask + coma, size)
-
-    amplitude = PC.crop(PC.create_gauss(2*size, 1), size)
+    #phasemask = PC.create_donut(2*size, 0, 1)
+    #phasemask = PC.create_bottleneck(2*size, 0.4*optical_params["obj_ba"]/4, 0.5)
+    #phasemask = phi / 2 / np.pi
     
-    [e_xy, e_xz, e_yz, e_xyz] = vector_diffraction(optical_params, 
-                                                   numerical_params, 
-                                                   polarization,
-                                                   phasemask, amplitude, 
-                                                   plane = 'all')
+    # #coma = PC.create_zernike(2*size, [3,1], 1)
+    # #astig = PC.create_zernike(2*size, [2,-2], 1)
+    # #sphere = PC.create_zernike(2*size, [4,0], 1)
+    # #phasemask = PC.crop(phasemask, size)
+    # #phasemask = PC.crop(phasemask + coma, size)
+    # #phasemask = (phi + np.pi) / 2 / np.pi
+    # phasemask = PC.create_donut(size, 0, 1)
+    # phasemaskpc = PC.crop(PC.create_donut(2*size, 0, 1), size)
+    amplitude = PC.crop(PC.create_gauss(2*size, 1), size)
+    # #phasemaskpc = PC.create_donut(size, 0, 1)
+    # amplitude = np.ones_like(phi)
+    # [e_xy, e_xz, e_yz, e_xyz] = vector_diffraction(optical_params, 
+    #                                                 numerical_params, 
+    #                                                 polarization,
+    #                                                 phasemask, amplitude, 
+    #                                                 plane = 'all')
     
     
     ##########################################################################
@@ -358,13 +365,205 @@ if __name__ == "__main__":
     midplane = numerical_params["out_res"]//2
     
     
+    # fig = plt.figure()
+    # plt.subplot(431)
+    # plt.imshow(phasemask)
+    # plt.subplot(432)
+    # plt.imshow(phasemaskpc)
+    # plt.subplot(433)
+    # plt.imshow(phasemaskpc-phasemask)
+    # plt.subplot(434)
+    # plt.imshow(np.log(e_xy))
+    # plt.subplot(435)
+    # plt.imshow(np.log(e_xz))
+    # plt.subplot(436)
+    # plt.imshow(np.log(e_yz))
+    
+    # [e_xypc, e_xzpc, e_yzpc, e_xyzpc] = vector_diffraction(optical_params, 
+    #                                                 numerical_params, 
+    #                                                 polarization,
+    #                                                 phasemaskpc, amplitude, 
+    #                                                 plane = 'all')    
+    # plt.subplot(437)
+    # plt.imshow(np.log(e_xypc))
+    # plt.subplot(438)
+    # plt.imshow(np.log(e_xzpc))
+    # plt.subplot(439)
+    # plt.imshow(np.log(e_yzpc))
+    # plt.subplot(4,3,10)
+    # plt.imshow(e_xy-e_xypc, cmap = "RdBu")
+    # plt.subplot(4,3,11)
+    # plt.imshow(e_xz-e_xzpc, cmap = "RdBu")
+    # plt.subplot(4,3,12)
+    # plt.imshow(e_yz-e_yzpc, cmap = "RdBu")    
+    
+    
+    # #phasemask = (r < 0.4 * optical_params["obj_ba"] / 2) * 0.5
+    # phasemask = PC.create_bottleneck(size, 0.8, 0.5)
+    # phasemaskpc = PC.crop(PC.create_bottleneck(2*size, 0.4, 0.5), size)
+    # [e_xy, e_xz, e_yz, e_xyz] = vector_diffraction(optical_params, 
+    #                                                 numerical_params, 
+    #                                                 polarization,
+    #                                                 phasemask, amplitude, 
+    #                                                 plane = 'all')    
+    # fig = plt.figure()
+    # plt.subplot(431)
+    # plt.imshow(phasemask)
+    # plt.subplot(432)
+    # plt.imshow(phasemaskpc)
+    # plt.subplot(433)
+    # plt.imshow(phasemaskpc-phasemask)
+    # plt.subplot(434)
+    # plt.imshow(np.log(e_xy))
+    # plt.subplot(435)
+    # plt.imshow(np.log(e_xz))
+    # plt.subplot(436)
+    # plt.imshow(np.log(e_yz))
+    
+    # [e_xypc, e_xzpc, e_yzpc, e_xyzpc] = vector_diffraction(optical_params, 
+    #                                                 numerical_params, 
+    #                                                 polarization,
+    #                                                 phasemaskpc, amplitude, 
+    #                                                 plane = 'all')    
+    # plt.subplot(437)
+    # plt.imshow(np.log(e_xypc))
+    # plt.subplot(438)
+    # plt.imshow(np.log(e_xzpc))
+    # plt.subplot(439)
+    # plt.imshow(np.log(e_yzpc))
+    # plt.subplot(4,3,10)
+    # plt.imshow(e_xy-e_xypc, cmap = "RdBu")
+    # plt.subplot(4,3,11)
+    # plt.imshow(e_xz-e_xzpc, cmap = "RdBu")
+    # plt.subplot(4,3,12)
+    # plt.imshow(e_yz-e_yzpc, cmap = "RdBu")
+    
+    
+    
+    #phasemask = (r < 0.4 * optical_params["obj_ba"] / 2) * 0.5
+    #phasemask = PC.create_donut(size, 0) + PC.create_zernike(size, [2,2], amp = 0.2, radscale = 2)
+    #phasemaskpc = phi/2/np.pi + PC.create_zernike(size, [2,2], amp = 0.2, radscale = 2)
+    # phasemaskpc = PC.crop(PC.create_donut(2*size, 0) + PC.create_zernike(2*size, [2,2], amp = 0.2), size)
+    # [e_xy, e_xz, e_yz, e_xyz] = vector_diffraction(optical_params, 
+    #                                                 numerical_params, 
+    #                                                 polarization,
+    #                                                 phasemask, amplitude, 
+    #                                                 plane = 'all')
+    # fig = plt.figure()
+    # plt.subplot(431)
+    # plt.imshow(phasemask)
+    # plt.subplot(432)
+    # plt.imshow(phasemaskpc)
+    # plt.subplot(433)
+    # plt.imshow(phasemaskpc-phasemask)
+    # plt.subplot(434)
+    # plt.imshow((e_xy))
+    # plt.subplot(435)
+    # plt.imshow((e_xz))
+    # plt.subplot(436)
+    # plt.imshow((e_yz))
+    
+    # [e_xypc, e_xzpc, e_yzpc, e_xyzpc] = vector_diffraction(optical_params, 
+    #                                                 numerical_params, 
+    #                                                 polarization,
+    #                                                 phasemaskpc, amplitude, 
+    #                                                 plane = 'all')    
+    # plt.subplot(437)
+    # plt.imshow((e_xypc))
+    # plt.subplot(438)
+    # plt.imshow((e_xzpc))
+    # plt.subplot(439)
+    # plt.imshow((e_yzpc))
+    # plt.subplot(4,3,10)
+    # plt.imshow((e_xy-e_xypc)/(e_xy+e_xypc), cmap = "RdBu")
+    # plt.subplot(4,3,11)
+    # plt.imshow((e_xz-e_xzpc)/(e_xz+e_xzpc), cmap = "RdBu")
+    # plt.subplot(4,3,12)
+    # plt.imshow((e_yz-e_yzpc)/(e_yz+e_yzpc), cmap = "RdBu")
+
+
+    phasemask = PC.create_donut(size, 0, amp = 1, radscale = 2)
+    zern = PC.create_zernike(size, [2,2], amp = 0.1, radscale = 2)
+    phasemaskpc = phi/2/np.pi
+    
+    [e_xy, e_xz, e_yz, e_xyz] = vector_diffraction(optical_params, 
+                                                    numerical_params, 
+                                                    polarization,
+                                                    phasemask, amplitude, 
+                                                    plane = 'all')
     fig = plt.figure()
-    plt.subplot(131)
-    plt.imshow(e_xy)
-    plt.subplot(132)
-    plt.imshow(e_xz)
-    plt.subplot(133)
-    plt.imshow(e_yz)
+    plt.subplot(431)
+    plt.imshow(phasemask)
+    plt.subplot(432)
+    plt.imshow(phasemaskpc)
+    plt.subplot(433)
+    plt.imshow(phasemaskpc-phasemask)
+    plt.subplot(434)
+    plt.imshow((e_xy))
+    plt.subplot(435)
+    plt.imshow((e_xz))
+    plt.subplot(436)
+    plt.imshow((e_yz))
+    
+    plt.subplot(4,3,7)
+    plt.imshow((e_xy-e_xy[::-1,:])/np.max(e_xy), cmap = "RdBu")
+    plt.subplot(4,3,8)
+    plt.imshow((e_xz-e_xz[::-1,:])/np.max(e_xz), cmap = "RdBu") #flips along horizontal axis
+    plt.subplot(4,3,9)
+    plt.imshow((e_yz-e_yz[::-1,:])/np.max(e_xy), cmap = "RdBu")    
+
+    plt.subplot(4,3,10)
+    plt.imshow((e_xy-e_xy[:,::-1])/np.max(e_xy), cmap = "RdBu") #flips along vertical axis
+    plt.subplot(4,3,11)
+    plt.imshow((e_xz-e_xz[:,::-1])/np.max(e_xz), cmap = "RdBu")
+    plt.subplot(4,3,12)
+    plt.imshow((e_yz-e_yz[:,::-1])/np.max(e_xy), cmap = "RdBu")
+    print(np.min((e_xy-e_xy[:,::-1])/np.max(e_xy)), 
+          np.min((e_xz-e_xz[::-1,:])/np.max(e_xz)), 
+          np.min((e_yz-e_yz[:,::-1])/np.max(e_xy)))
+    print(np.max((e_xy-e_xy[:,::-1])/np.max(e_xy)), 
+          np.max((e_xz-e_xz[::-1,:])/np.max(e_xz)), 
+          np.max((e_yz-e_yz[:,::-1])/np.max(e_xy)))
+    
+    [e_xypc, e_xzpc, e_yzpc, e_xyzpc] = vector_diffraction(optical_params, 
+                                                    numerical_params, 
+                                                    polarization,
+                                                    phasemaskpc, amplitude, 
+                                                    plane = 'all')    
+    fig = plt.figure()
+    plt.subplot(431)
+    plt.imshow(phasemask)
+    plt.subplot(432)
+    plt.imshow(phasemaskpc)
+    plt.subplot(433)
+    plt.imshow(phasemaskpc-phasemask)
+    plt.subplot(434)
+    plt.imshow((e_xypc))
+    plt.subplot(435)
+    plt.imshow((e_xzpc))
+    plt.subplot(436)
+    plt.imshow((e_yzpc))
+    
+    plt.subplot(4,3,7)
+    plt.imshow((e_xypc-e_xypc[::-1,:])/np.max(e_xypc), cmap = "RdBu")
+    plt.subplot(4,3,8)
+    plt.imshow((e_xzpc-e_xzpc[::-1,:])/np.max(e_xzpc), cmap = "RdBu")
+    plt.subplot(4,3,9)
+    plt.imshow((e_yzpc-e_yzpc[::-1,:])/np.max(e_xypc), cmap = "RdBu")
+    
+    plt.subplot(4,3,10)
+    plt.imshow((e_xypc-e_xypc[:,::-1])/np.max(e_xypc), cmap = "RdBu")
+    plt.subplot(4,3,11)
+    plt.imshow((e_xzpc-e_xzpc[:,::-1])/np.max(e_xzpc), cmap = "RdBu")
+    plt.subplot(4,3,12)
+    plt.imshow((e_yzpc-e_yzpc[:,::-1])/np.max(e_xypc), cmap = "RdBu")
+    print(np.min((e_xypc-e_xypc[:,::-1])/np.max(e_xypc)), 
+          np.min((e_xzpc-e_xzpc[::-1,:])/np.max(e_xzpc)), 
+          np.min((e_yzpc-e_yzpc[:,::-1])/np.max(e_xypc)))
+    print(np.max((e_xypc-e_xypc[:,::-1])/np.max(e_xypc)), 
+          np.max((e_xzpc-e_xzpc[::-1,:])/np.max(e_xzpc)), 
+          np.max((e_yzpc-e_yzpc[:,::-1])/np.max(e_xypc)))
+
     
     # fig, axes = plt.subplots(nrows=3, ncols=3)
     # mngr = plt.get_current_fig_manager()
