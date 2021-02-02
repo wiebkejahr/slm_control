@@ -21,6 +21,7 @@ class param():
     
     def init_defaults(self):
         self.general = {
+                    "scope_mode"   : "simulated", #simulated, abberior, homebuilt
                     "display_mode" : "external", # "imspector", "othersuite"
                     "data_source"  : "imspector", # "path", "othersuite"
                     "size_slm_mm"  : [7.5, 10],
@@ -204,6 +205,7 @@ class param():
         #     dbl_ps = 1
         
         self.general = {
+                    "scope_mode"   : daddy.p.general["scope_mode"],
                     "display_mode" : daddy.p.general["display_mode"],
                     "data_source"  : daddy.p.general["data_source"],
                     "size_slm_mm"  : daddy.p.general["size_slm_mm"],

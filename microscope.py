@@ -54,6 +54,11 @@ class Microscope():
         self.polarization = [1.0/np.sqrt(2), 1.0/np.sqrt(2)*1j, 0]
         #self.calc_data()
 
+    def calc_phasemask(self, size = [64,64], aberrs = np.zeros(11), off = [0,0]):
+        vortex = pc.crop(pc.create_donut(2*size, 0, 1, radscale = 2), size, off)
+        zerns = pc.crop(pc.zern_sum(2*size, aberrs, self.num_props["orders"][3::], radscale = 2), size, off)
+        phasemask = pc.add_images([vortex, zerns])
+        return phasemask
     
     def calc_groundtruth(self, scale_size = 1.1):
         num_props = self.num_props
@@ -65,9 +70,7 @@ class Microscope():
                                    self.opt_props["rep_rate"], 
                                    self.opt_props["pulse_length"])
         size = np.asarray([self.num_props["inp_res"], self.num_props["inp_res"]])
-        vortex = pc.crop(pc.create_donut(2*size, 0, 1, radscale = 2), size, [0,0])
-        self.zerns = pc.crop(pc.zern_sum(2*size, np.zeros(11), num_props["orders"][3::], radscale = 2), size, [0,0])
-        self.phasemask = pc.add_images([vortex, self.zerns])
+        self.phasemask = self.calc_phasemask(size, np.zeros(11), [0,0])
         amp = np.ones_like(self.phasemask)
         
 #        def correct_aberrations(size, ratios, orders, off = [0,0], radscale = 1):
@@ -98,9 +101,8 @@ class Microscope():
         if any(np.abs(mask_offset)) > any(size) / 2:
             mask_offset = [0,0]
             print("ATTENTION: determined offsets were too big, setting to zero, handle with caution")
-        vortex = pc.crop(pc.create_donut(2*size, 0, 1, radscale = 2), size, mask_offset)
-        self.zerns = pc.crop(pc.zern_sum(2*size, aberrs, self.num_props["orders"][3::], radscale = 2), size, mask_offset)
-        self.phasemask = pc.add_images([vortex, self.zerns])
+        
+        self.phasemask = self.calc_phasemask(size, aberrs, mask_offset)
         amp = np.ones_like(self.phasemask)
         
 #        def correct_aberrations(size, ratios, orders, off = [0,0], radscale = 1):
@@ -115,7 +117,7 @@ class Microscope():
                                   helpers.preprocess(xz), 
                                   helpers.preprocess(yz)), axis = 0)
         
-        return self.data, self.phasemask, self.zerns
+        return self.data, self.phasemask
         
         
     def get_config(self):
@@ -311,6 +313,17 @@ class Abberior():
         msr.save_as(path + '.msr')
     
     
+    
+def get_scope(p_gen, p_sim):
+    if p_gen['scope_mode'] == 'abberior':
+        scope = Abberior(p_sim)
+    elif p_gen['scope_mode'] == 'homebuild':
+        scope = Microscope(p_sim)
+    elif p_gen['scope_mode'] == 'simulate':
+        scope = Microscope(p_sim)
+    else:
+        scope = Microscope(p_sim)
+    return scope
 
 def abberior_predict(model_store_path, model_def, image, ii=1):
     

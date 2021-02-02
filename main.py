@@ -463,7 +463,8 @@ class Main_Window(QtWidgets.QMainWindow):
         # 0. creates data structure for statistics
         statistics = {'gt_off': [], 'preds_off': [], 
                       'gt_zern': [], 'preds_zern': [], 
-                      'init_corr': [],'corr': []}
+                      'init_corr': [],'corr': [],
+                      'CoM_correct': [], 'CoM_aberr': []}
         # for model name: drop everything from model path, drop extension
         mdl_name = self.p.general["autodl_model_path"].split("/")[-1][:-4]
         path = self.p.general["data_path"] + mdl_name
@@ -484,7 +485,7 @@ class Main_Window(QtWidgets.QMainWindow):
         except:
             print("couldn't create directory!")
         
-        scope = microscope.Microscope(self.p.simulation)
+        scope = microscope.get_scope(self.p.general, self.p.simulation)
         if self.groundtruth == None:
             virtual_scope = microscope.Microscope(self.p.simulation)
             #self.groundtruth = virtual_scope.calc_groundtruth(1.1)
@@ -532,6 +533,7 @@ class Main_Window(QtWidgets.QMainWindow):
             statistics['gt_zern'].append(aberrs)
             statistics['gt_off'].append(off_aberr)
             statistics['init_corr'].append(helpers.corr_coeff(img_aberr, multi=multi))
+            statistics['CoM_aberr'].append(helpers.get_CoMs(img_aberr).tolist())
             scope.save_img(path + '/' + str(ii+i_start) + "_aberrated")
             
             # 5. single pass correction
@@ -540,6 +542,7 @@ class Main_Window(QtWidgets.QMainWindow):
             statistics['preds_zern'].append(delta_zern.tolist())
             statistics['preds_off'].append(delta_off.tolist())
             statistics['corr'].append(corr)
+            statistics['CoM_correct'].append(helpers.get_CoMs(img_corr).tolist())
             scope.save_img(path + '/' + str(ii+i_start) + "_corrected")
             with open(path + '/' + mdl_name +str(i_start)+'.txt', 'w') as file:
                 json.dump(statistics, file)
@@ -565,7 +568,7 @@ class Main_Window(QtWidgets.QMainWindow):
                 plt.imshow(img_aberr, clim = minmax, cmap = 'inferno')
                 plt.subplot(122); plt.axis('off')
                 plt.imshow(img_corr[0], clim = minmax, cmap = 'inferno')
-            fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.png")
+            fig.savefig(path + '/' + str(ii+i_start) + "_thumbnail.pdf")
             #TODO add missing logic blocks
 
         print('DONE with automated loop!', '\n', 
