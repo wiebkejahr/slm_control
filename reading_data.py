@@ -5,10 +5,6 @@ Created on: Thursday, 31st July 2020 10:47:12 am
 @author: hmcgovern
 '''
 
-
-print("starting imports")
-
-
 import pandas as pd
 import numpy as np
 
@@ -21,8 +17,70 @@ from skimage.measure import regionprops
 
 import slm_control.Pattern_Calculator as pc
 import autoalign.utils.helpers as helpers
+import autoalign.utils.vector_diffraction as vd
 
-print("done with imports")
+params_sim = {
+    "optical_params_sted": {
+        "n": 1.518, 
+        "NA": 1.4, 
+        "f": 1.8, 
+        "transmittance": 0.74, 
+        "lambda": 775, 
+        "P_laser": 0.25, 
+        "rep_rate": 40000000.0, 
+        "pulse_length": 7e-10, 
+        "obj_ba": 5.04,
+        "px_size": 10, 
+        "offset": [0, 0]}, 
+    "optical_params_gauss": {
+        "n": 1.518, 
+        "NA": 1.4, 
+        "f": 1.8, 
+        "transmittance": 0.84, 
+        "lambda": 640, 
+        "P_laser": 0.000125, 
+        "rep_rate": 40000000.0, 
+        "pulse_length": 1e-10, 
+        "obj_ba": 5.04, 
+        "px_size": 10,
+        "offset": [0, 0]},
+    "numerical_params": {
+        "out_scrn_size" : 1,
+        "z_extent" : 1,
+        "out_res" : 64, 
+        "inp_res" : 64,
+        "orders" : [[1,-1],[1,1],[2,0],[2,-2],[2,2],
+                    [3,-3],[3,-1],[3,1],[3,3],
+                    [4,-4],[4,-2],[4,0],[4,2],[4,4]]}
+            }
+
+def calc_groundtruth(scale_size = 1.1):
+
+    opt_props = params_sim["optical_params_sted"]
+    num_props = params_sim["numerical_params"]
+    # left handed circular
+    polarization = [1.0/np.sqrt(2), 1.0/np.sqrt(2)*1j, 0]
+    num_props["out_res"] = np.uint8(scale_size * num_props["out_res"])
+    num_props["out_scrn_size"] = scale_size * num_props["out_scrn_size"]
+    num_props["z_extent"] = scale_size * num_props["z_extent"]
+
+    lp_scale_sted = vd.calc_lp(opt_props["P_laser"], 
+                               opt_props["rep_rate"], 
+                               opt_props["pulse_length"])
+    size = np.asarray([num_props["inp_res"], num_props["inp_res"]])
+    vortex = pc.crop(pc.create_donut(2*size, 0, 1, radscale = 2), size, [0,0])
+    zerns = pc.crop(pc.zern_sum(2*size, np.zeros(11), num_props["orders"][3::], radscale = 2), size, [0,0])
+    phasemask = pc.add_images([vortex, zerns])
+    amp = np.ones_like(phasemask)
+    
+#        def correct_aberrations(size, ratios, orders, off = [0,0], radscale = 1):
+    [xy, xz, yz, xyz] = vd.vector_diffraction(
+        opt_props, num_props, 
+        polarization, phasemask, amp, lp_scale_sted, plane = 'all', 
+        offset=opt_props['offset'])
+    
+    #groundtruth = np.uint8((xyz - np.min(xyz)) / (np.max(xyz) - np.min(xyz)) * 255)
+    return [xy, xz, yz]
 
 def create_circular_mask(h, w, center=None, radius=None):
 
@@ -95,51 +153,6 @@ def read_msr(fname, series):
     data = [data_xy, data_xz, data_yz]
     return data
 
-def get_CoMs(img):
-    if len(img) == 3:
-        _, x_shape, y_shape = np.shape(img)
-        
-        ####### xy ########
-        b, a = get_CoM(img[0])
-        dx_xy = ((x_shape-1)/2-a)
-        dy_xy = ((y_shape-1)/2-b)
-    
-        ####### xz ########
-        b, a = get_CoM(img[1])
-        dx_xz = ((x_shape-1)/2-a)
-        dz_xz = ((y_shape-1)/2-b)
-        
-        ######## yz #########
-        b, a = get_CoM(img[2])
-        dy_yz = ((x_shape-1)/2-a)
-        dz_yz = ((y_shape-1)/2-b)
-        
-        d_xyz = np.asarray([np.average([dx_xy, dx_xz]), 
-                            np.average([dy_xy, dy_yz]),
-                            np.average([dz_xz, dz_yz])])
-        #d_xyz = np.asarray([dx_xy, dy_xy, np.average([dz_xz, dz_yz])])    
-    elif len(img) == 2:
-        x_shape, y_shape = np.shape(img)
-        b, a = get_CoM(img)
-        d_xyz = np.asarray[((x_shape-1)/2-a),
-                           ((y_shape-1)/2-b),
-                           0]
-    return d_xyz
-
-
-def get_CoM(img):
-    #TODO: return offsets in nm instead of absolute positons in px
-    #    dx = (x_shape-1)/2-a
-    #    dy = (y_shape-1)/2-b
-    # then rewrite calc_tip_tilt, calc_defocus and automate accordingly
-
-    threshold_value = filters.threshold_otsu(img)
-    labeled_foreground = (img > threshold_value).astype(int)
-    properties = regionprops(labeled_foreground, img)
-    center_of_mass = properties[0].centroid
-    b = center_of_mass[0]
-    a = center_of_mass[1]
-    return b,a
 
 
 def plot_data(df, model):
@@ -328,12 +341,12 @@ drop = []
 
 # for ii in df.index:
 #     img_aberr = read_msr(str(ii)+"_aberrated.msr", [2,5,8])
-#     CoM_aberr = get_CoMs(img_aberr)
+#     CoM_aberr = helpers.get_CoMs(img_aberr)
 #     imgs_aberr.append(img_aberr)
 #     CoMs_aberr.append(CoM_aberr)
     
 #     img_correct = read_msr(str(ii)+"_corrected.msr", [2,5,8])
-#     CoM_correct = get_CoMs(img_correct)
+#     CoM_correct = helpers.get_CoMs(img_correct)
 #     imgs_correct.append(img_correct)
 #     CoMs_correct.append(CoM_correct)
     
@@ -389,14 +402,15 @@ drop = []
 #                      'figure.facecolor':'white'}):
 #     fig, axes = plot_data(df, model)
 
-
-
+gt = calc_groundtruth(scale_size = 1.0)
+# print("gt shape ", np.shape(gt))
 
 data_path11 = 'autoalign/datasets/20.08.03_1D_centered_18k_norm_dist.hdf5'
 data_path13 = 'autoalign/datasets/20.10.22_3D_centered_18k_norm_dist_offset_no_noise.hdf5'
 
-dataset = helpers.PSFDataset(hdf5_path = data_path11, mode = 'val')
-sample = dataset.__getitem__(idx = 0)
+dataset = helpers.PSFDataset(hdf5_path = data_path13, mode = 'val')
 
-plt.figure()
-plt.imshow(sample["image"])
+sample = []
+for ii in range(dataset.__len__()):
+    sample.append(dataset.__getitem__(idx = ii))
+

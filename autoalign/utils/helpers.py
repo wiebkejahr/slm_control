@@ -66,9 +66,12 @@ class PSFDataset(data.Dataset):
     
         image = self.images[idx]
         image = normalize_img(image)*255
-        image = np.squeeze(np.stack((image, image, image), axis=-1))
+        #if np.shape(image)[0] == 1:
+        #    image = np.squeeze(np.stack((image, image, image), axis=-1))
+        #elif np.shape(image)[0] == 3:
+        #    print(np.shape(image))
 
-        image = Image.fromarray(image.astype(np.uint8), 'RGB')
+        #image = Image.fromarray(image.astype(np.uint8), 'RGB')
         sample = {'image': image, 'label': self.labels[idx]}
 
         if self.transform:
