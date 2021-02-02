@@ -105,8 +105,6 @@ def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane =
     #
     ##########################################################################
     
-    print("offset_vectordiff: ", offset)
-    
     n = p_opt["n"]
     f = p_opt["f"]
     lambd = p_opt["lambda"]
@@ -156,7 +154,6 @@ def vector_diffraction(p_opt, p_num, polarization, phase, ampfn, LP = 1, plane =
         
     aperture = np.zeros_like(r)
     aperture[r < obj_ba / 2] = 1
-    print(np.shape(aperture), np.shape(ampfn))
     aperture = aperture * np.sqrt(ampfn)
     #Putting a hard circular aperture of NA keeping the amplitude changes
     # absolute scaling is done via C constant
