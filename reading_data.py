@@ -4,19 +4,18 @@ Created on: Thursday, 31st July 2020 10:47:12 am
 --------
 @author: hmcgovern
 '''
-
+import os
 import pandas as pd
 import numpy as np
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap as lsc
+#from matplotlib.colors import LinearSegmentedColormap as lsc
 #from sklearn.metrics import mean_squared_error
 from skimage import filters
 from skimage.measure import regionprops
-#from pyoformats import read
+from pyoformats import read
 
 import slm_control.Pattern_Calculator as pc
-import autoalign.utils.helpers as helpers
 import autoalign.utils.vector_diffraction as vd
 
 params_sim = {
@@ -53,6 +52,53 @@ params_sim = {
                     [3,-3],[3,-1],[3,1],[3,3],
                     [4,-4],[4,-2],[4,0],[4,2],[4,4]]}
             }
+
+def get_CoMs(img):
+    
+    if len(img.shape) == 3:
+        _, x_shape, y_shape = np.shape(img)
+        
+        ####### xy ########
+        b, a = get_CoM(img[0])
+        dx_xy = ((x_shape-1)/2-a)
+        dy_xy = ((y_shape-1)/2-b)
+    
+        ####### xz ########
+        b, a = get_CoM(img[1])
+        dx_xz = ((x_shape-1)/2-a)
+        dz_xz = ((y_shape-1)/2-b)
+        
+        ######## yz #########
+        b, a = get_CoM(img[2])
+        dy_yz = ((x_shape-1)/2-a)
+        dz_yz = ((y_shape-1)/2-b)
+        
+        d_xyz = np.asarray([np.average([dx_xy, dx_xz]), 
+                            np.average([dy_xy, dy_yz]),
+                            np.average([dz_xz, dz_yz])])
+        #d_xyz = np.asarray([dx_xy, dy_xy, np.average([dz_xz, dz_yz])])    
+    elif len(img.shape) == 2:
+        x_shape, y_shape = np.shape(img)
+        b, a = get_CoM(img)
+        d_xyz = np.asarray[((x_shape-1)/2-a),
+                           ((y_shape-1)/2-b),
+                           0]
+    return d_xyz
+
+
+def get_CoM(img):
+    #TODO: return offsets in nm instead of absolute positons in px
+    #    dx = (x_shape-1)/2-a
+    #    dy = (y_shape-1)/2-b
+    # then rewrite calc_tip_tilt, calc_defocus and automate accordingly
+
+    threshold_value = filters.threshold_otsu(img)
+    labeled_foreground = (img > threshold_value).astype(int)
+    properties = regionprops(labeled_foreground, img)
+    center_of_mass = properties[0].centroid
+    b = center_of_mass[0]
+    a = center_of_mass[1]
+    return b,a
 
 def calc_groundtruth(scale_size = 1.1):
 
@@ -127,7 +173,6 @@ def clean_stats(path, files):
         with open(path+'clean_'+file, 'w') as f:
             json.dump(data_clean, f, indent = 4)
 
-
 def read_stats(path, files):
     """" reads in all provided files and concatenates into one data frame.
          Drops columns specified by inde, eg for manually removing defocussed
@@ -145,7 +190,6 @@ def read_stats(path, files):
     df = df.reset_index()
     return df, files[0][:-5]
 
-        
 def read_msr(fname, series): 
     data_xy = np.squeeze(read.image_5d(path + fname, series=series[0]))
     data_xz = np.squeeze(read.image_5d(path + fname, series=series[1]))
@@ -169,7 +213,6 @@ def plot_data(df, model):
     axes.set_xlabel('Trial')
     axes.set_ylabel('Correlation Coefficient after correction')
     fig.savefig("corr_coeff.pdf", transparent = True)
- 
     
     ##########################################################################
     #      plot improvement of correlation coefficient after corrections     #
@@ -283,6 +326,99 @@ def plot_data(df, model):
         
 
 
+def read_img2df(df, path):
+    imgs_aberr = []
+    imgs_correct = []
+    CoMs_aberr = []
+    CoMs_correct = []
+    phase_aberr = []
+    phase_correct = []
+    
+    
+    orders = [[1,-1],[1,1],[2,0],
+              [2,-2],[2,2],[3,-3],[3,-1],[3,1],[3,3],
+              [4,-4],[4,-2],[4,0],[4,2],[4,4]]
+    size = [64,64]
+    
+    for ii in df.index:
+        # read and append aberrated images and CoMs
+        img_aberr = np.asarray(read_msr(str(ii)+"_aberrated.msr", [2,5,8]))[:, 1:-1, 1:-1]
+        CoM_aberr = get_CoMs(img_aberr)
+        imgs_aberr.append(img_aberr)
+        CoMs_aberr.append(CoM_aberr)
+        
+        # read and append corrected images and CoMs
+        img_correct = np.asarray(read_msr(str(ii)+"_corrected.msr", [2,5,8]))[:, 1:-1, 1:-1]
+        CoM_correct = get_CoMs(img_correct)
+        imgs_correct.append(img_correct)
+        CoMs_correct.append(CoM_correct)
+        
+        # read Zernikes, calculate and append aberrated phasemasks
+        ph_aberr = (pc.zern_sum(size, df["gt_zern"][ii], orders[3:]))
+        ph_corr = (pc.zern_sum(size, df["preds_zern"][ii], orders[3:]))
+        phase_aberr.append(ph_aberr)
+        phase_correct.append(ph_corr)
+        
+    # write everything into df
+    df["img_aberr"] = imgs_aberr
+    df["CoM_aberr"] = CoMs_aberr
+    df["img_correct"] = imgs_correct
+    df["CoM_correct"] = CoMs_correct
+    df["phase_aberr"] = phase_aberr
+    df["phase_corr"] = phase_correct
+    
+    return df
+
+def replot_psf_phase(df, path, size = [64,64]):
+    """ Plot aberrated and corrected images as well as phasemasks from the
+        dataframe.
+        """
+        
+    circ = create_circular_mask(size[0], size[1])
+
+    try:
+        if not os.path.isdir(path + '/eval'):
+            os.mkdir(path + '/eval')
+        if not os.path.isdir(path):
+            os.mkdir(path)
+    except:
+        print("couldn't create directory!")
+    
+    for ii in df.index:
+        # shorthand for df entries
+        img_correct = df.img_correct[ii]
+        img_aberr = df.img_aberr[ii]
+        ph_aberr = df.phase_aberr[ii]
+        ph_corr = df.phase_corr[ii]
+        ph_aberr[~circ] = np.nan
+        ph_corr[~circ] = np.nan
+        
+        fig = plt.figure()
+        minmax = [np.min(img_correct[0]), np.max(img_correct[0])]
+        plt.subplot(331); plt.axis('off')
+        plt.imshow(img_aberr[0], clim = minmax, cmap = 'inferno')
+        plt.subplot(332); plt.axis('off')
+        plt.imshow(img_aberr[1], clim = minmax, cmap = 'inferno')
+        plt.subplot(333); plt.axis('off')
+        plt.imshow(img_aberr[2], clim = minmax, cmap = 'inferno')
+        plt.subplot(334); plt.axis('off')
+        plt.imshow(img_correct[0], clim = minmax, cmap = 'inferno')
+        plt.subplot(335); plt.axis('off')
+        plt.imshow(img_correct[1], clim = minmax, cmap = 'inferno')
+        plt.subplot(336); plt.axis('off')
+        plt.imshow(img_correct[2], clim = minmax, cmap = 'inferno')
+        
+        minmax = ([np.min([np.nanmin(ph_aberr), np.nanmin(ph_corr)]),
+                    np.max([np.nanmax(ph_aberr), np.nanmax(ph_corr)])])
+        mm_center = [-np.max(np.abs(minmax)), np.max(np.abs(minmax))]
+        
+        plt.subplot(337); plt.axis('off')
+        plt.imshow(ph_aberr, clim = mm_center, cmap = 'RdBu')
+        plt.subplot(338); plt.axis('off')
+        plt.imshow(ph_corr, clim = mm_center, cmap = 'RdBu')
+        plt.subplot(339); plt.axis('off')
+        plt.imshow((ph_corr - ph_aberr)/mm_center[1], clim = [-1,1], cmap = 'RdBu')
+        fig.savefig(path + '/eval/' + str(ii) + "_thumbnail.png")
 
 #if __name__=="__main__":
 drop = []
@@ -299,6 +435,7 @@ drop = []
 #           'clean_20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_6448.txt',
 #           'clean_20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64123.txt']
 # clean_stats(path, files)
+
 
 # path = '/Users/wjahr/Seafile/Synch/Share/Hope/Data_automated/20201124_Autoalign/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64/'
 # files = ['20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_640.txt',
@@ -321,75 +458,17 @@ drop = []
 #           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64198.txt']
 
 
-# df, model = read_stats(path, files)
-
-# imgs_aberr = []
-# CoMs_aberr = []
-# imgs_correct = []
-# CoMs_correct = []
-# phase_aberr = []
-# phase_corr = []
+path = "E:/Data_eval/20210106_Autoalign/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/"
+files = ['20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_640.txt']
+#           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_6460.txt',
+#           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64133.txt',
+#           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64198.txt']
 
 
-# orders = [[1,-1],[1,1],[2,0],
-#           [2,-2],[2,2],[3,-3],[3,-1],[3,1],[3,3],
-#           [4,-4],[4,-2],[4,0],[4,2],[4,4]]
+df, model = read_stats(path, files)
 
-# size = [64,64]
-
-# circ = create_circular_mask(size[0], size[1])
-
-# for ii in df.index:
-#     img_aberr = read_msr(str(ii)+"_aberrated.msr", [2,5,8])
-#     CoM_aberr = helpers.get_CoMs(img_aberr)
-#     imgs_aberr.append(img_aberr)
-#     CoMs_aberr.append(CoM_aberr)
-    
-#     img_correct = read_msr(str(ii)+"_corrected.msr", [2,5,8])
-#     CoM_correct = helpers.get_CoMs(img_correct)
-#     imgs_correct.append(img_correct)
-#     CoMs_correct.append(CoM_correct)
-    
-#     ph_aberr = (pc.zern_sum(size, df["gt_zern"][ii], orders[3:]))
-#     ph_corr = (pc.zern_sum(size, df["preds_zern"][ii], orders[3:]))
-#     phase_aberr.append(ph_aberr)
-#     phase_corr.append(ph_corr)
-    
-#     # ph_aberr[~circ] = np.nan
-#     # ph_corr[~circ] = np.nan 
-#     # fig = plt.figure()
-#     # minmax = [np.min(img_correct[0]), np.max(img_correct[0])]
-#     # plt.subplot(331); plt.axis('off')
-#     # plt.imshow(img_aberr[0], clim = minmax, cmap = 'inferno')
-#     # plt.subplot(332); plt.axis('off')
-#     # plt.imshow(img_aberr[1], clim = minmax, cmap = 'inferno')
-#     # plt.subplot(333); plt.axis('off')
-#     # plt.imshow(img_aberr[2], clim = minmax, cmap = 'inferno')
-#     # plt.subplot(334); plt.axis('off')
-#     # plt.imshow(img_correct[0], clim = minmax, cmap = 'inferno')
-#     # plt.subplot(335); plt.axis('off')
-#     # plt.imshow(img_correct[1], clim = minmax, cmap = 'inferno')
-#     # plt.subplot(336); plt.axis('off')
-#     # plt.imshow(img_correct[2], clim = minmax, cmap = 'inferno')
-#     # minmax = ([np.min([np.nanmin(ph_aberr), np.nanmin(ph_corr)]),
-#     #             np.max([np.nanmax(ph_aberr), np.nanmax(ph_corr)])])
-#     # mm_center = [-np.max(np.abs(minmax)), np.max(np.abs(minmax))]
-#     # print(minmax)
-#     # plt.subplot(337); plt.axis('off')
-#     # plt.imshow(ph_aberr, clim = mm_center, cmap = 'RdBu')
-#     # plt.subplot(338); plt.axis('off')
-#     # plt.imshow(ph_corr, clim = mm_center, cmap = 'RdBu')
-#     # plt.subplot(339); plt.axis('off')
-#     # plt.imshow((ph_corr - ph_aberr)/mm_center[1], clim = [-1,1], cmap = 'RdBu')
-#     # fig.savefig(str(ii) + "_thumbnail.png")
-    
-
-# df["img_aberr"] = imgs_aberr
-# df["CoM_aberr"] = CoMs_aberr
-# df["img_correct"] = imgs_correct
-# df["CoM_correct"] = CoMs_correct
-# df["phase_aberr"] = phase_aberr
-# df["phase_corr"] = phase_corr
+read_img2df(df, path)
+replot_psf_phase(df, path)
 
 
 # df = df.drop(drop, axis = 0)
@@ -405,12 +484,19 @@ drop = []
 gt = calc_groundtruth(scale_size = 1.0)
 # print("gt shape ", np.shape(gt))
 
-data_path11 = 'autoalign/datasets/20.08.03_1D_centered_18k_norm_dist.hdf5'
-data_path13 = 'autoalign/datasets/20.10.22_3D_centered_18k_norm_dist_offset_no_noise.hdf5'
 
-dataset = helpers.PSFDataset(hdf5_path = data_path13, mode = 'val')
 
-sample = []
-for ii in range(dataset.__len__()):
-    sample.append(dataset.__getitem__(idx = ii))
+
+##############################################################################
+#           for analyzing validation datasets, not done yet                  #
+##############################################################################
+
+# data_path11 = 'autoalign/datasets/20.08.03_1D_centered_18k_norm_dist.hdf5'
+# data_path13 = 'autoalign/datasets/20.10.22_3D_centered_18k_norm_dist_offset_no_noise.hdf5'
+
+# dataset = helpers.PSFDataset(hdf5_path = data_path13, mode = 'val')
+
+# sample = []
+# for ii in range(dataset.__len__()):
+#     sample.append(dataset.__getitem__(idx = ii))
 
