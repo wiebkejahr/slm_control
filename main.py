@@ -369,18 +369,21 @@ class Main_Window(QtWidgets.QMainWindow):
       
     
     def corrective_loop(self, scope, image=None, aberrs = np.zeros(11), offset=False, multi=False, ortho_sec=False, i=1):
-        """ Passes trained model and acquired image to abberior_predict to 
+        """ Passes trained model and acquired image to microscope.predict to 
             estimate zernike weights and offsets required to correct 
             aberrations. Calculates new SLM pattern to acquire new image and 
             calculates correlation coefficients. """
         
         size = 2 * np.asarray(self.p.general["size_slm"])
         scale = 2 * pcalc.get_mm2px(self.p.general["slm_px"], self.p.general["slm_mag"])
+        
         orders = self.p.simulation["numerical_params"]["orders"]
         print("model into predict: ", self.p.general["autodl_model_path"])
-        delta_zern, delta_off = microscope.abberior_predict(self.p.general["autodl_model_path"], 
-                                                            self.p.model_def,
-                                                            image, ii=i)
+        delta_zern, delta_off = microscope.predict(self.p.general["autodl_model_path"], 
+                                                   self.p.model_def,
+                                                   self.groundtruth, image, ii=i)
+
+        print("offset: ", delta_off, "scale ", scale)
         delta_off = delta_off * scale
         #if abs(delta_off[0]) > 32:
         #    delta_off = 0
@@ -449,9 +452,9 @@ class Main_Window(QtWidgets.QMainWindow):
 
     def automate(self):
 
-        num_its=2
+        num_its = 250
         px_size = 10*1e-9
-        i_start = 0
+        i_start = 71
         best_of = 5
         size = 2 * np.asarray(self.p.general["size_slm"])
         orders = self.p.simulation["numerical_params"]["orders"]
@@ -488,6 +491,7 @@ class Main_Window(QtWidgets.QMainWindow):
         scope = microscope.get_scope(self.p.general, self.p.simulation)
         if self.groundtruth == None:
             virtual_scope = microscope.Microscope(self.p.simulation)
+            self.groundtruth = virtual_scope.calc_data()
             #self.groundtruth = virtual_scope.calc_groundtruth(1.1)
         
         #imspector, msr_names, active_msr, conf = scope.get_config()

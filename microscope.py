@@ -98,7 +98,7 @@ class Microscope():
                                    self.opt_props["pulse_length"])
         size = np.asarray([self.num_props["inp_res"], self.num_props["inp_res"]])
         
-        if any(np.abs(mask_offset)) > any(size) / 2:
+        if np.abs(mask_offset)[0] > size[0] / 2 or np.abs(mask_offset)[1] > size[1] / 2:
             mask_offset = [0,0]
             print("ATTENTION: determined offsets were too big, setting to zero, handle with caution")
         
@@ -325,7 +325,7 @@ def get_scope(p_gen, p_sim):
         scope = Microscope(p_sim)
     return scope
 
-def abberior_predict(model_store_path, model_def, image, ii=1):
+def predict(model_store_path, model_def, groundtruth, image, ii=1):
     
     best_coeffs = np.zeros(11)
     best_offsets = np.zeros(2)
@@ -397,8 +397,8 @@ def abberior_predict(model_store_path, model_def, image, ii=1):
             # else:
             #     zern = coeffs
             #     offset_label = [0,0]
-            reconstructed = helpers.get_sted_psf(coeffs=zern_label, offset_label=offset_label, multi=model_def["multi_flag"], defocus=False)
-            corr = helpers.corr_coeff(image, reconstructed)
+            #reconstructed = helpers.get_sted_psf(coeffs=zern_label, offset_label=offset_label, multi=model_def["multi_flag"], defocus=False)
+            corr = helpers.corr_coeff(image, groundtruth)
             if corr > best_corr:
                 best_corr = corr
                 best_coeffs = zern_label
