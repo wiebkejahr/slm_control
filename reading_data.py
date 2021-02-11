@@ -300,27 +300,7 @@ def plot_data(df, model):
     axes[2].legend()
     fig.savefig("corr_coeff_improv_sorted_after.pdf", transparent = True)    
 
-    ##########################################################################
-    #      plot box plots with improvements for each zernike polynomial      #
-    ##########################################################################
-    
-    fig, axes = plt.subplots()
-    p = df["preds_zern"].to_list()
-    gt = df["gt_zern"].to_list()
-    df_preds = pd.DataFrame(np.abs(np.subtract(p, gt)),
-                            columns = ["45 Astig", "90 Astig", "90 Trefoil", 
-                                       "90 Coma", "0 Coma", "45 Trefoil", 
-                                       "45 Quad", "45 Astig 2", "Spherical", 
-                                       "90 Astig 2", "90 Quad"])
-    c = 'w'
-    df_preds.boxplot(ax = axes, rot = 90, 
-                     color=dict(boxes=c, whiskers=c, medians=c, caps=c),
-                     flierprops=dict(markeredgecolor=c)
-                     )
-    axes.set_ylabel("Difference btw predicted and gt")
-    axes.set_xlabel("Zernike Mode")
-    plt.subplots_adjust(bottom=0.25)
-    fig.savefig("boxplot_labels.pdf", transparent = True)
+
 
     return fig, axes
         
@@ -333,12 +313,14 @@ def read_img2df(df, path):
     CoMs_correct = []
     phase_aberr = []
     phase_correct = []
+    phase_rms = []
     
     
     orders = [[1,-1],[1,1],[2,0],
               [2,-2],[2,2],[3,-3],[3,-1],[3,1],[3,3],
               [4,-4],[4,-2],[4,0],[4,2],[4,4]]
     size = [64,64]
+    circ = create_circular_mask(size[0], size[1])
     
     for ii in df.index:
         # read and append aberrated images and CoMs
@@ -356,8 +338,15 @@ def read_img2df(df, path):
         # read Zernikes, calculate and append aberrated phasemasks
         ph_aberr = (pc.zern_sum(size, df["gt_zern"][ii], orders[3:]))
         ph_corr = (pc.zern_sum(size, df["preds_zern"][ii], orders[3:]))
+        ph_aberr[~circ] = np.nan
+        ph_corr[~circ] = np.nan
+        
+        ph_diff = ph_aberr - ph_corr
+        ph_size = np.count_nonzero(~np.isnan(ph_diff[0]))
         phase_aberr.append(ph_aberr)
         phase_correct.append(ph_corr)
+        phase_rms.append(np.sqrt((np.nansum(ph_diff**2)) / ph_size))
+        
         
     # write everything into df
     df["img_aberr"] = imgs_aberr
@@ -366,6 +355,8 @@ def read_img2df(df, path):
     df["CoM_correct"] = CoMs_correct
     df["phase_aberr"] = phase_aberr
     df["phase_corr"] = phase_correct
+    df["phase_rms"] = phase_rms
+
     
     return df
 
@@ -373,8 +364,6 @@ def replot_psf_phase(df, path, size = [64,64]):
     """ Plot aberrated and corrected images as well as phasemasks from the
         dataframe.
         """
-        
-    circ = create_circular_mask(size[0], size[1])
 
     try:
         if not os.path.isdir(path + '/eval'):
@@ -390,8 +379,6 @@ def replot_psf_phase(df, path, size = [64,64]):
         img_aberr = df.img_aberr[ii]
         ph_aberr = df.phase_aberr[ii]
         ph_corr = df.phase_corr[ii]
-        ph_aberr[~circ] = np.nan
-        ph_corr[~circ] = np.nan
         
         fig = plt.figure()
         minmax = [np.min(img_correct[0]), np.max(img_correct[0])]
@@ -419,6 +406,36 @@ def replot_psf_phase(df, path, size = [64,64]):
         plt.subplot(339); plt.axis('off')
         plt.imshow((ph_corr - ph_aberr)/mm_center[1], clim = [-1,1], cmap = 'RdBu')
         fig.savefig(path + '/eval/' + str(ii) + "_thumbnail.png")
+        
+        
+        
+def plot_stats(df, path):
+    ##########################################################################
+    #      plot box plots with improvements for each zernike polynomial      #
+    ##########################################################################
+    
+    fig, axes = plt.subplots()
+    pred = df.preds_zern.to_list()
+    gt = df.gt_zern.to_list()
+    
+    df_preds = pd.DataFrame(np.abs(np.subtract(pred, gt)),
+                            columns = ["45 Astig", "90 Astig", "90 Trefoil", 
+                                       "90 Coma", "0 Coma", "45 Trefoil", 
+                                       "45 Quad", "45 Astig 2", "Spherical", 
+                                       "90 Astig 2", "90 Quad"])
+    df_preds[["off x", "off y"]] = df.gt_off.to_list()
+    df_preds["phase rms"] = df.phase_rms
+    c = 'k'
+    df_preds.boxplot(ax = axes, rot = 90, 
+                     color=dict(boxes=c, whiskers=c, medians=c, caps=c),
+                     flierprops=dict(markeredgecolor=c)
+                     )
+    axes.set_ylabel("Difference btw predicted and gt")
+    axes.set_xlabel("Zernike Mode")
+    plt.subplots_adjust(bottom=0.25)
+    
+
+    fig.savefig("boxplot_labels.pdf", transparent = True)
 
 #if __name__=="__main__":
 drop = []
@@ -468,12 +485,14 @@ files = ['20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_
 df, model = read_stats(path, files)
 
 read_img2df(df, path)
-replot_psf_phase(df, path)
+plot_stats(df, path)
+#replot_psf_phase(df, path)
+
+#plot_stats(df, path)
 
 
 # df = df.drop(drop, axis = 0)
-# #path = '/Users/wjahr/Seafile/Synch/Share/Hope/Data_automated/20201124_Autoalign/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64/'
-# #files = ['clean_20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_640.txt']
+
 
 # with plt.rc_context({'axes.edgecolor':'white', 
 #                      'xtick.color':'white', 'ytick.color':'white', 
