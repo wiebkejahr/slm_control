@@ -383,7 +383,6 @@ class Main_Window(QtWidgets.QMainWindow):
                                                    self.p.model_def,
                                                    self.groundtruth, image, ii=i)
 
-        print("offset: ", delta_off, "scale ", scale)
         delta_off = delta_off * scale
         #if abs(delta_off[0]) > 32:
         #    delta_off = 0
@@ -407,7 +406,7 @@ class Main_Window(QtWidgets.QMainWindow):
         new_img, stats = scope.acquire_image(multi=multi, mask_offset = off, aberrs = new_aberrs)
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         print('correlation coeff is: {}'.format(correlation))
-        
+        print("corrective loop deltas: ", delta_zern, delta_off)
         return delta_zern, delta_off, new_img, correlation
 
     def auto_align(self, so_far = -1, best_of = 5, multi = True, offset = True):
@@ -451,10 +450,9 @@ class Main_Window(QtWidgets.QMainWindow):
 
 
     def automate(self):
-
-        num_its = 250
+        num_its = 2
         px_size = 10*1e-9
-        i_start = 71
+        i_start = 0
         best_of = 5
         size = 2 * np.asarray(self.p.general["size_slm"])
         orders = self.p.simulation["numerical_params"]["orders"]
@@ -543,6 +541,7 @@ class Main_Window(QtWidgets.QMainWindow):
             # 5. single pass correction
             delta_zern, delta_off, img_corr, corr = self.corrective_loop(scope, img_aberr, aberrs, offset=offset, multi=multi, i = best_of)
             
+            print('preds ', delta_zern, delta_off)
             statistics['preds_zern'].append(delta_zern.tolist())
             statistics['preds_off'].append(delta_off.tolist())
             statistics['corr'].append(corr)

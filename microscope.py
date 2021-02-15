@@ -331,7 +331,7 @@ def predict(model_store_path, model_def, groundtruth, image, ii=1):
     best_offsets = np.zeros(2)
     best_corr = 0
     for _ in range(ii):
-
+        print("predicting ", ii)
         if model_def["multi_flag"]:
             in_dim = 3
         else:
@@ -343,7 +343,7 @@ def predict(model_store_path, model_def, groundtruth, image, ii=1):
         
         
         resolution = model_def["resolution"]
-        print('in dim', in_dim, 'out dim', out_dim, 'res', resolution)
+        #print('in dim', in_dim, 'out dim', out_dim, 'res', resolution)
 
 
         model = my_models.TheUltimateModel(input_dim=in_dim, output_dim=out_dim, res=resolution, concat=model_def["concat"])
@@ -374,16 +374,21 @@ def predict(model_store_path, model_def, groundtruth, image, ii=1):
         
                 outputs = model(input_image.float())
                 # coeffs = outputs.numpy().squeeze()
-    
+            
+            print("outputs: ", outputs)
+            print("len? ", len(outputs.numpy)[0])
             if len(outputs.numpy()[0]) == 13:
+                print("len = 13")
                 zern_label = outputs.numpy()[0][:-2]
                 offset_label = outputs.numpy()[0][-2:]
     
             elif len(outputs.numpy()[0])== 11:
+                print("len = 11")
                 zern_label = outputs.numpy()[0]
                 offset_label = [0,0]
             
             elif len(outputs.numpy()[0])== 2:
+                print("len = 2")
                 zern_label = np.asarray([0.0*11])
                 offset_label = outputs.numpy()[0]
                         
