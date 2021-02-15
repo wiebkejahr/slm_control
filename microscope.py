@@ -331,7 +331,6 @@ def predict(model_store_path, model_def, groundtruth, image, ii=1):
     best_offsets = np.zeros(2)
     best_corr = 0
     for _ in range(ii):
-        print("predicting ", ii)
         if model_def["multi_flag"]:
             in_dim = 3
         else:
@@ -362,52 +361,46 @@ def predict(model_store_path, model_def, groundtruth, image, ii=1):
         #model = torch.load(model_store_path)
 
         # Test the model
-            model.eval()
+        model.eval()
+        with torch.no_grad():
+            # adds 3rd color channel dim and batch dim
+            if model_def["multi_flag"]:   
+                input_image = torch.from_numpy(image).unsqueeze(0)
+            else:
+                # NOTE: THIS IS ONLY FOR 1D
+                input_image = torch.from_numpy(image).unsqueeze(0).unsqueeze(0)
     
-            with torch.no_grad():
-                # adds 3rd color channel dim and batch dim
-                if model_def["multi_flag"]:   
-                    input_image = torch.from_numpy(image).unsqueeze(0)
-                else:
-                    # NOTE: THIS IS ONLY FOR 1D
-                    input_image = torch.from_numpy(image).unsqueeze(0).unsqueeze(0)
+            outputs = model(input_image.float())
+            # coeffs = outputs.numpy().squeeze()
         
-                outputs = model(input_image.float())
-                # coeffs = outputs.numpy().squeeze()
-            
-            print("outputs: ", outputs)
-            print("len? ", len(outputs.numpy)[0])
-            if len(outputs.numpy()[0]) == 13:
-                print("len = 13")
-                zern_label = outputs.numpy()[0][:-2]
-                offset_label = outputs.numpy()[0][-2:]
-    
-            elif len(outputs.numpy()[0])== 11:
-                print("len = 11")
-                zern_label = outputs.numpy()[0]
-                offset_label = [0,0]
-            
-            elif len(outputs.numpy()[0])== 2:
-                print("len = 2")
-                zern_label = np.asarray([0.0*11])
-                offset_label = outputs.numpy()[0]
-                        
-            # zern = coeffs
-            # offset_label = np.asarray([0,0])
-            
-            # return coeffs
-            # if offset:
-            #     zern = coeffs[:-2]
-            #     offset_label = coeffs[-2:]
-            # else:
-            #     zern = coeffs
-            #     offset_label = [0,0]
-            #reconstructed = helpers.get_sted_psf(coeffs=zern_label, offset_label=offset_label, multi=model_def["multi_flag"], defocus=False)
-            corr = helpers.corr_coeff(image, groundtruth)
-            if corr > best_corr:
-                best_corr = corr
-                best_coeffs = zern_label
-                best_offsets = offset_label
+        if len(outputs.numpy()[0]) == 13:
+            zern_label = outputs.numpy()[0][:-2]
+            offset_label = outputs.numpy()[0][-2:]
+
+        elif len(outputs.numpy()[0])== 11:
+            zern_label = outputs.numpy()[0]
+            offset_label = [0,0]
+        
+        elif len(outputs.numpy()[0])== 2:
+            zern_label = np.asarray([0.0*11])
+            offset_label = outputs.numpy()[0]
+                    
+        # zern = coeffs
+        # offset_label = np.asarray([0,0])
+        
+        # return coeffs
+        # if offset:
+        #     zern = coeffs[:-2]
+        #     offset_label = coeffs[-2:]
+        # else:
+        #     zern = coeffs
+        #     offset_label = [0,0]
+        #reconstructed = helpers.get_sted_psf(coeffs=zern_label, offset_label=offset_label, multi=model_def["multi_flag"], defocus=False)
+        corr = helpers.corr_coeff(np.asarray(image), np.asarray(groundtruth))
+        if corr > best_corr:
+            best_corr = corr
+            best_coeffs = zern_label
+            best_offsets = offset_label
         
 
     # if offset:

@@ -381,7 +381,7 @@ class Main_Window(QtWidgets.QMainWindow):
         print("model into predict: ", self.p.general["autodl_model_path"])
         delta_zern, delta_off = microscope.predict(self.p.general["autodl_model_path"], 
                                                    self.p.model_def,
-                                                   self.groundtruth, image, ii=i)
+                                                   self.groundtruth[0], image, ii=i)
 
         delta_off = delta_off * scale
         #if abs(delta_off[0]) > 32:
@@ -394,8 +394,6 @@ class Main_Window(QtWidgets.QMainWindow):
         self.img_l.off.xgui.setValue(np.round(off[0]))
         self.img_l.off.ygui.setValue(np.round(off[1]))
         
-        print("TODO: stats for debugging. ", aberrs, delta_zern, size, 
-              self.slm_radius, scale, delta_off, off)
         new_aberrs = aberrs - delta_zern
         full = pcalc.zern_sum(size, new_aberrs, orders[3::], np.sqrt(2)*self.slm_radius)
         self.phase_zern = pcalc.crop(full, size//2, offset = off)
@@ -405,8 +403,6 @@ class Main_Window(QtWidgets.QMainWindow):
             
         new_img, stats = scope.acquire_image(multi=multi, mask_offset = off, aberrs = new_aberrs)
         correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
-        print('correlation coeff is: {}'.format(correlation))
-        print("corrective loop deltas: ", delta_zern, delta_off)
         return delta_zern, delta_off, new_img, correlation
 
     def auto_align(self, so_far = -1, best_of = 5, multi = True, offset = True):
@@ -450,7 +446,7 @@ class Main_Window(QtWidgets.QMainWindow):
 
 
     def automate(self):
-        num_its = 2
+        num_its = 200
         px_size = 10*1e-9
         i_start = 0
         best_of = 5
@@ -490,6 +486,7 @@ class Main_Window(QtWidgets.QMainWindow):
         if self.groundtruth == None:
             virtual_scope = microscope.Microscope(self.p.simulation)
             self.groundtruth = virtual_scope.calc_data()
+            print("calc gt ", np.shape(self.groundtruth), np.shape(self.groundtruth[0]), np.shape(self.groundtruth[1]))
             #self.groundtruth = virtual_scope.calc_groundtruth(1.1)
         
         #imspector, msr_names, active_msr, conf = scope.get_config()
