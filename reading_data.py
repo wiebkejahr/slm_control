@@ -5,6 +5,7 @@ Created on: Thursday, 31st July 2020 10:47:12 am
 @author: hmcgovern
 '''
 import os
+import glob
 import pandas as pd
 import numpy as np
 
@@ -14,6 +15,7 @@ import matplotlib.pyplot as plt
 from skimage import filters
 from skimage.measure import regionprops
 from pyoformats import read
+import tifffile
 
 import slm_control.Pattern_Calculator as pc
 import autoalign.utils.vector_diffraction as vd
@@ -52,6 +54,12 @@ params_sim = {
                     [3,-3],[3,-1],[3,1],[3,3],
                     [4,-4],[4,-2],[4,0],[4,2],[4,4]]}
             }
+
+def find_txt(path):
+    files = []
+    for file in glob.glob(path + '*.txt'):
+        files.append(file)
+    return files
 
 def get_CoMs(img):
     
@@ -169,7 +177,6 @@ def clean_stats(path, files):
         data_clean["corr"] = data["corr"]
         data_clean["init_corr"] = data["init_corr"]
 
-        
         with open(path+'clean_'+file, 'w') as f:
             json.dump(data_clean, f, indent = 4)
 
@@ -184,13 +191,13 @@ def read_stats(path, files):
          """
     df = pd.DataFrame()
     for f in files:
-        p = path + f
-        print(p)
-        df = pd.concat([df, pd.read_json(p)], sort = False)
+        #p = path + f
+        #print(p)
+        df = pd.concat([df, pd.read_json(f)], sort = False)
     df = df.reset_index()
     return df, files[0][:-5]
 
-def read_msr(fname, series): 
+def read_msr(path, fname, series): 
     data_xy = np.squeeze(read.image_5d(path + fname, series=series[0]))
     data_xz = np.squeeze(read.image_5d(path + fname, series=series[1]))
     data_yz = np.squeeze(read.image_5d(path + fname, series=series[2]))
@@ -198,115 +205,7 @@ def read_msr(fname, series):
     return data
 
 
-
-def plot_data(df, model):
-    
-    cm = plt.get_cmap("coolwarm")
-    
-    ##########################################################################
-    #            plot correlation coefficient after corrections              #
-    ##########################################################################
-    fig, axes = plt.subplots(nrows = 1, ncols = 1)
-    #plt.suptitle(model)
-    
-    axes.scatter(df.index, df["corr"], marker = '+')
-    axes.set_xlabel('Trial')
-    axes.set_ylabel('Correlation Coefficient after correction')
-    fig.savefig("corr_coeff.pdf", transparent = True)
-    
-    ##########################################################################
-    #      plot improvement of correlation coefficient after corrections     #
-    #              plot residiual centering error for comparison             #
-    ##########################################################################    
-    fig, axes = plt.subplots(3, sharex = True)
-    improv = df['corr'] - df['init_corr']
-    improv = 1 - ((improv / (np.abs(np.max(improv) + np.max(improv)))) + 0.5)
-    axes[0].scatter(df.index, df["init_corr"], marker = '+', label = 'initial correlation')
-    axes[0].scatter(df.index, df["corr"], marker = '+', label = 'final correlation')
-    axes[0].legend()
-    
-    for ii in df.index:
-        if df["init_corr"][ii] < df["corr"][ii]:
-            axes[0].plot([ii, ii], [df["init_corr"][ii], df["corr"][ii]], 
-                           color = 'b')
-            axes[1].plot(ii, np.sqrt(np.sum(np.asarray(df["CoM_correct"][ii])**2)), marker = 'x', color = "tab:blue")
-        else:
-            axes[0].plot([ii, ii], [df["init_corr"][ii], df["corr"][ii]], 
-                   color = 'r') 
-            axes[1].plot(ii, np.sqrt(np.sum(np.asarray(df["CoM_correct"][ii])**2)), marker = 'x', color = "tab:orange")
-        if ii != 0:
-            axes[2].plot(ii, df["CoM_aberr"][ii][0], marker = '+', color = "tab:blue")
-            axes[2].plot(ii, df["CoM_aberr"][ii][1], marker = '+', color = "tab:orange")
-            axes[2].plot(ii, df["CoM_aberr"][ii][2], marker = '+', color = "tab:green")
-        else:
-            axes[2].plot(ii, df["CoM_aberr"][ii][0], marker = '+', color = "tab:blue", label = "CoM xy")
-            axes[2].plot(ii, df["CoM_aberr"][ii][1], marker = '+', color = "tab:orange", label = "CoM xz")
-            axes[2].plot(ii, df["CoM_aberr"][ii][2], marker = '+', color = "tab:green", label = "CoM yz")
-            
-    axes[2].set_xlabel('Trial')
-    axes[0].set_ylabel('Improvement of correlation coefficient')
-    axes[1].set_ylabel('residual centering error')
-    axes[2].set_ylabel('residual centering error')
-    axes[2].legend()
-    fig.savefig("corr_coeff_improv_unsorted.pdf", transparent = True)
-
-    df_sorted = df.sort_values(by=['init_corr']).reset_index()
-    improv = df_sorted['corr'] - df_sorted['init_corr']
-    improv = 1 - ((improv / (np.abs(np.max(improv) + np.max(improv)))) + 0.5)
-
-
-    ##########################################################################
-    #      plot improvement of correlation coefficient after corrections     #
-    #              plot residiual centering error for comparison             #
-    #           for data sorted wrt initial correlation coefficient          #
-    ##########################################################################   
-    fig, axes = plt.subplots(3, sharex = True)
-    for ii in range(df.index[-1]+1): 
-        axes[0].plot([ii, ii], [df_sorted["init_corr"][ii], df_sorted["corr"][ii]], 
-                      color = cm(improv[ii]), marker = '+')
-        axes[1].plot(ii, np.sqrt(np.sum(np.asarray(df_sorted["CoM_aberr"][ii])**2)), marker = 'x', color = cm(improv[ii]))
-        if ii != 0:
-            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][0], marker = '+', color = "tab:blue")
-            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][1], marker = '+', color = "tab:orange")
-            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][2], marker = '+', color = "tab:green")
-        else:
-            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][0], marker = '+', color = "tab:blue", label = "CoM xy")
-            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][1], marker = '+', color = "tab:orange", label = "CoM xz")
-            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][2], marker = '+', color = "tab:green", label = "CoM yz")
-    axes[2].set_xlabel('Trial')
-    axes[0].set_ylabel('Improv CC')
-    axes[1].set_ylabel('centering before')
-    axes[2].set_ylabel('centering before')
-    axes[2].legend()
-    fig.savefig("corr_coeff_improv_sorted_before.pdf", transparent = True)
-    
-    fig, axes = plt.subplots(3, sharex = True)
-    for ii in range(df.index[-1]+1): 
-        axes[0].plot([ii, ii], [df_sorted["init_corr"][ii], df_sorted["corr"][ii]], 
-                      color = cm(improv[ii]), marker = '+')
-        axes[1].plot(ii, np.sqrt(np.sum(np.asarray(df_sorted["CoM_correct"][ii])**2)), marker = 'x', color = cm(improv[ii]))
-        if ii != 0:
-            axes[2].plot(ii, df_sorted["CoM_correct"][ii][0], marker = '+', color = "tab:blue")
-            axes[2].plot(ii, df_sorted["CoM_correct"][ii][1], marker = '+', color = "tab:orange")
-            axes[2].plot(ii, df_sorted["CoM_correct"][ii][2], marker = '+', color = "tab:green")
-        else:
-            axes[2].plot(ii, df_sorted["CoM_correct"][ii][0], marker = '+', color = "tab:blue", label = "CoM xy")
-            axes[2].plot(ii, df_sorted["CoM_correct"][ii][1], marker = '+', color = "tab:orange", label = "CoM xz")
-            axes[2].plot(ii, df_sorted["CoM_correct"][ii][2], marker = '+', color = "tab:green", label = "CoM yz")
-    axes[2].set_xlabel('Trial')
-    axes[0].set_ylabel('Improv CC')
-    axes[1].set_ylabel('centering after')
-    axes[2].set_ylabel('centering after')
-    axes[2].legend()
-    fig.savefig("corr_coeff_improv_sorted_after.pdf", transparent = True)    
-
-
-
-    return fig, axes
-        
-
-
-def read_img2df(df, path):
+def read_img2df(df, path, file = 'msr'):
     imgs_aberr = []
     imgs_correct = []
     CoMs_aberr = []
@@ -314,7 +213,6 @@ def read_img2df(df, path):
     phase_aberr = []
     phase_correct = []
     phase_rms = []
-    
     
     orders = [[1,-1],[1,1],[2,0],
               [2,-2],[2,2],[3,-3],[3,-1],[3,1],[3,3],
@@ -324,13 +222,20 @@ def read_img2df(df, path):
     
     for ii in df.index:
         # read and append aberrated images and CoMs
-        img_aberr = np.asarray(read_msr(str(ii)+"_aberrated.msr", [2,5,8]))[:, 1:-1, 1:-1]
+        if file == 'msr':
+            img_aberr = np.asarray(read_msr(path, str(ii) + "_aberrated.msr", 
+                                            [2,5,8]))[:, 1:-1, 1:-1]
+            img_correct = np.asarray(read_msr(path, str(ii) + "_corrected.msr", 
+                                              [2,5,8]))[:, 1:-1, 1:-1]
+        elif file == 'tif':
+            img_aberr = np.asarray(tifffile.imread(path + str(ii) + "_aberrated.tif"))
+            img_correct = np.asarray(tifffile.imread(path + str(ii) + "_corrected.tif"))
+            print(np.shape(img_aberr), np.shape(img_correct))
         CoM_aberr = get_CoMs(img_aberr)
         imgs_aberr.append(img_aberr)
         CoMs_aberr.append(CoM_aberr)
         
         # read and append corrected images and CoMs
-        img_correct = np.asarray(read_msr(str(ii)+"_corrected.msr", [2,5,8]))[:, 1:-1, 1:-1]
         CoM_correct = get_CoMs(img_correct)
         imgs_correct.append(img_correct)
         CoMs_correct.append(CoM_correct)
@@ -342,11 +247,9 @@ def read_img2df(df, path):
         ph_corr[~circ] = np.nan
         
         ph_diff = ph_aberr - ph_corr
-        ph_size = np.count_nonzero(~np.isnan(ph_diff[0]))
         phase_aberr.append(ph_aberr)
         phase_correct.append(ph_corr)
-        phase_rms.append(np.sqrt((np.nansum(ph_diff**2)) / ph_size))
-        
+        phase_rms.append(np.sqrt(np.nanmean(ph_diff**2) - (np.nanmean(ph_diff))**2))
         
     # write everything into df
     df["img_aberr"] = imgs_aberr
@@ -356,7 +259,6 @@ def read_img2df(df, path):
     df["phase_aberr"] = phase_aberr
     df["phase_corr"] = phase_correct
     df["phase_rms"] = phase_rms
-
     
     return df
 
@@ -364,14 +266,6 @@ def replot_psf_phase(df, path, size = [64,64]):
     """ Plot aberrated and corrected images as well as phasemasks from the
         dataframe.
         """
-
-    try:
-        if not os.path.isdir(path + '/eval'):
-            os.mkdir(path + '/eval')
-        if not os.path.isdir(path):
-            os.mkdir(path)
-    except:
-        print("couldn't create directory!")
     
     for ii in df.index:
         # shorthand for df entries
@@ -405,37 +299,127 @@ def replot_psf_phase(df, path, size = [64,64]):
         plt.imshow(ph_corr, clim = mm_center, cmap = 'RdBu')
         plt.subplot(339); plt.axis('off')
         plt.imshow((ph_corr - ph_aberr)/mm_center[1], clim = [-1,1], cmap = 'RdBu')
-        fig.savefig(path + '/eval/' + str(ii) + "_thumbnail.png")
+        fig.savefig(path + str(ii) + "_thumbnail.png")
         
         
+
+def plot_corrcoeff(df, path):
+    ##########################################################################
+    #            plot correlation coefficient after corrections              #
+    ##########################################################################
+    fig, axes = plt.subplots()
+    
+    axes.scatter(df.index, df["corr"], marker = '+', color = 'tab:blue')
+    ax = axes.twinx()
+    ax.scatter(df.index, df["phase_rms"], marker = '+', color = 'tab:orange')
+    axes.set_xlabel('Trial')
+    axes.set_ylabel('Correlation Coefficient')
+    ax.set_ylabel('wavefront RMS')
+    fig.savefig(path + "corr_coeff.pdf", transparent = True)
+    return fig, axes
+
+
+def plot_sorted(df, path):
+    cm = plt.get_cmap("coolwarm")
+    df_sorted = df.sort_values(by=['init_corr']).reset_index()
+    improv = df_sorted['corr'] - df_sorted['init_corr']
+    improv = 1 - ((improv / (np.abs(np.max(improv) + np.max(improv)))) + 0.5)
+    
+    fig, axes = plt.subplots(3, sharex = True)
+    for ii in range(df.index[-1]+1): 
+        axes[0].plot([ii, ii], [df_sorted["init_corr"][ii], df_sorted["corr"][ii]], 
+                      color = cm(improv[ii]), marker = '+')
+        axes[1].plot(ii, np.sqrt(np.sum(np.asarray(df_sorted["CoM_correct"][ii])**2)), marker = 'x', color = cm(improv[ii]))
+        axes[2].plot(ii, df.phase_rms[ii], marker = '+', color = cm(improv[ii]))
+    axes[2].set_xlabel('Trial')
+    axes[0].set_ylabel('Improv CC')
+    axes[1].set_ylabel('centering after')
+    axes[2].set_ylabel('phase rms')
+    fig.savefig(path + "improv_centering_phaserms.pdf", transparent = True)
+
+
+def plot_sorted_allCoM(df, path):
+    ##########################################################################
+    #      plot improvement of correlation coefficient after corrections     #
+    #              plot residiual centering error for comparison             #
+    #           for data sorted wrt initial correlation coefficient          #
+    ##########################################################################
+    
+    cm = plt.get_cmap("coolwarm")
+    df_sorted = df.sort_values(by=['init_corr']).reset_index()
+    improv = df_sorted['corr'] - df_sorted['init_corr']
+    improv = 1 - ((improv / (np.abs(np.max(improv) + np.max(improv)))) + 0.5)
+
+    fig, axes = plt.subplots(3, sharex = True)
+    for ii in range(df.index[-1]+1): 
+        axes[0].plot([ii, ii], [df_sorted["init_corr"][ii], df_sorted["corr"][ii]], 
+                      color = cm(improv[ii]), marker = '+')
+        axes[1].plot(ii, np.sqrt(np.sum(np.asarray(df_sorted["CoM_aberr"][ii])**2)), marker = 'x', color = cm(improv[ii]))
+        if ii != 0:
+            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][0], marker = '+', color = "tab:blue")
+            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][1], marker = '+', color = "tab:orange")
+            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][2], marker = '+', color = "tab:green")
+        else:
+            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][0], marker = '+', color = "tab:blue", label = "CoM xy")
+            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][1], marker = '+', color = "tab:orange", label = "CoM xz")
+            axes[2].plot(ii, df_sorted["CoM_aberr"][ii][2], marker = '+', color = "tab:green", label = "CoM yz")
+    axes[2].set_xlabel('Trial')
+    axes[0].set_ylabel('Corr Coeff diff')
+    axes[1].set_ylabel('CoM error before')
+    axes[2].set_ylabel('CoM error')
+    axes[2].legend()
+    fig.savefig(path + "corr_coeff_improv_sorted_before.pdf", transparent = True)
+    
+    fig, axes = plt.subplots(3, sharex = True)
+    for ii in range(df.index[-1]+1): 
+        axes[0].plot([ii, ii], [df_sorted["init_corr"][ii], df_sorted["corr"][ii]], 
+                      color = cm(improv[ii]), marker = '+')
+        axes[1].plot(ii, np.sqrt(np.sum(np.asarray(df_sorted["CoM_correct"][ii])**2)), marker = 'x', color = cm(improv[ii]))
+        if ii != 0:
+            axes[2].plot(ii, df_sorted["CoM_correct"][ii][0], marker = '+', color = "tab:blue")
+            axes[2].plot(ii, df_sorted["CoM_correct"][ii][1], marker = '+', color = "tab:orange")
+            axes[2].plot(ii, df_sorted["CoM_correct"][ii][2], marker = '+', color = "tab:green")
+        else:
+            axes[2].plot(ii, df_sorted["CoM_correct"][ii][0], marker = '+', color = "tab:blue", label = "CoM xy")
+            axes[2].plot(ii, df_sorted["CoM_correct"][ii][1], marker = '+', color = "tab:orange", label = "CoM xz")
+            axes[2].plot(ii, df_sorted["CoM_correct"][ii][2], marker = '+', color = "tab:green", label = "CoM yz")
+    axes[2].set_xlabel('Trial')
+    axes[0].set_ylabel('Corr Coeff diff')
+    axes[1].set_ylabel('CoM error')
+    axes[2].set_ylabel('CoM error')
+    axes[2].legend()
+    fig.savefig(path + "corr_coeff_improv_sorted_after.pdf", transparent = True)
         
 def plot_stats(df, path):
     ##########################################################################
     #      plot box plots with improvements for each zernike polynomial      #
     ##########################################################################
     
-    fig, axes = plt.subplots()
-    pred = df.preds_zern.to_list()
-    gt = df.gt_zern.to_list()
-    
-    df_preds = pd.DataFrame(np.abs(np.subtract(pred, gt)),
+    fig, axes = plt.subplots(nrows = 1, ncols = 2, gridspec_kw={'width_ratios': [11, 3]})
+    df_preds = pd.DataFrame(np.abs(np.subtract( df.preds_zern.to_list(), df.gt_zern.to_list())),
                             columns = ["45 Astig", "90 Astig", "90 Trefoil", 
                                        "90 Coma", "0 Coma", "45 Trefoil", 
                                        "45 Quad", "45 Astig 2", "Spherical", 
                                        "90 Astig 2", "90 Quad"])
-    df_preds[["off x", "off y"]] = df.gt_off.to_list()
-    df_preds["phase rms"] = df.phase_rms
+    df_off = pd.DataFrame(np.abs(np.subtract(df.preds_off.to_list(), df.gt_off.to_list())),
+                          columns = ["off x", "off y"])
+    df_off["phase rms"] = df.phase_rms
     c = 'k'
-    df_preds.boxplot(ax = axes, rot = 90, 
+    df_preds.boxplot(ax = axes[0], rot = 90, 
                      color=dict(boxes=c, whiskers=c, medians=c, caps=c),
                      flierprops=dict(markeredgecolor=c)
                      )
-    axes.set_ylabel("Difference btw predicted and gt")
-    axes.set_xlabel("Zernike Mode")
-    plt.subplots_adjust(bottom=0.25)
+    axes[0].set_ylabel("Difference btw predicted and gt")
+    axes[0].set_xlabel("Zernike Mode")
     
+    df_off.boxplot(ax = axes[1], rot = 90, 
+                     color=dict(boxes=c, whiskers=c, medians=c, caps=c),
+                     flierprops=dict(markeredgecolor=c)
+                     )
+    axes[1].set_ylabel("residual relative offset")
+    plt.subplots_adjust(bottom=0.25)
 
-    fig.savefig("boxplot_labels.pdf", transparent = True)
+    fig.savefig(path + "boxplot_labels.pdf", transparent = True)
 
 #if __name__=="__main__":
 drop = []
@@ -460,35 +444,33 @@ drop = []
 #          '20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_6479.txt']
 # clean_stats(path, files)
 
-# path = '/Users/wjahr/Seafile/Synch/Share/Hope/Data_automated/20210104_Autoalign/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64/'
-# files = ['20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_640.txt',
-#           '20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_6438.txt',
-#           '20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_6479.txt',
-#           '20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64177.txt',
-#           '20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64245.txt']
-#clean_stats(path, files)
-
-# path = '/Users/wjahr/Seafile/Synch/Share/Hope/Data_automated/20210106_Autoalign/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/'
-# files = ['20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_640.txt',
-#           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_6460.txt',
-#           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64133.txt',
-#           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64198.txt']
-
-
+#path = 'E:/Data_eval/20210104_Autoalign/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64/'
 path = "E:/Data_eval/20210106_Autoalign/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/"
-files = ['20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_640.txt']
-#           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_6460.txt',
-#           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64133.txt',
-#           '20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64198.txt']
 
+#RERUN! Didn't correct!
+#path = 'E:/Data_eval/20210202_Autoalign_simulate/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64/'
+#path = 'E:/Data_eval/20210202_Autoalign_simulate/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/'
 
+files = find_txt(path)
 df, model = read_stats(path, files)
 
-read_img2df(df, path)
-plot_stats(df, path)
-#replot_psf_phase(df, path)
+read_img2df(df, path, file = 'msr')
 
-#plot_stats(df, path)
+path = path + '/eval/'
+try:
+    if not os.path.isdir(path):
+        os.mkdir(path)
+    if not os.path.isdir(path):
+        os.mkdir(path)
+except:
+    print("couldn't create directory!")
+    
+plot_stats(df, path)
+replot_psf_phase(df, path)
+plot_corrcoeff(df, path)
+plot_sorted(df, path)
+plot_sorted_allCoM(df, path)
+plot_stats(df, path)
 
 
 # df = df.drop(drop, axis = 0)
