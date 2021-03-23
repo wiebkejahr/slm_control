@@ -219,7 +219,8 @@ def read_img2df(df, path, file = 'msr'):
               [4,-4],[4,-2],[4,0],[4,2],[4,4]]
     size = [64,64]
     circ = create_circular_mask(size[0], size[1])
-    
+    df.drop(df.tail(1).index, 
+        inplace = True)
     for ii in df.index:
         # read and append aberrated images and CoMs
         if file == 'msr':
@@ -230,7 +231,6 @@ def read_img2df(df, path, file = 'msr'):
         elif file == 'tif':
             img_aberr = np.asarray(tifffile.imread(path + str(ii) + "_aberrated.tif"))
             img_correct = np.asarray(tifffile.imread(path + str(ii) + "_corrected.tif"))
-            print(np.shape(img_aberr), np.shape(img_correct))
         CoM_aberr = get_CoMs(img_aberr)
         imgs_aberr.append(img_aberr)
         CoMs_aberr.append(CoM_aberr)
@@ -445,16 +445,15 @@ drop = []
 # clean_stats(path, files)
 
 #path = 'E:/Data_eval/20210104_Autoalign/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64/'
-path = "E:/Data_eval/20210106_Autoalign/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/"
+#path = "E:/Data_eval/20210106_Autoalign/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/"
 
-#RERUN! Didn't correct!
-#path = 'E:/Data_eval/20210202_Autoalign_simulate/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64/'
-#path = 'E:/Data_eval/20210202_Autoalign_simulate/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/'
+path = 'E:/Data_eval/20210215_Autoalign/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64/'
+#path = 'E:/Data_eval/20210215_Autoalign/20.10.22_3D_centered_18k_norm_dist_offset_no_noise_eps_15_lr_0.001_bs_64/'
 
 files = find_txt(path)
 df, model = read_stats(path, files)
 
-read_img2df(df, path, file = 'msr')
+read_img2df(df, path, file = 'tif')
 
 path = path + '/eval/'
 try:

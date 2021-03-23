@@ -402,7 +402,7 @@ class Main_Window(QtWidgets.QMainWindow):
         self.correct_tiptiltdefoc(img)
             
         new_img, stats = scope.acquire_image(multi=multi, mask_offset = off, aberrs = new_aberrs)
-        correlation = np.round(helpers.corr_coeff(new_img, multi=multi), 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+        correlation = helpers.corr_coeff(new_img, multi=multi)
         return delta_zern, delta_off, new_img, correlation
 
     def auto_align(self, so_far = -1, best_of = 5, multi = True, offset = True):
@@ -448,7 +448,7 @@ class Main_Window(QtWidgets.QMainWindow):
     def automate(self):
         num_its = 200
         px_size = 10*1e-9
-        i_start = 0
+        i_start = 155
         best_of = 5
         size = 2 * np.asarray(self.p.general["size_slm"])
         orders = self.p.simulation["numerical_params"]["orders"]
