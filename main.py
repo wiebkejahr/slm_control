@@ -446,7 +446,7 @@ class Main_Window(QtWidgets.QMainWindow):
 
 
     def automate(self):
-        num_its = 200
+        num_its = 10
         px_size = 10*1e-9
         i_start = 155
         best_of = 5

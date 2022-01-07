@@ -3,20 +3,20 @@
     "display_mode": "external",
     "data_source": "external",
     "size_slm_mm": [
-        5.04,
-        10.08
+        7.5,
+        10
     ],
-    "slm_px": 0.07875,
+    "slm_px": 0.0125,
     "size_full": [
-        64,
-        128
+        600,
+        792
     ],
     "size_slm": [
-        64,
-        64
+        600,
+        396
     ],
-    "displaywidth": 32,
-    "slm_mag": 1,
+    "displaywidth": 300,
+    "slm_mag": 3,
     "laser_radius": 1.2,
     "objective": "100xOil_NA_140",
     "path": "patterns/",
@@ -37,7 +37,8 @@
     "double_pass": 0,
     "slm_range": 255,
     "phasewrap": 1,
+
     "cal1": "patterns/CAL_LSH0801768_780nm.bmp",
     "autodl_model_path": "autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth",
-    "data_path": "/Users/wiebke/tmp/test/"
+    "data_path": "E:/Data_eval/20210215_Autoalign/"
 }
