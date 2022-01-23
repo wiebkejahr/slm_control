@@ -8,9 +8,7 @@ Created on Tue Oct  9 08:15:36 2018
 
 import numpy as np
 from math import factorial as mfac
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as grs
 
 from PIL import Image
 
@@ -263,7 +261,8 @@ def compute_vortex(mode, size, rot, rad, steps, amp = 1, radscale = 1):
         - returns an array of zeros ("Gauss")
         - "Segments"
         - "Bivortex"
-        Input parameters are size of the image, rotation, radius and amplitude. """
+        Input parameters are size of the image, rotation, radius and amplitude. 
+        Cases Code Input and From File are handled by GUI."""
     img = np.zeros(size)
     if mode == "2D STED":
         img = create_donut(size, rot, amp)
@@ -275,16 +274,6 @@ def compute_vortex(mode, size, rot, rad, steps, amp = 1, radscale = 1):
         img = create_segments(size, rot, steps, amp)
     elif mode == "Bivortex":
         img = create_bivortex(size, rad, rot, amp, radscale)
-        
-    # These two cases need to be handled by the GUI, therefore commented here
-    # for now; will be deleted.
-    # elif mode == "Code Input":
-    #     img = np.zeros(size)
-    #     print("TODO code input")
-    # elif mode == "From File":
-    #     img = np.zeros(size)
-    #     print(img.size)
-    #     print("TODO From File")
     
     return img
 
@@ -348,15 +337,6 @@ def double_blazed_grating(size, drctn , phase = 1, amp = 1, radscale = 1):
     dbl_blz[mask] = phase - dbl_blz[mask]
     
     return dbl_blz
-
-
-
-# def compute_pattern(self, update = True):
-#     if self.daddy.blockupdating == False:
-#         slope = [-self.xgui.value(), -self.ygui.value()]
-#         z = self.daddy.daddy.zernikes_normalized
-#         self.data = pcalc.add_images([z["tiptiltx"] * slope[0],
-#                                       z["tiptilty"] * slope[1]])
         
         
 
@@ -373,152 +353,42 @@ if __name__ == "__main__":
     offset = [0,0]
     phase = 1
     
-    sgl_blaze = crop(phase_wrap(create_zernike(size, [1, -1], amp, radius), phase) + 
-                     phase_wrap(create_zernike(size, [1,  1], amp, radius), phase),
-                                size)
-    
-    
-    dbl_blaze = double_blazed_grating(size, -1, phase, 3*amp, radius) + \
-                double_blazed_grating(size,  1, phase, 3*amp, radius)
-    dbl_blaze   = phase_wrap(crop(dbl_blaze,   size, offset), phase)
-
-    plt.figure()
-    plt.subplot(121)
-    plt.imshow(dbl_blaze, interpolation = 'None')
-    plt.subplot(122)
-    plt.imshow(sgl_blaze, interpolation = 'None')
-
-
-    # def compute_pattern(self, update = True):
-    #     if self.daddy.blockupdating == False:
-    #         slope = [-self.xgui.value(), -self.ygui.value()]
-    #         z = self.daddy.daddy.zernikes_normalized
-    #         self.data = pcalc.add_images([z["tiptiltx"] * slope[0],
-    #                                       z["tiptilty"] * slope[1]])
-    
-    fig = plt.figure()
-    ax = fig.gca(projection = '3d')
-    X = np.arange(-size[0]//4, size[0]//4)
-    Y = np.arange(-size[1]//4, size[1]//4)
-    X, Y = np.meshgrid(X, Y)
-    surf = ax.plot_surface(X, Y, dbl_blaze, cmap = 'coolwarm')
-    
-    # orders = [[0,0],
-    #           [1,-1], [1,1],
-    #           [2,-2], [2,0], [2,2],
-    #           [3,-3], [3,-1], [3,1],[3,3],
-    #           [4,-4], [4,-2], [4,0], [4,2], [4,4],
-    #           [5,-5], [5,-3], [5,-1], [5,1], [5,3], [5,5],
-    #           [6,-6], [6,-4], [6,-2], [6,0], [6,2], [6,4], [6,6]]
+    orders = [[0,0],
+              [1,-1], [1,1],
+              [2,-2], [2,0], [2,2],
+              [3,-3], [3,-1], [3,1],[3,3],
+              [4,-4], [4,-2], [4,0], [4,2], [4,4],
+              [5,-5], [5,-3], [5,-1], [5,1], [5,3], [5,5],
+              [6,-6], [6,-4], [6,-2], [6,0], [6,2], [6,4], [6,6]]
        
-    # f1 = plt.figure(num = 3, figsize = (10,10), dpi = 100)
-    # f1.canvas.manager.window.move(0,0)
+    f1 = plt.figure(num = 3, figsize = (10,10), dpi = 100)
+    #f1.canvas.manager.window.move(0,0)
     
-    # for ii, oo in enumerate(orders):
+    for ii, oo in enumerate(orders):
         
-    #     zernike = create_zernike(size*2, oo, 1)
+        zernike = create_zernike(size*2, oo, 1)
         
-    #     print("mean zernike ", ii, oo, np.mean(zernike))
-    #     ax = plt.subplot2grid((np.max(orders)+1,(np.max(orders)+1)*2), 
-    #                             (oo[0], oo[1] + np.max(orders)), colspan = 2)
+        print("mean zernike ", ii, oo, np.mean(zernike))
+        ax = plt.subplot2grid((np.max(orders)+1,(np.max(orders)+1)*2), 
+                                (oo[0], oo[1] + np.max(orders)), colspan = 2)
         
-    #     im = ax.imshow(crop(zernike, size, offset), interpolation = 'Nearest', cmap = 'RdYlBu', clim = [-1,1])
-    #     im.cmap.set_over('white')
-    #     im.cmap.set_under('black')
+        im = ax.imshow(crop(zernike, size, offset), interpolation = 'Nearest', cmap = 'RdYlBu', clim = [-1,1])
+        im.cmap.set_over('white')
+        im.cmap.set_under('black')
          
-    #     #cs = ax.contour(crop(zernike, size, offset), levels = [-1, 0, 1], colors=['green', 'orange', 'magenta'])
+        #cs = ax.contour(crop(zernike, size, offset), levels = [-1, 0, 1], colors=['green', 'orange', 'magenta'])
         
-    #     circle = plt.Circle((size[1]/2, size[0]/2), size[0]/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-    #     ax.add_artist(circle)
-    #     circle = plt.Circle((size[1]/2, size[0]/2), size[1]/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-    #     ax.add_artist(circle)
-    #     circle = plt.Circle((size[1]/2, size[0]/2), np.mean(size)/2, lw= 0.1, edgecolor = 'k', facecolor='None')
-    #     ax.add_artist(circle)
+        circle = plt.Circle((size[1]/2, size[0]/2), size[0]/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        ax.add_artist(circle)
+        circle = plt.Circle((size[1]/2, size[0]/2), size[1]/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        ax.add_artist(circle)
+        circle = plt.Circle((size[1]/2, size[0]/2), np.mean(size)/2, lw= 0.1, edgecolor = 'k', facecolor='None')
+        ax.add_artist(circle)
         
-    #     ax.set_xticks([]), ax.set_yticks([])
-    #     cbar_ax = plt.subplot2grid((7,14), (0, 1), rowspan = 3)
-    #     f1.colorbar(im, cax = cbar_ax)
-    #     cbar_ax.yaxis.set_ticks_position('left')
-    #     cbar_ax.invert_yaxis()
-
-
-
-
-
-        
-        
-    # from mpl_toolkits.mplot3d import Axes3D
-    # f2 = plt.figure(num = 3, figsize = (10,10), dpi = 100)
-    # f2.canvas.manager.window.move(0,0)
-    # ax = f2.add_subplot(121, projection = '3d')
-    # [x,y] = create_coords(size)
-    # ax.plot_surface(x,y,crop(create_zernike(size*2, [4,0], 1), size, offset), clim = [-1,1],
-    #                 rstride=1, cstride=1, cmap='RdYlBu', linewidth=0, antialiased=False)
-    # ax.set_zlim3d(-1.01, 1.01)
-    # ax = f2.add_subplot(122, projection = '3d')
-    # ax.plot_surface(x,y,crop(create_zernike(size*2, [6,0], 1), size, offset), clim = [-1,1],
-    #                 rstride=1, cstride=1, cmap='RdYlBu', linewidth=0, antialiased=False)
-    # ax.set_zlim3d(-1.01, 1.01)
-    
-    # bn = crop(create_bottleneck(size*2, radius, amp), size, offset)
-    # f2 = plt.figure(num = 4, figsize = (4,8), dpi = 100)
-    # ax = f2.add_subplot(111)
-    # ax.imshow(bn, interpolation = 'Nearest', cmap = 'RdYlBu', clim = [-1,1])
-    # circle = plt.Circle((size[1]/2, size[0]/2), size[0]/2, edgecolor = 'k', facecolor='None')
-    # ax.add_artist(circle)
-    # circle = plt.Circle((size[1]/2, size[0]/2), size[1]/2, edgecolor = 'k', facecolor='None')
-    # ax.add_artist(circle)
-        
-    
-#        f3 = plt.figure(num = 3, figsize = (4,8), dpi = 100)
-#        ax = f3.add_subplot(422)
-#        ax.imshow(ls_norm, interpolation = 'Nearest', cmap = 'RdYlBu')
-#        #ax.set_aspect(1.0)
-#        ax.set_xticks([]), ax.set_yticks([])
-#        ax = f3.add_subplot(421)
-#        ax.imshow(rs_norm, interpolation = 'Nearest', cmap = 'RdYlBu')
-#        #ax.set_aspect(1.0)
-#        ax.set_xticks([]), ax.set_yticks([])
-#        
-#        ax = f3.add_subplot(424)
-#        ax.imshow(ls_norm_crop, interpolation = 'Nearest', cmap = 'RdYlBu')
-#        #ax.set_aspect(1.0)
-#        ax.set_xticks([]), ax.set_yticks([])
-#        ax = f3.add_subplot(423)
-#        ax.imshow(rs_norm_crop, interpolation = 'Nearest', cmap = 'RdYlBu')
-#        #ax.set_aspect(1.0)
-#        ax.set_xticks([]), ax.set_yticks([])
-#        
-#        ax = f3.add_subplot(426)
-#        ax.imshow(ls_ph, interpolation = 'Nearest', cmap = 'RdYlBu')
-#        #ax.set_aspect(1.0)
-#        ax.set_xticks([]), ax.set_yticks([])
-#        ax = f3.add_subplot(425)
-#        ax.imshow(rs_ph, interpolation = 'Nearest', cmap = 'RdYlBu')
-#        #ax.set_aspect(1.0)
-#        ax.set_xticks([]), ax.set_yticks([])
-#        
-#        plt.xticks(rotation = 90, color = "white")
-#        plt.yticks(rotation = 90, color = "white")
-#        ax = f3.add_subplot(428)
-#        ax.plot(ls_add[250, :])
-#        ax.plot(ls_ph[250, :])
-#        ax.invert_yaxis()
-#        ax.set_xticks([])
-#        ylabels = ax.get_yticklabels()
-#        for yy in ylabels:
-#            yy.set_rotation(-90)
-#    
-#        ax = f3.add_subplot(427)
-#        ax.plot(rs_add[250, :])
-#        ax.plot(rs_ph[250,:])
-#        ax.invert_yaxis()
-#        ax.set_xticks([])
-#        ylabels = ax.get_yticklabels()
-#        for yy in ylabels:
-#            yy.set_rotation(-90)
-#        
-#        
-#    f1.savefig("/Users/wjahr/Seafile/Synch/2P_STED/Patterns_Python/Donut.tif", bbox_inches = 0, transparent = True)
-#    f2.savefig("/Users/wjahr/Seafile/Synch/2P_STED/Patterns_Python/Bottle.tif", bbox_inches = 0, transparent = True)
-#        f3.savefig("/Users/wjahr/Seafile/Synch/Labmeeting/Labmeeting_20181029/Adding.png", bbox_inches = 0, transparent = True)    
+        ax.set_xticks([]), ax.set_yticks([])
+        cbar_ax = plt.subplot2grid((7,14), (0, 1), rowspan = 3)
+        f1.colorbar(im, cax = cbar_ax)
+        cbar_ax.yaxis.set_ticks_position('left')
+        cbar_ax.invert_yaxis()
+        #f1.save("bla.png")
+    plt.show()
