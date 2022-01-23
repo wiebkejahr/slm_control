@@ -2,7 +2,7 @@
 Project: deep-sted-autoalign
 Created on: Tuesday, 7th January 2020 10:29:32 am
 --------
-@author: hmcgovern
+@author: wjahr
 '''
 
 
