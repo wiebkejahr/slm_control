@@ -16,18 +16,9 @@ import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-
-try:
-    import specpy as sp
-except:
-    print("Specpy not installed!")
-    pass
-
-
 import slm_control.Pattern_Calculator as pcalc
 import slm_control.Pattern_Interface as PI
 import slm_control.SLM as SLM
-
 from slm_control.Parameters import param
 
 
@@ -70,9 +61,9 @@ class Main_Window(QtWidgets.QMainWindow):
         self.app = app
         self.slm = None
         
-        screen0 = QtWidgets.QDesktopWidget().screenGeometry()
-        self.setGeometry(screen0.left(), screen0.top(), 
-                         screen0.width()/4, .9*screen0.height())
+        screen = QtWidgets.QDesktopWidget().screenGeometry()
+        self.setGeometry(screen.left(), screen.top(), 
+                         screen.width()/4, .95*screen.height())
         
         self.param_path = ['parameters/', 'params']
         self.p = param()
@@ -447,7 +438,6 @@ class Main_Window(QtWidgets.QMainWindow):
             to the flatfield correction of the second impact. """
         self.p.general["double_pass"] = int(state)
         if self.p.general["flat_field"]:#flt_fld_state.checkState():
-            print("calling flatfield")
             if self.p.general["split_image"]:
                 self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
             else:
@@ -469,7 +459,7 @@ class Main_Window(QtWidgets.QMainWindow):
         """ Radius of pattern on SLM can be hardcoded instead of calculating
             from the objectives backaperture and optical magnification. """
         self.radius_input = self.rad_but.value()
-        print("radius changed")
+        print("radius changed, may not correspond anymore to objective properties!")
         self.slm_radius = self.calc_slmradius(self.radius_input, 1)
         self.init_zernikes()
         self.recalc_images()
@@ -479,7 +469,7 @@ class Main_Window(QtWidgets.QMainWindow):
         """ Action called when the users selects a different objective. 
             Calculates the diameter of the BFP; then recalculates the the
             patterns based on the selected objective. """
-        self.current_objective = self.obj_sel.currentText()#["name"]
+        self.current_objective = self.obj_sel.currentText()
         self.reload_params(self.param_path)
         self.slm_radius = self.calc_slmradius(
             self.p.objectives[self.current_objective]["backaperture"],

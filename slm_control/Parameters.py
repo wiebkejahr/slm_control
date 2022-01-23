@@ -13,8 +13,7 @@ class param():
     """ Class containing the dictionary for the parameters to be saved.
         Implements a reader/writer to import/export to json. Before exporting,
         the parameters for left/right images and aberrations can be updated
-        according to the parameters provided in the user input.
-        TODO: update general parameters (according to user input) if needed. """
+        according to the parameters provided in the user input. """
     def __init__(self):
         self.init_defaults()
         
@@ -23,13 +22,14 @@ class param():
         self.general = {
                     "scope_mode"   : "simulated", #simulated, abberior, homebuilt
                     "display_mode" : "external", # "imspector", "othersuite"
+                    "display_num"  : 1,
                     "data_source"  : "imspector", # "path", "othersuite"
                     "size_slm_mm"  : [7.5, 10],
                     "slm_px"       : 0.0125,
                     "size_full"    : [600, 792],
                     "size_slm"     : [600, 396],
                     "displaywidth" : 300,
-                    "slm_mag"      :  3,
+                    "slm_mag"      : 3,
                     "laser_radius" : 1.2,
                     "objective"    : "100xOil_NA_140",
                     "path"         : "patterns/",
