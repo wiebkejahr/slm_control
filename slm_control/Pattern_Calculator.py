@@ -117,7 +117,6 @@ def create_coords(size, off = [0,0], res = None):
         size that's passed in needs to be two times the size needed due to 
         cropping later. Offset here will be offset of the pattern in the 
         backaperture."""
-    # print(size, type(size))
     if res == None:
         res = size
     x = np.linspace((-(size[0]/2) + off[0]), (size[0]-size[0]/2 + off[0]), res[0])
@@ -343,10 +342,8 @@ def double_blazed_grating(size, drctn , phase = 1, amp = 1, radscale = 1):
 # bunch of things left sitting around from testing
 if __name__ == "__main__":
     
-    #size = np.asarray([600, 792])
     size = np.asarray([200,200])
     path = 'patterns/'
-    imgname = 'test.bmp'
     rot = 0
     radius = 1
     amp = 1
@@ -362,7 +359,6 @@ if __name__ == "__main__":
               [6,-6], [6,-4], [6,-2], [6,0], [6,2], [6,4], [6,6]]
        
     f1 = plt.figure(num = 3, figsize = (10,10), dpi = 100)
-    #f1.canvas.manager.window.move(0,0)
     
     for ii, oo in enumerate(orders):
         
@@ -375,8 +371,6 @@ if __name__ == "__main__":
         im = ax.imshow(crop(zernike, size, offset), interpolation = 'Nearest', cmap = 'RdYlBu', clim = [-1,1])
         im.cmap.set_over('white')
         im.cmap.set_under('black')
-         
-        #cs = ax.contour(crop(zernike, size, offset), levels = [-1, 0, 1], colors=['green', 'orange', 'magenta'])
         
         circle = plt.Circle((size[1]/2, size[0]/2), size[0]/2, lw= 0.1, edgecolor = 'k', facecolor='None')
         ax.add_artist(circle)
@@ -390,5 +384,4 @@ if __name__ == "__main__":
         f1.colorbar(im, cax = cbar_ax)
         cbar_ax.yaxis.set_ticks_position('left')
         cbar_ax.invert_yaxis()
-        #f1.save("bla.png")
     plt.show()
