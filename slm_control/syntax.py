@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Provides basic syntax highlighting in the code input inwodow.
 Copied and adapted from: https://wiki.python.org/moin/PyQt/Python%20syntax%20highlighting
 on 2020/03/13.
+
+@author: wjahr
 """
 
 # syntax.py
