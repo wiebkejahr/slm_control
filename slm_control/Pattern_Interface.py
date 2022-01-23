@@ -6,9 +6,7 @@ Created on Mon Oct 15 21:18:41 2018
 @author: wjahr
 """
 
-import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
-
 import numpy as np
 
 import slm_control.Pattern_Calculator as pcalc
@@ -23,7 +21,6 @@ class Half_Pattern(QtWidgets.QWidget):
         offset is changed. """
     def __init__(self, params, size, parent = None):
         super(Half_Pattern, self).__init__(parent)
-        #self.size = np.asarray(params.general["size_slm"])
         self.size = size
         self.full = np.zeros(self.size * 2)
         self.data = np.zeros(self.size)
@@ -96,24 +93,6 @@ class Half_Pattern(QtWidgets.QWidget):
             file. Global flag is set to prevent recalculation and redrawing.
             Updating of SLM patterns is called manually in the end. """
         self.blockupdating = True
-        
-        # if p_gen.general["split_image"]:
-        #     self.daddy.splt_img_state.setChecked(True)
-        #     print("split image true")
-        # else:
-        #     self.daddy.splt_img_state.setChecked(False)
-        # if p_gen.general["single_aberr"]:
-        #     self.daddy.sngl_corr_state.setChecked(True)
-        #     print("single correction true")
-        # else:
-        #     self.daddy.sngl_corr_state.setChecked(True)
-        # if p_gen.general["flat_field"]:
-        #     self.daddy.flt_fld_state.setChecked(True)
-        #     print("flt fld true")
-        # else:
-        #     self.daddy.flt_fld_state.setChecked(True)
-   
-        #self.daddy.obj_sel.setCurrentText(p_gen.general["objective"])
         
         self.off.xgui.setValue(p_spec["off"][0])
         self.off.ygui.setValue(p_spec["off"][1])
