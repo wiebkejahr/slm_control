@@ -208,6 +208,7 @@ class param():
                     "scope_mode"   : daddy.p.general["scope_mode"],
                     "display_mode" : daddy.p.general["display_mode"],
                     "data_source"  : daddy.p.general["data_source"],
+                    "display_num"  : daddy.p.general["display_num"],
                     "size_slm_mm"  : daddy.p.general["size_slm_mm"],
                     "slm_px"       : daddy.p.general["slm_px"],
                     "size_full"    : daddy.p.general["size_full"],

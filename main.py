@@ -554,7 +554,9 @@ class Main_Window(QtWidgets.QMainWindow):
     def open_SLMDisplay(self):
         """ Opens a widget fullscreen on the secondary screen that displays
             the latest image. """
-        self.slm = SLM.SLM_Display(np.uint8(self.img_data), self.p.general["display_mode"])
+        self.slm = SLM.SLM_Display(np.uint8(self.img_data), 
+                                   self.p.general["display_mode"],
+                                   self.p.general["display_num"])
 
         
     def close_SLMDisplay(self):

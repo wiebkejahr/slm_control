@@ -8,9 +8,7 @@ Created on Mon Oct 15 21:20:23 2018
 
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
-from PyQt5.QtGui import QPixmap, QImage, qRgb
-#from PIL.ImageQt import ImageQt
-import sys
+from PyQt5.QtGui import QPixmap, QImage
 import numpy as np
 
 class SLM_Display(QtWidgets.QWidget):
@@ -18,12 +16,12 @@ class SLM_Display(QtWidgets.QWidget):
         full screen. Set screen resolution of secondary to 800 x 600 px for the
         SLM to work properly. """
     
-    def __init__(self, data, mode, parent = None):
+    def __init__(self, data, mode, display, parent = None):
         super(SLM_Display, self).__init__(parent)
         self.display = mode
         
         if self.display == "external":
-            self.create_main_frame(data)
+            self.create_main_frame(data, display)
             self.show()
             self.raise_()
             
@@ -32,12 +30,12 @@ class SLM_Display(QtWidgets.QWidget):
 
                           
  
-    def create_main_frame(self, data):
+    def create_main_frame(self, data, n_display):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         print("Opening SLM ...")
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)        
-        screen1 = QtWidgets.QDesktopWidget().screenGeometry(1)
-        self.setGeometry(screen1.left(), screen1.top(), screen1.width(), screen1.height())        
+        screen = QtWidgets.QDesktopWidget().screenGeometry(n_display)
+        self.setGeometry(screen.left(), screen.top(), screen.width(), screen.height())        
         self.showFullScreen()  
             
         #vbox = QtWidgets.QVBoxLayout()

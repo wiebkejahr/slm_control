@@ -2,6 +2,7 @@
     "scope_mode": "simulate",
     "display_mode": "external",
     "data_source": "external",
+    "display_num": 1,
     "size_slm_mm": [
         7.5,
         10
@@ -37,7 +38,6 @@
     "double_pass": 0,
     "slm_range": 255,
     "phasewrap": 1,
-
     "cal1": "patterns/CAL_LSH0801768_780nm.bmp",
     "autodl_model_path": "autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_15_lr_0.001_bs_64.pth",
     "data_path": "E:/Data_eval/20210215_Autoalign/"
