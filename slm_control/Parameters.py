@@ -177,32 +177,11 @@ class param():
                                                     }
                             }
         
-#        self.aberrations = {
-#                            "astig" : [0,0],
-#                            "coma" : [0,0],
-#                            "sphere" : [0,0],
-#                            "trefoil" : [0,0],
-#                            }
     
     def update(self, daddy):
         """ Parameter p: self of the calling function. Needed to have access to
             parameters provided via the GUI. Updates the values in the 
             dictionary with the values from the GUI. """
-        # values that cannot be changed via GUI are written read from the 
-        # parameter files and written back in unchanged. Checkboxes from GUI 
-        # are read out and updated in parameter files
-        # splt_img = 0
-        # if daddy.splt_img_state.checkState():
-        #     splt_img = 1
-        # flt_fld = 0
-        # if daddy.flt_fld_state.checkState():
-        #     flt_fld = 1
-        # sngl_corr = 0
-        # if daddy.sngl_corr_state.checkState():
-        #     sngl_corr = 1
-        # dbl_ps = 0
-        # if daddy.dbl_pass_state.checkState():
-        #     dbl_ps = 1
         
         self.general = {
                     "scope_mode"   : daddy.p.general["scope_mode"],
@@ -231,7 +210,6 @@ class param():
                     "autodl_model_path" : daddy.p.general["autodl_model_path"],
                     "data_path"    : daddy.p.general["data_path"]
                     }
-#        self.slm_radius = pcalc.normalize_radius(self.p.objectives[self.current_objective["name"]]["backaperture"], 
 
         
         if daddy.p.general["split_image"]:
@@ -302,14 +280,6 @@ class param():
                         "phasewrap" : daddy.p.general["phasewrap"],
                         "cal1"      : daddy.p.general["cal1"],
                         }
-            
-#        d = daddy.img_aberr
-#        self.aberrations = {
-#                            "astig" : [d.astig.xgui.value(), d.astig.ygui.value()],
-#                            "coma" : [d.coma.xgui.value(), d.coma.ygui.value()],
-#                            "sphere" : [d.sphere.xgui.value(), d.sphere.ygui.value()],
-#                            "trefoil" : [d.trefoil.xgui.value(), d.trefoil.ygui.value()],
-#                            }
 
 
     def write_file(self, path, obj_path, name_base):
@@ -383,8 +353,6 @@ class param():
         """ Can be  used to convert mm to px. Not needed at the moment. To use,
             comment 1st line and uncomment 2nd."""
         return mm
-        #return mm/self.general["slm_px"]
-        
 
 
 
