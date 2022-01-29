@@ -72,10 +72,10 @@ class Main_Window(QtWidgets.QMainWindow):
         self.p.load_file_obj(self.param_path[0], self.current_objective, self.param_path[1])
         self.p.load_file_sim(self.param_path[0], self.param_path[1])
         
-        self.slm_radius = self.calc_slmradius(
-            self.p.objectives[self.current_objective]["backaperture"],
-            self.p.general["slm_mag"])
-        
+        ba = self.p.objectives[self.current_objective]["backaperture"]
+        self.slm_radius = pcalc.normalize_radius(ba, self.p.general["slm_mag"], 
+                                                 self.p.general["slm_px"], 
+                                                 self.p.general["size_slm"])
         self.init_data()
         self.show()
         self.raise_()
@@ -428,6 +428,7 @@ class Main_Window(QtWidgets.QMainWindow):
             self.img_r.aberr.sphere.ygui.setValue(self.img_l.aberr.sphere.ygui.value())
             self.img_r.aberr.trefoil.xgui.setValue(self.img_l.aberr.trefoil.xgui.value())
             self.img_r.aberr.trefoil.ygui.setValue(self.img_l.aberr.trefoil.ygui.value())
+
             
     def double_pass(self, state):
         """ Activates the double pass geometry cross correction as on Abberior.
@@ -442,25 +443,15 @@ class Main_Window(QtWidgets.QMainWindow):
                 self.load_flat_field(self.p.left["cal1"], self.p.right["cal1"])
             else:
                 self.load_flat_field(self.p.full["cal1"], self.p.full["cal1"])
-        
-    
-    def calc_slmradius(self, backaperture, mag):
-        """ Calculates correct scaling factor for SLM based on objective
-            backaperture, optical magnification of the beampath, SLM pixel
-            size and size of the SLM. Required values are directly taken from
-            the parameters files. """
-            
-        rad = pcalc.normalize_radius(backaperture, mag, 
-                    self.p.general["slm_px"], self.p.general["size_slm"])
-        return rad
-    
+
     
     def radius_changed(self):
         """ Radius of pattern on SLM can be hardcoded instead of calculating
             from the objectives backaperture and optical magnification. """
         self.radius_input = self.rad_but.value()
         print("radius changed, may not correspond anymore to objective properties!")
-        self.slm_radius = self.calc_slmradius(self.radius_input, 1)
+        self.slm_radius = pcalc.normalize_radius(self.radius_input, 1, 
+                         self.p.general["slm_px"], self.p.general["size_slm"])
         self.init_zernikes()
         self.recalc_images()
 
@@ -471,9 +462,10 @@ class Main_Window(QtWidgets.QMainWindow):
             patterns based on the selected objective. """
         self.current_objective = self.obj_sel.currentText()
         self.reload_params(self.param_path)
-        self.slm_radius = self.calc_slmradius(
-            self.p.objectives[self.current_objective]["backaperture"],
-            self.p.general["slm_mag"])
+        ba = self.p.objectives[self.current_objective]["backaperture"]
+        self.slm_radius = pcalc.normalize_radius(ba, self.p.general["slm_mag"], 
+                                                 self.p.general["slm_px"], 
+                                                 self.p.general["size_slm"])
         self.init_zernikes()
         self.recalc_images()
     
