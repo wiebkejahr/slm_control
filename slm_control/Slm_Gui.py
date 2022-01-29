@@ -356,24 +356,6 @@ class Main_Window(QtWidgets.QMainWindow):
         else:
             return None
 
-        
-    def openFlatFieldDialog(self, path):
-        """ Creates a dialog to open a file. At the moement, it is only used 
-            to load the image for the flat field correction. There is no 
-            sanity check implemented whether the selected file is a valid image. """
-        options = QtWidgets.QFileDialog.Options()
-        options |= QtWidgets.QFileDialog.DontUseNativeDialog
-        work_dir = os.path.dirname(os.path.realpath(__file__))
-        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
-                        "Load flat field correction", work_dir +'/'+ path)
-        # TODO: needs to be implemented to work for two paths, one for left, 
-        # one for right side
-        print("Currently not implemented. Please add paths in the files for \
-              left and right side parameters as 'cal1'.")
-        #if fileName:
-        #    self.load_flat_field(fileName)
-        #    self.combine_and_update()
-
     
     def load_flat_field(self, path_l, path_r, recalc = True):
         """ Opens the images in the parameter paths, combines two halves to 
@@ -401,8 +383,7 @@ class Main_Window(QtWidgets.QMainWindow):
 
 
     def flat_field(self, state, recalc = True):
-        """ Opens the image in the parameter path and sets as new flatfield
-            correction. """
+        """ Updates the flatfield correction depending on checkbox state. """
         self.p.general["flat_field"] = int(state)
         if state:
             self.flatfield = self.flatfieldcor
