@@ -341,21 +341,6 @@ class Main_Window(QtWidgets.QMainWindow):
             checkbox.setChecked(True)
         return checkbox     
 
-
-    def openFileDialog(self, path):
-        """ Creates a dialog to open a file. At the moement, it is only used 
-            to load the image for the flat field correction. There is no 
-            sanity check implemented whether the selected file is a valid image. """
-        options = QtWidgets.QFileDialog.Options()
-        options |= QtWidgets.QFileDialog.DontUseNativeDialog
-        work_dir = os.path.dirname(os.path.realpath(__file__))
-        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
-                        "Load flat field correction", work_dir +'/'+ path)
-        if fileName:
-            return fileName
-        else:
-            return None
-
     
     def load_flat_field(self, path_l, path_r, recalc = True):
         """ Opens the images in the parameter paths, combines two halves to 

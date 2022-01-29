@@ -5,6 +5,7 @@ Created on Wed Oct 17 16:17:18 2018
 
 @author: wjahr
 """
+import os
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
 
@@ -158,15 +159,37 @@ class Sub_Pattern_Vortex(Sub_Pattern):
                 self.create_text_box(self.size, rot, rad, steps, phase, slm_scale)
 
             elif mode == "From File":
-                self.data = pcalc.compute_vortex('Gauss', self.size, rot, rad, 
-                                                 steps, phase, slm_scale)
-                print("From File")
-                #TODO: implement!
+                fname = self.openFileDialog('../patterns/')
+                if fname:
+                    newvortex = pcalc.load_image(fname)
+                    if np.all(newvortex.shape) == np.all(self.size):
+                        if newvortex.dtype == 'uint8':
+                            self.data = newvortex/(np.power(2, 8)-1)
+                        elif newvortex.dtype == 'uint16':
+                            self.data = newvortex/(np.power(2, 16)-1)
+                        else:
+                            print('Please select 8bit or 16bit image!')
+                    else:
+                        print('Please select file of the correct size: ', self.size, 'px!')
             
             if update:
                 self.daddy.update()
         return self.data
 
+
+    def openFileDialog(self, path):
+        """ Creates a dialog to open a file. At the moement, it is only used 
+            to load the image for the flat field correction. There is no 
+            sanity check implemented whether the selected file is a valid image. """
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        work_dir = os.path.dirname(os.path.realpath(__file__))
+        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 
+                        "Load image with vortex", work_dir +'/'+ path)
+        if fileName:
+            return fileName
+        else:
+            return None
 
     def create_text_box(self, size, rot, rad, steps, phase, slm_scale):
         """" Creates dialog window with text box; reads example text from file.
