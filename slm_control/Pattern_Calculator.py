@@ -1,10 +1,41 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Oct  9 08:15:36 2018
+# Pattern_Calculator.py
 
-@author: wjahr
+
 """
+    Created on Tue Oct  9 08:15:36 2018
+    @author: wjahr
+    
+    Mathematical backend for creating the different patterns and for image
+    processing. Includes wrappers and convenience functions for coordinate 
+    transforms, image loading/saving, cropping, summation.
+    Implements:
+        - mathematical description of the different vortizes to create STED 
+          patterns.
+        - Zernike polynomials for adaptive optics.
+        - Blazed grating for holographic operation of SLM, and for aligment of 
+          beam position within the microscope.
+    Can be used stand-alone by calling functions from included main. Within the 
+    SLM control framework, the functions are called by the various 
+    pattern-creation routines.
+    
+    Copyright (C) 2022 Wiebke Jahr
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 
 import numpy as np
 from math import factorial as mfac
@@ -78,6 +109,7 @@ def normalize_radius(obj_ba, mag, slm_px, size_slm):
     radius_slm = obj_ba / mag / slm_px / np.mean(size_slm * 2)
     return radius_slm
 
+
 def get_mm2px(slm_px, M):
     """" Converts mm in objective backaperture into px on SLM.
         Needed eg when scaling offsets. 
@@ -91,6 +123,7 @@ def get_mm2px(slm_px, M):
     
     mm = 1 / (slm_px * M)
     return mm
+
 
 def bfp_radius(M, NA, f_TL):
     """ Takes magnification M and NA of the objective, as well as focal length

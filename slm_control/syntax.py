@@ -1,20 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Provides basic syntax highlighting in the code input inwodow.
-Copied and adapted from: https://wiki.python.org/moin/PyQt/Python%20syntax%20highlighting
-on 2020/03/13.
-
-@author: wjahr
-"""
-
 # syntax.py
 
-import sys
+
+"""
+    Created on Mon Oct 15 21:40:23 2018
+    @author: wjahr
+
+
+    Provides very basic syntax highlighting in the code input window.
+    Copied and adapted from: 
+    https://wiki.python.org/moin/PyQt/Python%20syntax%20highlighting
+    on 2020/03/13.
+
+
+    Copyright (C) 2022 Wiebke Jahr
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 
 from PyQt5.QtCore import QRegExp
 from PyQt5.QtGui import QColor, QTextCharFormat, QFont, QSyntaxHighlighter
-import __future__
 
 def format(color, style=''):
     """Return a QTextCharFormat with the given attributes.

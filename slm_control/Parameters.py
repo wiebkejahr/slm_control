@@ -1,10 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Oct 16 11:13:09 2018
+# Parameters.py
 
-@author: wjahr
+
 """
+    Created on Tue Oct 16 11:13:09 2018
+    @author: wjahr
+    
+    Class to handle creation of text files to save and load parameters. Can be 
+    used standalone: when executed as main, all parameter_xyz.txt files are 
+    recreated according to the values hardcoded in this file.
+    
+    
+    Copyright (C) 2022 Wiebke Jahr
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 
 import json
 import os
@@ -14,6 +37,8 @@ class param():
         Implements a reader/writer to import/export to json. Before exporting,
         the parameters for left/right images and aberrations can be updated
         according to the parameters provided in the user input. """
+
+
     def __init__(self):
         self.init_defaults()
         
@@ -102,7 +127,6 @@ class param():
                     "phasewrap" : 1,
                     "cal1"      : "patterns/CAL_LSH0801768_780nm.bmp",
                     }
-
         
         self.objectives = {
                         "100xOil_NA_140": {
@@ -319,10 +343,12 @@ class param():
         with open(path + obj_path + '_' + name_base + "_full.txt", 'r') as f:
             self.full = json.load(f)
         return 
+
     
     def load_file_sim(self, path, name_base):
         with open(path + name_base + "_simulation.txt", 'r') as f:
             self.simulation = json.load(f)
+
             
     def load_file(self, path, obj_path, name_base):
         print("Loading parameters from: ", path + obj_path + '_' + name_base)
@@ -343,11 +369,14 @@ class param():
             models = json.load(f)
             self.model_def = models[model_name]
 
+
     def get(self, param):
         return param
+
     
     def set_(self, param, value):
         self.param = value
+
         
     def mm2px(self, mm):
         """ Can be  used to convert mm to px. Not needed at the moment. To use,
@@ -367,6 +396,4 @@ if __name__ == "__main__":
     
     for o in objectives:
         p.write_file(path[0], o , path[1])
-        
-        
         

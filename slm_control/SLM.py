@@ -1,10 +1,42 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Oct 15 21:20:23 2018
+#SLM.py
 
-@author: wjahr
+
 """
+    Created on Mon Oct 15 21:20:23 2018
+    @author: wjahr
+    
+    
+    Handles communication with  SLM. Supports two operating modes, depending 
+    on "display" parameter set in the parameters_general.txt:
+        - external: displays image data fullscreen and in foreground with the 
+          size specified by 'size_full' parameter on the (external) display 
+          'display_num'
+        - imspector: establishes communication with Abberior's Imspector 
+          software, opens new window to display phase pattern within. In 
+          Imspector, select 'custom' phasemask and connect image display via
+          eyedropper tool. Important: Abberior adds up the displayed image and 
+          all of their parameeters; may lead to unwanted results if there are 
+          non-zero parameters in Imspector.
+    
+
+    Copyright (C) 2022 Wiebke Jahr
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 
 import PyQt5.QtCore as QtCore
 import PyQt5.QtWidgets as QtWidgets
@@ -27,7 +59,6 @@ class SLM_Display(QtWidgets.QWidget):
             
         elif self.display == "imspector":
             self.create_imspec_display(data)
-
                           
  
     def create_main_frame(self, data, n_display):
@@ -44,8 +75,8 @@ class SLM_Display(QtWidgets.QWidget):
         self.img_frame.setCursor(QtCore.Qt.BlankCursor) #vbox.addWidget(self.img_frame)
         self.img_frame.show() #self.setLayout(vbox)
 
+
     def create_imspec_display(self, data):
-                    
         # Handling of all the different things that could potentially go wrong
         # when communicating with the Abberior
         try:
@@ -80,6 +111,7 @@ class SLM_Display(QtWidgets.QWidget):
                       file. If you're using Imspector, check that it is 
                       running and a measurement is active. """)
         self.update_image(data)
+    
     
     def update_image(self, data):
         """ updates the  displayed image with the one provided in img_path. """

@@ -1,10 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Oct 15 21:18:41 2018
+# Pattern_Interface.py
 
-@author: wjahr
+
 """
+    Created on Mon Oct 15 21:18:41 2018
+    @author: wjahr
+    
+    This is the highest level control for phasemask calculation, and contains 
+    the class for the two "half-patterns". When the SLM is used in double pass 
+    configuration, the code reates GUI for the two halfs of the pattern. It 
+    calls updates of the various sub-components when needed, adds all layers
+    and crops the images to account for the offset (i.e. different center 
+    positions of the vortex).
+    
+        
+    Copyright (C) 2022 Wiebke Jahr
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 
 import PyQt5.QtWidgets as QtWidgets
 import numpy as np
@@ -13,12 +39,15 @@ import slm_control.Pattern_Calculator as pcalc
 import slm_control.Sub_Pattern as spat
 import slm_control.Patterns_Zernike as patzern
 
+
 class Half_Pattern(QtWidgets.QWidget):
     """ Contains the image data to create one half of the pattern on the SLM:
         offset, grid, defocus, vortex and aberrations. Flatfield correction is
         only in the Main Program. For fast offset calculation, images are 
         created at twice the size needed and then cropped differently when the 
         offset is changed. """
+
+
     def __init__(self, params, size, parent = None):
         super(Half_Pattern, self).__init__(parent)
         self.size = size
@@ -26,24 +55,30 @@ class Half_Pattern(QtWidgets.QWidget):
         self.data = np.zeros(self.size)
         self.blockupdating = False
         
+
     def call_daddy(self, p): 
         """ Connects the instance of this class to the calling function p, in this
             case usually img_l and img_r from the Main class. Needed to tell
             apart the instances and eg to update the correct side of the image. """
         self.daddy = p
 
+
     def set_name (self, name):
         self.name = name
     
+
     def get_name(self):
         return self.name
         
+
     def create_gui(self, p_gen, p_spec):
         """ Places the GUI elements of the Subpatterns and sets default behavior
             for the spinboxes. Parameters p_gen: General parameters, p_spec: 
             parameter list for either left or right side of the image, depending
             on the instance. """
         
+        
+        # create controls for the "basic" parameters creating the pattern
         self.offset = np.asarray(p_spec["off"])
         
         controls = QtWidgets.QGridLayout()
@@ -75,6 +110,9 @@ class Half_Pattern(QtWidgets.QWidget):
                                                  p_spec["steps"]]), 5,0,5,2)
         self.vort.compute_pattern(update = False)
         
+        
+        # controls for the Zernike modes are created by the Patterns_Zernike
+        # class and added in one go
         self.aberr = patzern.Aberr_Pattern(p_gen, self.size)
         self.aberr.call_daddy(self)
         controls.addLayout(self.aberr.create_gui(p_gen, p_spec), 10, 0, 4, 2)
@@ -127,6 +165,7 @@ class Half_Pattern(QtWidgets.QWidget):
             self.update()
         return cropped
     
+
     def update(self, update = True, completely = False):
         """ Recalculates the image by adding the vortex, defocus and aberration
             data, cropping to the provided offset and adding the grating. Then

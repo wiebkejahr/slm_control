@@ -1,10 +1,37 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Jan 23 21:43:54 2022
+# Slm_Gui.py
 
-@author: wjahr
+
 """
+    Created on Sun Jan 23 21:43:54 2022
+    @author: wjahr
+    
+    This class handles the whole front end of the SLM control code. It builds 
+    the GUI, and initializes all input fields with the values stored in the 
+    parameters_xyz.txt files. It calculates the phasemasks according to the 
+    stored values and calls the display, either via graphics card output or by 
+    sending the pattern to Abberio's Imspector software. This class further 
+    implements all the GUI event handling and updates the phasemasks as 
+    required.
+    
+    
+    Copyright (C) 2022 Wiebke Jahr
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 
 import os
 
@@ -30,6 +57,7 @@ class PlotCanvas(FigureCanvas):
         the QPixmap automatically phasewraps intensities into the space between
         [0,1], which might interfere with the phasewrapping implemented for 
         the SLM. """
+
         
     def __init__(self, parent=None, w=800, h=600, dpi=200):
         w = w / dpi
@@ -40,7 +68,8 @@ class PlotCanvas(FigureCanvas):
         
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
- 
+
+    
     def plot(self, data):
         self.img_ax.imshow(data, interpolation = 'nearest', clim = [0,1], cmap = 'RdYlBu')#'PRGn')
         self.draw()
@@ -49,6 +78,7 @@ class PlotCanvas(FigureCanvas):
 class Main_Window(QtWidgets.QMainWindow):
     """ Main window for SLM control. Controls to change the parameters, and all
         function calls. """
+
 
     def __init__(self, app, parent=None):
         """ Called upon start up of the class. Initializes the Gui, places all

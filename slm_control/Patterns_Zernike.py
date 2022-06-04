@@ -1,10 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Oct 17 16:20:49 2018
+# Pattern_Zernike.py
 
-@author: wjahr
+
 """
+    Created on Wed Oct 17 16:20:49 2018
+    @author: wjahr
+    
+    Contains all the "adaptive" optics to correct for aberrations, as
+    parametrized by Zernike Polynomials. Exceptions are orders [1,+/-1] and 
+    [2,0]: as they only move the beam without changing the beam's shape, these 
+    orders are treated in the Sub_Pattern class.
+    Weights of the common Zernike polynomials are read from the GUI, the 
+    phasemask for each polynomial is computed and all images are added.
+    
+    
+    Copyright (C) 2022 Wiebke Jahr
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 
 import PyQt5.QtWidgets as QtWidgets
 import numpy as np
@@ -12,11 +38,14 @@ import numpy as np
 import slm_control.Pattern_Calculator as pcalc
 from slm_control.Sub_Pattern import Sub_Pattern
 
+
 class Sub_Pattern_Zernike(Sub_Pattern):
     """ Subpattern containing the image data for aberrations. GUI contains the 
         weights, usually of the two orthogonal Zernike modes (primary and 
         secondary for spherical). Recalculates the aberration and calls an 
         update to the Aberr_Pattern instance to recalculate aberrations. """
+
+
     def __init__(self, params, size, name, parent = None):
         super(Sub_Pattern, self).__init__(parent)
         self.size = size * 2
@@ -25,12 +54,15 @@ class Sub_Pattern_Zernike(Sub_Pattern):
         
         self.set_name(name)        
         
+
     def set_name(self, name):
         self.name = name
         
+
     def get_name(self):
         return self.name
         
+
     def compute_pattern(self, update = True):
         # somewhat ugly solution for using identical correction on both sides of the SLM
         # whenever one side is changed, just writes the values into the gui controls
@@ -79,14 +111,17 @@ class Aberr_Pattern(QtWidgets.QWidget):
         according to the parameters. Calls an update to the Half Pattern to 
         recalculate the whole image data. """
         
+
     def __init__(self, params, size, parent = None):
         super(Aberr_Pattern, self).__init__(parent)
         self.size = size * 2
         self.data = np.zeros(self.size)
 
+
     def call_daddy(self, p):        
         self.daddy = p
     
+
     def create_gui(self, p, p_abberation):
         """ Zernike mode (2, -2) for obligue astigmatism,
             Zernike mode (2, 2) for vertical astigmatism.
@@ -127,6 +162,7 @@ class Aberr_Pattern(QtWidgets.QWidget):
         gui.setContentsMargins(0,0,0,0)
         return gui
         
+
     def update(self, update = True):
         z = self.daddy.daddy.zernikes_normalized
         self.data = pcalc.add_images([z["astigx"]   * self.astig.coeff[0],
