@@ -1,19 +1,44 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Oct 15 21:18:41 2018
+# Pattern_Interface.py
 
-@author: wjahr
+
+"""
+    Created on Mon Oct 15 21:18:41 2018
+    @author: wjahr
+    
+    This is the highest level control for phasemask calculation, and contains 
+    the class for the two "half-patterns". When the SLM is used in double pass 
+    configuration, the code reates GUI for the two halfs of the pattern. It 
+    calls updates of the various sub-components when needed, adds all layers
+    and crops the images to account for the offset (i.e. different center 
+    positions of the vortex).
+    
+        
+    Copyright (C) 2022 Wiebke Jahr
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-import PyQt5.QtCore as QtCore
+
 import PyQt5.QtWidgets as QtWidgets
-
 import numpy as np
 
-import Pattern_Calculator as pcalc
-import Sub_Pattern as spat
-import Patterns_Zernike as patzern
+import slm_control.Pattern_Calculator as pcalc
+import slm_control.Sub_Pattern as spat
+import slm_control.Patterns_Zernike as patzern
+
 
 class Half_Pattern(QtWidgets.QWidget):
     """ Contains the image data to create one half of the pattern on the SLM:
@@ -21,55 +46,63 @@ class Half_Pattern(QtWidgets.QWidget):
         only in the Main Program. For fast offset calculation, images are 
         created at twice the size needed and then cropped differently when the 
         offset is changed. """
-    def __init__(self, params, parent = None):
+
+
+    def __init__(self, params, size, parent = None):
         super(Half_Pattern, self).__init__(parent)
-        self.size = np.asarray(params.general["size_slm"])
+        self.size = size
         self.full = np.zeros(self.size * 2)
         self.data = np.zeros(self.size)
         self.blockupdating = False
         
+
     def call_daddy(self, p): 
         """ Connects the instance of this class to the calling function p, in this
             case usually img_l and img_r from the Main class. Needed to tell
             apart the instances and eg to update the correct side of the image. """
         self.daddy = p
 
+
     def set_name (self, name):
         self.name = name
     
+
     def get_name(self):
         return self.name
         
+
     def create_gui(self, p_gen, p_spec):
         """ Places the GUI elements of the Subpatterns and sets default behavior
             for the spinboxes. Parameters p_gen: General parameters, p_spec: 
             parameter list for either left or right side of the image, depending
             on the instance. """
         
-        self.offset = p_spec["off"]
+        
+        # create controls for the "basic" parameters creating the pattern
+        self.offset = np.asarray(p_spec["off"])
         
         controls = QtWidgets.QGridLayout()
-        self.off = spat.Off_Pattern(p_gen)
+        self.off = spat.Off_Pattern(p_gen, self.size)
         self.off.call_daddy(self)
-        size = np.asarray(p_gen.general["size_full"])
-        controls.addLayout(self.off.create_gui(p_spec["off"], 
-                                               [[0, 1, -size[0]/2, size[0]/2],
-                                                [0, 1, -size[1]/2, size[1]/2]]),
+        offlim = [self.size[0], self.size[1]*2]
+        controls.addLayout(self.off.create_gui(
+                            p_spec["off"], 
+                            [[0, 1, -offlim[1]/4, offlim[1]/4],
+                             [0, 1, -offlim[0]/2, offlim[0]/2]]),
                             0,0,2,2)
-        
-        self.gr = spat.Sub_Pattern_Grid(p_gen)
+        self.gr = spat.Sub_Pattern_Grid(p_gen, self.size)
         self.gr.call_daddy(self)
         controls.addLayout(self.gr.create_gui(p_spec["sl"], 
                                               [[2, 0.1, -20, 20], [2, 0.1, -20, 20]]), 2,0,2,2)
         self.gr.compute_pattern(update = False)
         
-        self.defoc = spat.Sub_Pattern_Defoc(p_gen)
+        self.defoc = spat.Sub_Pattern_Defoc(p_gen, self.size)
         self.defoc.call_daddy(self)
         controls.addLayout(self.defoc.create_gui(p_spec["defoc"], 
                                                  [3, 0.1, -10, 10]), 4,0,1,2)
         self.defoc.compute_pattern(update = False)
         
-        self.vort = spat.Sub_Pattern_Vortex(p_gen)
+        self.vort = spat.Sub_Pattern_Vortex(p_gen, self.size)
         self.vort.call_daddy(self)
         controls.addLayout(self.vort.create_gui(p_gen.general["modes"], 
                                                 [p_spec["mode"], p_spec["radius"], 
@@ -77,14 +110,14 @@ class Half_Pattern(QtWidgets.QWidget):
                                                  p_spec["steps"]]), 5,0,5,2)
         self.vort.compute_pattern(update = False)
         
-        self.aberr = patzern.Aberr_Pattern(p_gen)
+        
+        # controls for the Zernike modes are created by the Patterns_Zernike
+        # class and added in one go
+        self.aberr = patzern.Aberr_Pattern(p_gen, self.size)
         self.aberr.call_daddy(self)
         controls.addLayout(self.aberr.create_gui(p_gen, p_spec), 10, 0, 4, 2)
         
         self.aberr.update(update = False)
-
-        #self.aberr = self.daddy.img_aberr
-        #self.aberr.call_daddy(self)
         
         self.update(update = False)
 
@@ -98,24 +131,6 @@ class Half_Pattern(QtWidgets.QWidget):
             file. Global flag is set to prevent recalculation and redrawing.
             Updating of SLM patterns is called manually in the end. """
         self.blockupdating = True
-        
-        # if p_gen.general["split_image"]:
-        #     self.daddy.splt_img_state.setChecked(True)
-        #     print("split image true")
-        # else:
-        #     self.daddy.splt_img_state.setChecked(False)
-        # if p_gen.general["single_aberr"]:
-        #     self.daddy.sngl_corr_state.setChecked(True)
-        #     print("single correction true")
-        # else:
-        #     self.daddy.sngl_corr_state.setChecked(True)
-        # if p_gen.general["flat_field"]:
-        #     self.daddy.flt_fld_state.setChecked(True)
-        #     print("flt fld true")
-        # else:
-        #     self.daddy.flt_fld_state.setChecked(True)
-   
-        self.daddy.obj_sel.setCurrentText(p_gen.general["objective"])
         
         self.off.xgui.setValue(p_spec["off"][0])
         self.off.ygui.setValue(p_spec["off"][1])
@@ -150,13 +165,14 @@ class Half_Pattern(QtWidgets.QWidget):
             self.update()
         return cropped
     
+
     def update(self, update = True, completely = False):
         """ Recalculates the image by adding the vortex, defocus and aberration
             data, cropping to the provided offset and adding the grating. Then
             Calls the update function of the function owning this instance (in 
             this case the main). """
             
-        if completely:    
+        if completely:
             self.aberr.astig.compute_pattern(update = False)
             self.aberr.coma.compute_pattern(update = False)
             self.aberr.sphere.compute_pattern(update = False)
@@ -167,11 +183,9 @@ class Half_Pattern(QtWidgets.QWidget):
             self.vort.compute_pattern(update = False)
             self.defoc.compute_pattern(update = False)
             self.off.compute_pattern(update = False)
-                    
-        self.full = pcalc.add_images([self.vort.data, self.defoc.data, self.aberr.data])
+        
+        self.full = pcalc.add_images([self.gr.data, self.vort.data, self.defoc.data, self.aberr.data])
         self.data = self.crop(update = False)
-        self.data = pcalc.add_images([self.data, self.gr.data])
         
         if update:
-            self.daddy.combine_images()
-            self.daddy.update_display()
+            self.daddy.combine_and_update()

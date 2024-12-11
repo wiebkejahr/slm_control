@@ -1,6 +1,7 @@
 # Images
-*.bmp
+# *.bmp
 
+*.hdf5
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -130,3 +131,41 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.vscode/settings.json
+
+# ignore pyc files
+*.pyc
+*.hdf5
+autoalign/runs/4.27.20_noiseTEST_eps_15_lr_0.001_bs_64/events.out.tfevents.1588617341.Hopes-MacBook-Pro.local.20939.0
+autoalign/models/4.27.20_noiseTEST_eps_15_lr_0.001_bs_64.pth
+autoalign/runs/4.27.20_noiseTEST_eps_15_lr_0.001_bs_64/events.out.tfevents.1588617546.Hopes-MacBook-Pro.local.21125.0
+*.0
+autoalign/models/tiptilt_test_80_w_noise_norm_eps_15_lr_0.001_bs_16.pth
+autoalign/models/20.06.02_tiptiltdefocus_20k_eps_15_lr_0.001_bs_32.pth
+autoalign/models/20.06.02_tiptiltdefocus_20k_eps_15_lr_0.001_bs_64.pth
+autoalign/models/20.06.07_multi_cnn_test_5_eps_15_lr_0.001_bs_64.pth
+autoalign/models/tiptilt_test_500_noise_norm_eps_15_lr_0.001_bs_32.pth
+autoalign/models/tiptilt_test_80_no_crop_eps_15_lr_0.001_bs_64.pth
+autoalign/models/tiptilt_test_80_no_noise_eps_15_lr_0.001_bs_16.pth
+autoalign/models/tiptilt_test_80_w_noise_eps_15_lr_0.001_bs_16.pth
+autoalign/models/20.01.08_corrected_pattern_calc_w_val_eps_15_lr_0.001_bs_64_testing.pth
+autoalign/models/20.05.27_shift_invariant_15k_eps_15_lr_0.001_bs_64_new_model.pth
+
+# autoalign/models/20.16.06_1D_20k_eps_10_lr_0.001_bs_64_standardized_not_norm.pth
+autoalign/models/testing_no_defocus_multi_eps_15_lr_0.001_bs_64_standardized_check.pth
+autoalign/models/testing_no_defocus_multi_eps_15_lr_0.001_bs_64_standardized.pth
+autoalign/models/20.07.22_multi_modify_test_new_eps_15_lr_0.001_bs_64_noise_centered_2.pth
+autoalign/models/20.07.22_multi_modify_test_5_eps_15_lr_0.001_bs_64_noise_centered_2.pth
+autoalign/models/20.07.23_1D_offset_only_500_eps_15_lr_0.001_bs_64_noise.pth
+#autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64.pth
+autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg0poiss1000.pth
+autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg0poiss5000.pth
+autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss10000.pth
+#autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_bg2poiss500.pth
+autoalign/models/20.07.23_1D_offset_only_2k_eps_15_lr_0.001_bs_64_noise_poiss1000.pth
+autoalign/models/20.07.23_1D_offset_only_500_eps_15_lr_0.001_bs_64.pth
+autoalign/models/20.06.22_no_defocus_multi_20k_eps_25_lr_0.001_bs_64_ALEXNET.pth
+autoalign/models/20.07.22_multi_centered_11_dim_18k_eps_25_lr_0.001_bs_64_ALEXNET.pth
+autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_25_lr_0.001_bs_64_ALEXNET_redo.pth
+*.pth
+autoalign/models/ReflectDLHF.exe

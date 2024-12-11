@@ -1,0 +1,35 @@
+{
+    "sl": [
+        5.0,
+        1.0
+    ],
+    "off": [
+        0.0,
+        0.0
+    ],
+    "rot": 0.0,
+    "radius": 0.64,
+    "phase": 0.5,
+    "steps": 1.0,
+    "defoc": 0.0,
+    "mode": "3D STED",
+    "astig": [
+        0.0,
+        0.0
+    ],
+    "coma": [
+        0.0,
+        0.0
+    ],
+    "sphere": [
+        0.0,
+        0.0
+    ],
+    "trefoil": [
+        0.0,
+        0.0
+    ],
+    "slm_range": 255,
+    "phasewrap": 1,
+    "cal1": "patterns/CAL_LSH0801768_780nm.bmp"
+}
