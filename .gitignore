@@ -171,7 +171,7 @@ autoalign/models/20.08.03_1D_centered_18k_norm_dist_eps_25_lr_0.001_bs_64_ALEXNE
 autoalign/models/ReflectDLHF.exe
 
 .DS_Store
-autalign/.DS_Store
+autoalign/.DS_Store
 documentation/.DS_Store
 parameters/.DS_Store
 patterns/.DS_Store
